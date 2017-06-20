@@ -33,14 +33,14 @@ angular.module('angular-ui-query-builder',[])
 		<div ng-repeat="leaf in $ctrl.properties track by leaf.id" ng-switch="leaf.spec.type" class="row">
 			<div class="col-md-1 col-join-root" ng-class="$first && 'col-join-root-first'"></div>
 			<div class="col-md-2 col-join-both">
-				<div class="btn btn-primary btn-block">
+				<div class="btn btn-1 btn-primary btn-block">
 					{{leaf.id}}
 				</div>
 			</div>
 			<div ng-switch-when="string">
 				<div class="col-md-2 col-join-both">
 					<div class="btn-group btn-block">
-						<a class="btn btn-default btn-block dropdown-toggle" data-toggle="dropdown">
+						<a class="btn btn-2 btn-block dropdown-toggle" data-toggle="dropdown">
 							{{leaf.valueWrapper}}
 							<i class="fa fa-caret-down"></i>
 						</a>
@@ -52,7 +52,7 @@ angular.module('angular-ui-query-builder',[])
 					</div>
 				</div>
 				<div class="col-md-2 col-join-left">
-					<div class="btn btn-primary">
+					<div class="btn btn-3 btn-primary">
 						<input ng-model="leaf.valueEdit" ng-change="$ctrl.setValue(leaf)" type="text" class="form-control"/>
 					</div>
 				</div>

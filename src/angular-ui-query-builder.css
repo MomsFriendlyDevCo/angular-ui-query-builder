@@ -5,6 +5,24 @@
 	cursor: pointer;
 }
 
+.ui-query-builder .row .col-md-1,
+.ui-query-builder .row .col-md-2
+{
+	height: 40px;
+}
+
+/* Buttons {{{ */
+.ui-query-builder .btn.btn-1,
+.ui-query-builder .btn.btn-2,
+.ui-query-builder .btn.btn-3,
+.ui-query-builder .btn.btn-4
+{color: #FFF}
+
+.ui-query-builder .btn.btn-1 {background: #104E8B}
+.ui-query-builder .btn.btn-2 {background: #1874CD}
+.ui-query-builder .btn.btn-3 {background: #1C86EE}
+.ui-query-builder .btn.btn-4 {background: #1E90FF}
+
 .ui-query-builder .btn > input.form-control {
 	background: transparent;
 	box-shadow: none;
@@ -14,12 +32,7 @@
 	cursor: pointer;
 	border: 0;
 }
-
-.ui-query-builder .row .col-md-1,
-.ui-query-builder .row .col-md-2
-{
-	height: 40px;
-}
+/* }}} */
 
 /* Mouse hovering {{{ */
 .ui-query-builder .btn i.fa-caret-down {
