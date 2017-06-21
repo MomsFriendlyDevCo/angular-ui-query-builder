@@ -64,6 +64,8 @@ angular.module('angular-ui-query-builder',[])
 					<ul class="dropdown-menu">
 						<li><a ng-click="$ctrl.setWrapper(leaf, '$eq')">Is</a></li>
 						<li><a ng-click="$ctrl.setWrapper(leaf, '$ne')">Is not</a></li>
+						<li><a ng-click="$ctrl.setWrapper(leaf, '$in')">One of</a></li>
+						<li><a ng-click="$ctrl.setWrapper(leaf, '$nin')">Not one of</a></li>
 						<li ng-if="leaf.spec.type == 'number'"><a ng-click="$ctrl.setWrapper(leaf, '$gt')">Above</a></li>
 						<li ng-if="leaf.spec.type == 'number'"><a ng-click="$ctrl.setWrapper(leaf, '$lt')">Below</a></li>
 						<li ng-if="leaf.spec.type == 'date'"><a ng-click="$ctrl.setWrapper(leaf, '$gt')">After</a></li>
@@ -88,6 +90,7 @@ angular.module('angular-ui-query-builder',[])
 			</div>
 			<!-- }}} -->
 		</div>
+		<!-- Add button {{{ -->
 		<div class="container row">
 			<div ng-show="$ctrl.properties.length" class="col-md-1 col-join-root col-join-root-last"></div>
 			<div ng-show="$ctrl.properties.length" class="col-md-2 btn-group col-join-left-add">
@@ -102,6 +105,7 @@ angular.module('angular-ui-query-builder',[])
 				</a>
 			</div>
 		</div>
+		<!-- }}} -->
 	`,
 	controller: function($scope) {
 		var $ctrl = this;
@@ -149,7 +153,7 @@ angular.module('angular-ui-query-builder',[])
 			},
 			{
 				id: '$in',
-				setter: v => ({$in: v.split(/\s*,\s*/)}),
+				setter: v => ({$in: _.isArray(v) ? v.split(/\s*,\s*/) : [v]}),
 				export: leaf => ({$in: leaf.value.$in}),
 				base: {
 					title: 'One of',
@@ -158,8 +162,8 @@ angular.module('angular-ui-query-builder',[])
 			},
 			{
 				id: '$nin',
-				setter: v => ({$in: v.split(/\s*,\s*/)}),
-				export: leaf => ({$in: leaf.value.$nin}),
+				setter: v => ({$nin: _.isArray(v) ? v.split(/\s*,\s*/) : [v]}),
+				export: leaf => ({$nin: leaf.value.$nin}),
 				base: {
 					title: 'Not one of',
 					type: 'string',
@@ -215,7 +219,7 @@ angular.module('angular-ui-query-builder',[])
 			{
 				id: '$regexp',
 				setter: v => ({$regexp: v}),
-				export: leaf => ({$exists: leaf.value.$regexp}),
+				export: leaf => ({$regexp: leaf.value.$regexp}),
 				base: {
 					title: 'Matches',
 					type: 'string',
@@ -331,7 +335,7 @@ angular.module('angular-ui-query-builder',[])
 
 			// Run via operand setter
 			leaf.value = $ctrl.operandsByID[leaf.valueOperand].setter(newValue);
-			leaf.valueEdit = _.isObject(leaf.value) && _.size(leaf.value) ? _(leaf.value).map().first() : leaf.value
+			leaf.valueEdit = _.isObject(leaf.value) && _.size(leaf.value) ? _(leaf.value).map().first() : leaf.value;
 
 			// Set the upstream model value
 			$ctrl.exportBranch();
