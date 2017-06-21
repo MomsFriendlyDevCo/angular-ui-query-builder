@@ -126,6 +126,7 @@ angular.module('angular-ui-query-builder',[])
 			{
 				id: '$eq',
 				setter: v => ({$eq: v}),
+				export: leaf => leaf.valueEdit,
 				base: {
 					title: 'Is',
 					type: 'string',
@@ -134,6 +135,7 @@ angular.module('angular-ui-query-builder',[])
 			{
 				id: '$ne',
 				setter: v => ({$ne: v}),
+				export: leaf => leaf.valueEdit,
 				base: {
 					title: 'Is not',
 					type: 'string',
@@ -142,6 +144,7 @@ angular.module('angular-ui-query-builder',[])
 			{
 				id: '$in',
 				setter: v => ({$in: v.split(/\s*,\s*/)}),
+				export: leaf => ({$in: leaf.value.$in}),
 				base: {
 					title: 'One of',
 					type: 'string',
@@ -150,6 +153,7 @@ angular.module('angular-ui-query-builder',[])
 			{
 				id: '$nin',
 				setter: v => ({$in: v.split(/\s*,\s*/)}),
+				export: leaf => ({$in: leaf.value.$nin}),
 				base: {
 					title: 'Not one of',
 					type: 'string',
@@ -158,6 +162,7 @@ angular.module('angular-ui-query-builder',[])
 			{
 				id: '$gt',
 				setter: v => ({$gt: v}),
+				export: leaf => ({$gt: leaf.value.$gt}),
 				base: {
 					title: 'Above',
 					type: 'number',
@@ -166,6 +171,7 @@ angular.module('angular-ui-query-builder',[])
 			{
 				id: '$gte',
 				setter: v => ({$gte: v}),
+				export: leaf => ({$gte: leaf.value.$gte}),
 				base: {
 					title: 'Above or equals',
 					type: 'number',
@@ -174,6 +180,7 @@ angular.module('angular-ui-query-builder',[])
 			{
 				id: '$lt',
 				setter: v => ({$lt: v}),
+				export: leaf => ({$lt: leaf.value.$lt}),
 				base: {
 					title: 'Below',
 					type: 'number',
@@ -182,6 +189,7 @@ angular.module('angular-ui-query-builder',[])
 			{
 				id: '$lte',
 				setter: v => ({$lt: v}),
+				export: leaf => ({$lte: leaf.value.$lte}),
 				base: {
 					title: 'Below or equals',
 					type: 'number',
@@ -190,6 +198,7 @@ angular.module('angular-ui-query-builder',[])
 			{
 				id: '$exists',
 				setter: v => ({$exists: !!v}),
+				export: leaf => ({$exists: leaf.value.$exists}),
 				base: {
 					title: 'Has a value',
 					type: 'boolean',
@@ -200,6 +209,7 @@ angular.module('angular-ui-query-builder',[])
 			{
 				id: '$regexp',
 				setter: v => ({$regexp: v}),
+				export: leaf => ({$exists: leaf.value.$regexp}),
 				base: {
 					title: 'Matches',
 					type: 'string',
@@ -259,13 +269,25 @@ angular.module('angular-ui-query-builder',[])
 				.value();
 		// }}}
 
+		// $ctrl.exportBranch() {{{
+		/**
+		* Export the local $ctrl.properties branch back into the upstream branch
+		*/
+		$ctrl.exportBranch = ()=> {
+			$ctrl.branch = _($ctrl.properties)
+				.mapKeys(b => b.id)
+				.mapValues(b => $ctrl.operandsByID[b.valueOperand].export(b))
+				.value()
+		};
+		// }}}
+
 		// Convert branch -> properties {{{
 		// We have to do this to sort appropriately and allow iteration over dollar prefixed keys
 		$ctrl.properties;
-		$scope.$watch('$ctrl.branch', ()=> {
+		$ctrl.$onInit = ()=> {
 			$ctrl.properties = $ctrl.translateBranch($ctrl.branch);
-			console.log('BECOMES', $ctrl.properties);
-		});
+			console.log('INIT', $ctrl.properties);
+		};
 		// }}}
 
 		// Branch interaction {{{
@@ -306,14 +328,12 @@ angular.module('angular-ui-query-builder',[])
 			leaf.valueEdit = _.isObject(leaf.value) && _.size(leaf.value) ? _(leaf.value).map().first() : leaf.value
 
 			// Set the upstream model value
-			_.set($ctrl.branch, leaf.path, leaf.value);
+			$ctrl.exportBranch();
 		};
 		// }}}
 
 		// New branches {{{
-		$ctrl.add = ()=> {
-			$ctrl.properties.push({});
-		};
+		$ctrl.add = ()=> $ctrl.properties.push({});
 		// }}}
 	},
 })

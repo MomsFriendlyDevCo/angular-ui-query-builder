@@ -13,9 +13,9 @@ app.controller("queryBuilderExampleCtrl", function($scope) {
 	};
 
 	$scope.query = {
-		status: {$in: ['active', 'approved']},
-		role: 'admin',
 		email: {$exists: true},
+		role: 'admin',
+		status: {$in: ['active', 'approved']},
 		/* FIXME: Not yet supported
 		$and: [
 			{role: 'admin'},
