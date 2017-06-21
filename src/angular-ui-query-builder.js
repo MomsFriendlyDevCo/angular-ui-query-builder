@@ -33,7 +33,7 @@ angular.module('angular-ui-query-builder',[])
 		spec: '<',
 	},
 	template: `
-		<div ng-repeat="leaf in $ctrl.properties track by leaf.id" ng-switch="leaf.spec.type" class="row">
+		<div ng-repeat="leaf in $ctrl.properties track by leaf.id" ng-switch="leaf.spec.type" class="container row">
 			<!-- Root branch display {{{ -->
 			<div class="col-md-1 col-join-root" ng-class="$first && 'col-join-root-first'"></div>
 			<!-- }}} -->
@@ -88,7 +88,7 @@ angular.module('angular-ui-query-builder',[])
 			</div>
 			<!-- }}} -->
 		</div>
-		<div class="row">
+		<div class="container row">
 			<div class="col-md-1 col-join-root col-join-root-last"></div>
 			<div class="col-md-2 col-join-left-add btn-group">
 				<a ng-click="$ctrl.add()" class="btn btn-add btn-default">
