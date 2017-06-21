@@ -70,10 +70,7 @@
 }
 
 .ui-query-builder .btn-add {
-	width: 40px;
-	height: 35px;
-	padding: 8px 0 0 0;
-	font-size: 20px;
+	padding: 8px 4px;
 }
 
 /* Root stalk {{{ */
@@ -86,7 +83,7 @@
 }
 
 .ui-query-builder .row .col-join-root.col-join-root-first::after {
-	top: 16px;
+	top: 15px;
 	border-top-left-radius: 5px;
 }
 

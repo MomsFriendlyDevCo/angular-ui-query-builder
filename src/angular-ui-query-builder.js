@@ -55,7 +55,7 @@ angular.module('angular-ui-query-builder',[])
 			</div>
 			<!-- }}} -->
 			<!-- Query type component {{{ -->
-			<div class="col-md-2 col-join-both">
+			<div ng-show="leaf.valueOperand" class="col-md-2 col-join-both">
 				<div class="btn-group btn-block">
 					<a class="btn btn-2 btn-block dropdown-toggle" data-toggle="dropdown">
 						{{($ctrl.operandsByID[leaf.valueOperand][leaf.spec.type] || $ctrl.operandsByID[leaf.valueOperand].base).title}}
@@ -74,7 +74,7 @@ angular.module('angular-ui-query-builder',[])
 			</div>
 			<!-- }}} -->
 			<!-- Query operand component {{{ -->
-			<div class="col-md-2 col-join-left btn-group" ng-switch="(operandConfig = $ctrl.operandsByID[leaf.valueOperand][leaf.spec.type] || $ctrl.operandsByID[leaf.valueOperand].base).type">
+			<div ng-show="leaf.valueOperand" class="col-md-2 col-join-left btn-group" ng-switch="(operandConfig = $ctrl.operandsByID[leaf.valueOperand][leaf.spec.type] || $ctrl.operandsByID[leaf.valueOperand].base).type">
 				<div ng-switch-when="string"  class="btn btn-block btn-3">
 					<input ng-model="leaf.valueEdit" ng-change="$ctrl.setValue(leaf)" type="text" class="form-control"/>
 				</div>
@@ -91,13 +91,13 @@ angular.module('angular-ui-query-builder',[])
 		<div class="container row">
 			<div ng-show="$ctrl.properties.length" class="col-md-1 col-join-root col-join-root-last"></div>
 			<div ng-show="$ctrl.properties.length" class="col-md-2 btn-group col-join-left-add">
-				<a ng-click="$ctrl.add()" class="btn btn-add btn-default">
-					<i class="fa fa-fw fa-plus"></i>
+				<a ng-click="$ctrl.add()" class="btn btn-lg btn-add btn-default">
+					<i class="fa fa-fw fa-plus fa-lg"></i>
 				</a>
 			</div>
-			<div ng-show="!$ctrl.properties.length" class="col-md-2 btn-group">
-				<a ng-click="$ctrl.add()" class="btn btn-success">
-					<i class="fa fa-plus fa-lg"></i>
+			<div ng-show="!$ctrl.properties.length" class="col-md-2 col-md-offset-1 btn-group">
+				<a ng-click="$ctrl.add()" class="btn btn-lg btn-add btn-default">
+					<i class="fa fa-fw fa-plus fa-lg"></i>
 					Add filter
 				</a>
 			</div>
