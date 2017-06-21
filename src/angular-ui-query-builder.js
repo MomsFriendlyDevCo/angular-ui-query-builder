@@ -89,10 +89,16 @@ angular.module('angular-ui-query-builder',[])
 			<!-- }}} -->
 		</div>
 		<div class="container row">
-			<div class="col-md-1 col-join-root col-join-root-last"></div>
-			<div class="col-md-2 col-join-left-add btn-group">
+			<div ng-show="$ctrl.properties.length" class="col-md-1 col-join-root col-join-root-last"></div>
+			<div ng-show="$ctrl.properties.length" class="col-md-2 btn-group col-join-left-add">
 				<a ng-click="$ctrl.add()" class="btn btn-add btn-default">
 					<i class="fa fa-fw fa-plus"></i>
+				</a>
+			</div>
+			<div ng-show="!$ctrl.properties.length" class="col-md-2 btn-group">
+				<a ng-click="$ctrl.add()" class="btn btn-success">
+					<i class="fa fa-plus fa-lg"></i>
+					Add filter
 				</a>
 			</div>
 		</div>
