@@ -339,7 +339,10 @@ angular.module('angular-ui-query-builder',[])
 		// }}}
 
 		// New branches {{{
-		$ctrl.add = ()=> $ctrl.properties.push({});
+		$ctrl.add = ()=> {
+			if ($ctrl.properties.every(p => p.id)) // Check there are no new items currently in the process of being added
+				$ctrl.properties.push({});
+		};
 		// }}}
 	},
 })
