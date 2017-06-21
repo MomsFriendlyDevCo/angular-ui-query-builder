@@ -16,7 +16,14 @@
 .ui-query-builder .btn.btn-2,
 .ui-query-builder .btn.btn-3,
 .ui-query-builder .btn.btn-4
-{color: #FFF}
+{
+	color: #FFF;
+	z-index: 1;
+}
+
+.ui-query-builder .btn.btn-add {
+	z-index: 1;
+}
 
 .ui-query-builder .btn.btn-1 {background: #104E8B}
 .ui-query-builder .btn.btn-2 {background: #1874CD}
@@ -51,15 +58,15 @@
 /* }}} */
 
 /* Stalks {{{ */
-.ui-query-builder .row .col-join-root::before,
-.ui-query-builder .row .col-join-both::before,
-.ui-query-builder .row .col-join-left::before,
-.ui-query-builder .row .col-join-left-add::before
+.ui-query-builder .row .col-join-root::after,
+.ui-query-builder .row .col-join-both::after,
+.ui-query-builder .row .col-join-left::after,
+.ui-query-builder .row .col-join-left-add::after
 {
 	content: '';
 	background: #BBB;
 	position: absolute;
-	z-index: -1;
+	z-index: 0;
 }
 
 .ui-query-builder .btn-add {
@@ -70,7 +77,7 @@
 }
 
 /* Root stalk {{{ */
-.ui-query-builder .row .col-join-root::before {
+.ui-query-builder .row .col-join-root::after {
 	background: #BBB;
 	top: 0;
 	bottom: 0;
@@ -78,15 +85,17 @@
 	right: 0;
 }
 
-.ui-query-builder .row .col-join-root.col-join-root-first::before {
+.ui-query-builder .row .col-join-root.col-join-root-first::after {
 	top: 16px;
+	border-top-left-radius: 5px;
 }
 
-.ui-query-builder .row .col-join-root.col-join-root-last::before {
+.ui-query-builder .row .col-join-root.col-join-root-last::after {
 	bottom: 20px;
+	border-bottom-left-radius: 5px;
 }
 
-.ui-query-builder .row .col-join-root-add::before {
+.ui-query-builder .row .col-join-root-add::after {
 	background: red;
 	top: 0;
 	bottom: 20px;
@@ -100,21 +109,21 @@
 /* }}} */
 
 /* Background stalks {{{ */
-.ui-query-builder .row .col-join-both::before {
+.ui-query-builder .row .col-join-both::after {
 	top: 15px;
 	bottom: 15px;
 	left: 0;
 	right: 0;
 }
 
-.ui-query-builder .row .col-join-left::before {
+.ui-query-builder .row .col-join-left::after {
 	top: 15px;
 	bottom: 15px;
 	left: 0;
 	right: 50%;
 }
 
-.ui-query-builder .row .col-join-left-add::before {
+.ui-query-builder .row .col-join-left-add::after {
 	top: 13px;
 	bottom: 20px;
 	left: 0;
