@@ -1,4 +1,6 @@
-angular.module('angular-ui-query-builder',[])
+angular.module('angular-ui-query-builder',[
+	'ui.select',
+])
 
 // Main widget {{{
 .component('uiQueryBuilder', {
@@ -14,8 +16,16 @@ angular.module('angular-ui-query-builder',[])
 			></ui-query-builder-branch>
 		</div>
 	`,
-	controller: function() {
+	controller: function($scope) {
 		var $ctrl = this;
+
+		// Clean up incomming spec {{{
+		$scope.$watch('$ctrl.spec', ()=> {
+			_.forEach($ctrl.spec, (v, k) => {
+				if (!v.title) v.title = _.startCase(k);
+			})
+		});
+		// }}}
 	},
 })
 // }}}
@@ -41,13 +51,13 @@ angular.module('angular-ui-query-builder',[])
 			<div class="col-md-2" ng-class="leaf.id ? 'col-join-both' : 'col-join-left'">
 				<div class="btn-group btn-block">
 					<a class="btn btn-1 btn-block dropdown-toggle" data-toggle="dropdown">
-						{{leaf.id || 'Select...'}}
+						{{$ctrl.spec[leaf.id].title || 'Select...'}}
 						<i class="fa fa-caret-down"></i>
 					</a>
 					<ul class="dropdown-menu">
 						<li ng-repeat="(key, val) in $ctrl.spec track by key" ng-class="key == leaf.id && 'active'">
 							<a ng-click="$ctrl.setField(leaf, key)">
-								{{key}}
+								{{$ctrl.spec[key].title}}
 							</a>
 						</li>
 					</ul>
