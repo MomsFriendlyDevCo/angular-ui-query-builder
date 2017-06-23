@@ -14,8 +14,40 @@ angular.module('angular-ui-query-builder',[])
 			></ui-query-builder-branch>
 		</div>
 	`,
-	controller: function() {
+	controller: function($scope) {
 		var $ctrl = this;
+
+		// Clean up incomming spec {{{
+		$scope.$watch('$ctrl.spec', ()=> {
+			_.forEach($ctrl.spec, (v, k) => {
+				if (!v.title) v.title = _.startCase(k);
+
+				// Ensure that the parents exist if this ID is using dotted notation {{{
+				var segments = k.split('.');
+				if (!v.level) v.level = segments.length - 1;
+				if (segments.length > 1) { // Is a child element
+					segments.forEach((s, i) => {
+						var path = segments.slice(0, i);
+						if (!path.length) return; // Not interested in the root path
+
+						var pathDotted = path.join('.');
+						var parentExisting = $ctrl.spec[pathDotted];
+						if (parentExisting) { // Found existing parent - check they have the child listed, if not add it
+							if (!parentExisting.children.includes(k)) parentExisting.children.push(k);
+						} else { // New parent node detected
+							$ctrl.spec[pathDotted] = {
+								title: _.startCase(_.last(path)),
+								level: path.length - 1,
+								children: [k],
+							};
+						}
+					});
+				}
+				// }}}
+			});
+			console.log('SPEC NOW', $ctrl.spec);
+		});
+		// }}}
 	},
 })
 // }}}
@@ -41,13 +73,28 @@ angular.module('angular-ui-query-builder',[])
 			<div class="col-md-2" ng-class="leaf.id ? 'col-join-both' : 'col-join-left'">
 				<div class="btn-group btn-block">
 					<a class="btn btn-1 btn-block dropdown-toggle" data-toggle="dropdown">
-						{{leaf.id || 'Select...'}}
+						{{$ctrl.spec[leaf.id].title || 'Select...'}}
 						<i class="fa fa-caret-down"></i>
 					</a>
 					<ul class="dropdown-menu">
-						<li ng-repeat="(key, val) in $ctrl.spec track by key" ng-class="key == leaf.id && 'active'">
+						<li ng-repeat="(key, field) in $ctrl.spec track by key" ng-class="key == leaf.id && 'active'" ng-if="field.level == 0">
 							<a ng-click="$ctrl.setField(leaf, key)">
-								{{key}}
+								{{field.title}}
+							</a>
+						</li>
+					</ul>
+				</div>
+			</div>
+			<div ng-if="$ctrl.spec[leaf.id].children.length" class="col-md-2 col-join-both">
+				<div class="btn-group btn-block">
+					<a class="btn btn-1 btn-block dropdown-toggle" data-toggle="dropdown">
+						{{$ctrl.spec[leaf.id].title || 'Select'}}
+						<i class="fa fa-caret-down"></i>
+					</a>
+					<ul class="dropdown-menu">
+						<li ng-repeat="child in $ctrl.spec[leaf.id].children track by child">
+							<a ng-click="$ctrl.setField(leaf, child)">
+								{{$ctrl.spec[child].title}}
 							</a>
 						</li>
 					</ul>
@@ -301,7 +348,12 @@ angular.module('angular-ui-query-builder',[])
 		// }}}
 
 		// Branch interaction {{{
-		$ctrl.setField = (leaf, field) => {
+		/**
+		* Set the field type of a leaf
+		* @param {Object} leaf The leaf to set the field on
+		* @param {string} filed The field to reset the leaf to
+		*/
+		$ctrl.setField = (leaf, field, level) => {
 			leaf.id = field;
 			leaf.path = [field];
 			leaf.value = undefined;

@@ -10,6 +10,9 @@ app.controller("queryBuilderExampleCtrl", function($scope) {
 		role: {type: 'string', enum: ['user', 'admin', 'root']},
 		name: {type: 'string'},
 		email: {type: 'string'},
+		'foo.bar.baz': {type: 'string'},
+		'foo.bar.quz': {type: 'boolean'},
+		'foo.bar.quuz': {type: 'boolean'},
 	};
 
 	$scope.query = {
@@ -23,4 +26,6 @@ app.controller("queryBuilderExampleCtrl", function($scope) {
 		],
 		*/
 	};
+
+	$scope.query = {};
 });
