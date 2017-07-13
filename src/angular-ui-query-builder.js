@@ -55,13 +55,23 @@ angular.module('angular-ui-query-builder',[])
 			<div class="col-md-2" ng-class="leaf.id ? 'col-join-both' : 'col-join-left'">
 				<div class="btn-group btn-block">
 					<a class="btn btn-1 btn-block dropdown-toggle" data-toggle="dropdown">
-						{{$ctrl.spec[leaf.id].title || 'Select...'}}
+						{{
+							leaf.id == '$or' ? 'Either...'
+							: $ctrl.spec[leaf.id] ? $ctrl.spec[leaf.id].title
+							: 'Select...'
+						}}
 						<i class="fa fa-caret-down"></i>
 					</a>
 					<ul class="dropdown-menu">
 						<li ng-repeat="(key, val) in $ctrl.spec track by key" ng-class="key == leaf.id && 'active'">
 							<a ng-click="$ctrl.setField(leaf, key)">
 								{{$ctrl.spec[key].title}}
+							</a>
+						</li>
+						<li class="divider"></li>
+						<li ng-class="leaf.id == '$or' && 'active'">
+							<a ng-click="$ctrl.setField(leaf, '$or')">
+								Either...
 							</a>
 						</li>
 					</ul>
@@ -87,6 +97,12 @@ angular.module('angular-ui-query-builder',[])
 						<li><a ng-click="$ctrl.setWrapper(leaf, '$exists')">Has a value</a></li>
 					</ul>
 				</div>
+			</div>
+			<div ng-if="leaf.valueMeta == '$or'" class="col-md-2 col-join-both">
+				<ui-query-builder-branch
+					branch="leaf.value"
+					spec="$ctrl.spec"
+				></ui-query-builder-branch>
 			</div>
 			<!-- }}} -->
 			<!-- Query operand component {{{ -->
@@ -262,6 +278,15 @@ angular.module('angular-ui-query-builder',[])
 					type: 'string',
 				},
 			},
+			{
+				id: '$or',
+				setter: v => v,
+				export: leaf => leaf.value,
+				base: {
+					title: 'Either...',
+					type: '$or',
+				},
+			},
 		];
 		$ctrl.operandsByID = _.mapKeys($ctrl.operands, 'id');
 		// }}}
@@ -291,26 +316,41 @@ angular.module('angular-ui-query-builder',[])
 		// }}}
 
 		// $ctrl.translateBranch() {{{
-		$ctrl.translateBranch = (branch, pathSegments = []) =>
-			_($ctrl.branch)
+		$ctrl.translateBranch = (branch, pathSegments = []) => {
+			debugger;
+			return _($ctrl.branch)
 				.map((v, k) => {
-					var wrappingKey = _.isObject(v) ? _(v).keys().first() : '$eq';
-					var firstKeyVal = _.isObject(v) && _.size(v) > 0 ? _(v).map().first() : undefined;
-
+					console.log('TRANSLATE', k);
 					var newBranch = {
 						id: k,
 						value: v,
-						valueEdit: firstKeyVal || v,
-						valueOperand: wrappingKey,
-						isMeta: k.startsWith('$'),
-						spec: $ctrl.getSpec(k, v, ''),
-						path: pathSegments.concat([k]),
 					};
+
+					switch (k) {
+						case '$or':
+							_.merge(newBranch, {
+								valueMeta: '$or',
+								isMeta: true,
+							});
+							break;
+						default:
+							var wrappingKey = _.isObject(v) ? _(v).keys().first() : '$eq';
+							var firstKeyVal = _.isObject(v) && _.size(v) > 0 ? _(v).map().first() : undefined;
+
+							_.merge(newBranch, {
+								valueEdit: firstKeyVal || v,
+								valueOperand: wrappingKey,
+								isMeta: k.startsWith('$'),
+								spec: $ctrl.getSpec(k, v, ''),
+								path: pathSegments.concat([k]),
+							});
+					}
 
 					return newBranch;
 				})
 				.sortBy(p => p.isMeta ? `Z${p.id}` : `A${p.id}`) // Force meta items to the end
 				.value();
+		};
 		// }}}
 
 		// $ctrl.exportBranch() {{{
@@ -320,7 +360,7 @@ angular.module('angular-ui-query-builder',[])
 		$ctrl.exportBranch = ()=> {
 			$ctrl.branch = _($ctrl.properties)
 				.mapKeys(b => b.id)
-				.mapValues(b => $ctrl.operandsByID[b.valueOperand].export(b))
+				.mapValues(b => $ctrl.operandsByID[b.valueOperand || b.valueMeta].export(b))
 				.value()
 		};
 		// }}}
@@ -338,10 +378,21 @@ angular.module('angular-ui-query-builder',[])
 		$ctrl.setField = (leaf, field) => {
 			leaf.id = field;
 			leaf.path = [field];
-			leaf.value = undefined;
-			leaf.valueEdit = undefined;
-			leaf.valueOperand = '$eq';
-			leaf.spec = $ctrl.spec[field];
+
+			switch (field) {
+				case '$or':
+					leaf.valueMeta = '$or';
+					delete leaf.valueOperand;
+					delete leaf.valueEdit;
+					delete leaf.spec;
+					break;
+				default: // Assume its a simple comparitor
+					delete leaf.valueMeta;
+					leaf.value = undefined;
+					leaf.valueEdit = undefined;
+					leaf.valueOperand = '$eq';
+					leaf.spec = $ctrl.spec[field];
+			}
 			$ctrl.setValue(leaf);
 		};
 
@@ -368,8 +419,10 @@ angular.module('angular-ui-query-builder',[])
 			var newValue = _.isUndefined(value) ? leaf.valueEdit : value;
 
 			// Run via operand setter
-			leaf.value = $ctrl.operandsByID[leaf.valueOperand].setter(newValue);
-			leaf.valueEdit = _.isObject(leaf.value) && _.size(leaf.value) ? _(leaf.value).map().first() : leaf.value;
+			if (leaf.valueOperand || leaf.valueMeta) {
+				leaf.value = $ctrl.operandsByID[leaf.valueOperand || leaf.valueMeta].setter(newValue);
+				leaf.valueEdit = _.isObject(leaf.value) && _.size(leaf.value) ? _(leaf.value).map().first() : leaf.value;
+			}
 
 			// Set the upstream model value
 			$ctrl.exportBranch();

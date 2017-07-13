@@ -10,17 +10,16 @@ app.controller("queryBuilderExampleCtrl", function($scope) {
 		role: {type: 'string', enum: ['user', 'admin', 'root']},
 		name: {type: 'string'},
 		email: {type: 'string'},
+		emailStatus: {type: 'string', enum: ['unverified', 'verified']},
 	};
 
 	$scope.query = {
 		email: {$exists: true},
 		role: 'admin',
 		status: {$in: ['active', 'approved']},
-		/* FIXME: Not yet supported
-		$and: [
-			{role: 'admin'},
-			{role: 'user', $exists: {email: true}},
+		$or: [
+			{role: 'email', $exists: {email: true}},
+			{emailStatus: {$in: ['verified']}},
 		],
-		*/
 	};
 });
