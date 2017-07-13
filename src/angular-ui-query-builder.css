@@ -11,6 +11,17 @@
 	height: 40px;
 }
 
+/* Badges {{{ */
+.ui-query-builder .badge {
+	background-color: #5bc0de;
+	padding: 4px 10px;
+}
+
+.ui-query-builder .badge + .badge {
+	margin-left: 5px;
+}
+/* }}} */
+
 /* Buttons {{{ */
 .ui-query-builder .btn.btn-1,
 .ui-query-builder .btn.btn-2,
@@ -19,6 +30,13 @@
 {
 	color: #FFF;
 	z-index: 1;
+	min-height: 33px;
+}
+
+.btn-fill { /* Stretch an inner button to the maximum extent */
+	margin: -8px -12px;
+	min-height: 33px;
+	padding: 8px;
 }
 
 .ui-query-builder .btn.btn-add {
@@ -39,6 +57,12 @@
 	cursor: pointer;
 	border: 0;
 }
+
+/* BUGFIX: Disable silly box-shadow when opening a dropdown {{{ */
+.btn-group.open .dropdown-toggle {
+	box-shadow: none;
+}
+/* }}} */
 /* }}} */
 
 /* Mouse hovering {{{ */

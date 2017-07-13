@@ -1,6 +1,4 @@
-angular.module('angular-ui-query-builder',[
-	'ui.select',
-])
+angular.module('angular-ui-query-builder',[])
 
 // Main widget {{{
 .component('uiQueryBuilder', {
@@ -22,7 +20,13 @@ angular.module('angular-ui-query-builder',[
 		// Clean up incomming spec {{{
 		$scope.$watch('$ctrl.spec', ()=> {
 			_.forEach($ctrl.spec, (v, k) => {
-				if (!v.title) v.title = _.startCase(k);
+				if (!v.title) v.title = _.startCase(k); // Create a title from the key if its omitted
+				if (v.enum && _.isArray(v.enum)) { // Ensure enums are aways collections
+					v.enum = _(v.enum)
+						.map(e => _.isString(e) ? {id: e, title: _.startCase(e)} :e)
+						.sortBy('title')
+						.value();
+				}
 			})
 		});
 		// }}}
@@ -87,8 +91,31 @@ angular.module('angular-ui-query-builder',[
 			<!-- }}} -->
 			<!-- Query operand component {{{ -->
 			<div ng-show="leaf.valueOperand" class="col-md-2 col-join-left btn-group" ng-switch="(operandConfig = $ctrl.operandsByID[leaf.valueOperand][leaf.spec.type] || $ctrl.operandsByID[leaf.valueOperand].base).type">
-				<div ng-switch-when="string"  class="btn btn-block btn-3">
+				<div ng-switch-when="string" class="btn btn-block btn-3">
 					<input ng-model="leaf.valueEdit" ng-change="$ctrl.setValue(leaf)" type="text" class="form-control"/>
+				</div>
+				<div ng-switch-when="array" class="btn btn-block btn-3 btn-group">
+					<div class="btn-fill dropdown-toggle" data-toggle="dropdown">
+						<span class="badge badge-info" ng-repeat="item in $ctrl.spec[leaf.id].enum | uiQueryBuilderFilterSelected:leaf track by item.id">
+							{{item.title}}
+						</span>
+						<span ng-if="!leaf.valueEdit.length">...</span>
+						<i class="fa fa-caret-down"></i>
+					</div>
+					<ul class="dropdown-menu">
+						<li ng-repeat="item in $ctrl.spec[leaf.id].enum | uiQueryBuilderFilterSelected:leaf:false track by item.id">
+							<a ng-click="$ctrl.setValueIncluded(leaf, item.id, false)">
+								<i class="fa fa-fw fa-check-square text-primary"></i>
+								{{item.title}}
+							</a>
+						</li>
+						<li ng-repeat="item in $ctrl.spec[leaf.id].enum | uiQueryBuilderFilterSelected:leaf:true track by item.id">
+							<a ng-click="$ctrl.setValueIncluded(leaf, item.id, true)">
+								<i class="fa fa-fw fa-square-o text-primary"></i>
+								{{item.title}}
+							</a>
+						</li>
+					</ul>
 				</div>
 				<div ng-switch-when="boolean" class="btn btn-block btn-3" ng-click="$ctrl.setValue(leaf, !leaf.valueEdit)">
 					<i class="fa" ng-class="leaf.valueEdit ? 'fa-check-square-o' : 'fa-square-o'"></i>
@@ -167,7 +194,7 @@ angular.module('angular-ui-query-builder',[
 				export: leaf => ({$in: leaf.value.$in}),
 				base: {
 					title: 'One of',
-					type: 'string',
+					type: 'array',
 				},
 			},
 			{
@@ -176,7 +203,7 @@ angular.module('angular-ui-query-builder',[
 				export: leaf => ({$nin: leaf.value.$nin}),
 				base: {
 					title: 'Not one of',
-					type: 'string',
+					type: 'array',
 				},
 			},
 			{
@@ -273,10 +300,7 @@ angular.module('angular-ui-query-builder',[
 					var newBranch = {
 						id: k,
 						value: v,
-						valueEdit:
-							firstKeyVal && _.isArray(firstKeyVal) ? firstKeyVal.join(', ')
-							: v
-						,
+						valueEdit: firstKeyVal || v,
 						valueOperand: wrappingKey,
 						isMeta: k.startsWith('$'),
 						spec: $ctrl.getSpec(k, v, ''),
@@ -352,6 +376,28 @@ angular.module('angular-ui-query-builder',[
 		};
 		// }}}
 
+		/**
+		* Set whether the specified value is included in the leaf array of values
+		* @param {Object} leaf The leaf to change the value of
+		* @param {string} value The value to toggle to inclusion of
+		* @param {boolean} included Whether the value is included
+		*/
+		$ctrl.setValueIncluded = (leaf, value, included) => {
+			var wrapperKey = _(leaf.value).keys().first();
+			if (!wrapperKey) throw new Error('Tried to set array inclusion on non wrapped key: ' + leaf.value);
+
+			var isIncluded = leaf.value[wrapperKey].includes(value);
+			if (included && !isIncluded) {
+				leaf.value[wrapperKey].push(value);
+			} else if (!included && isIncluded) {
+				leaf.value[wrapperKey] = leaf.value[wrapperKey].filter(i => i != value);
+			}
+
+			leaf.value[wrapperKey].sort();
+
+			leaf.valueEdit = _.isObject(leaf.value) && _.size(leaf.value) ? _(leaf.value).map().first() : leaf.value;
+		};
+
 		// New branches {{{
 		$ctrl.add = ()=> {
 			if ($ctrl.properties.every(p => p.id)) // Check there are no new items currently in the process of being added
@@ -359,5 +405,24 @@ angular.module('angular-ui-query-builder',[
 		};
 		// }}}
 	},
+})
+
+/**
+* Simple query which takes an array of possible selections and returns only those that are present within the leaf.valueEdit array
+* This is used to display selected items in an array
+* @param {array} items The array to filter
+* @param {Object} leaf The leaf node to filter against
+* @param {boolean} [invert=false] Whether to invert the result
+* @returns {array} The filtered items array
+*/
+.filter('uiQueryBuilderFilterSelected', function() {
+	return function(items, leaf, invert) {
+		if (!items) return;
+
+		return items.filter(i => {
+			var doesInclude = leaf.valueEdit.includes(i.id);
+			return (invert ? !doesInclude : doesInclude);
+		});
+	};
 })
 // }}}
