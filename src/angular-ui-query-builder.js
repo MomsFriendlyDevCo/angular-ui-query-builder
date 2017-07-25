@@ -340,10 +340,10 @@ angular.module('angular-ui-query-builder',[])
 		// Convert branch -> properties {{{
 		// We have to do this to sort appropriately and allow iteration over dollar prefixed keys
 		$ctrl.properties;
-		$ctrl.$onInit = ()=> {
+		$scope.$watch('$ctrl.branch', ()=> {
+			if (!$ctrl.branch) return; // Not yet ready
 			$ctrl.properties = $ctrl.translateBranch($ctrl.branch);
-			console.log('INIT', $ctrl.properties);
-		};
+		});
 		// }}}
 
 		// Branch interaction {{{
