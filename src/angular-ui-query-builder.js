@@ -303,7 +303,7 @@ angular.module('angular-ui-query-builder',[])
 						valueEdit: firstKeyVal || v,
 						valueOperand: wrappingKey,
 						isMeta: k.startsWith('$'),
-						spec: $ctrl.getSpec(k, v, ''),
+						spec: $ctrl.getSpec(k, v, k),
 						path: pathSegments.concat([k]),
 					};
 
