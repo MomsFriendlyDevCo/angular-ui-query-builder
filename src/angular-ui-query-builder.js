@@ -178,6 +178,12 @@ angular.module('angular-ui-query-builder',[])
 					title: 'Is',
 					type: 'string',
 				},
+				boolean: {
+					title: 'Is',
+					type: 'boolean',
+					textTrue: 'Enabled',
+					textFalse: 'Disabled',
+				},
 			},
 			{
 				id: '$ne',
@@ -186,6 +192,12 @@ angular.module('angular-ui-query-builder',[])
 				base: {
 					title: 'Is not',
 					type: 'string',
+				},
+				boolean: {
+					title: 'Is not',
+					type: 'boolean',
+					textTrue: 'Enabled',
+					textFalse: 'Disabled',
 				},
 			},
 			{
