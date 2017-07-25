@@ -81,6 +81,12 @@ angular.module('angular-ui-query-builder', [])
 			base: {
 				title: 'Is',
 				type: 'string'
+			},
+			boolean: {
+				title: 'Is',
+				type: 'boolean',
+				textTrue: 'Enabled',
+				textFalse: 'Disabled'
 			}
 		}, {
 			id: '$ne',
@@ -93,6 +99,12 @@ angular.module('angular-ui-query-builder', [])
 			base: {
 				title: 'Is not',
 				type: 'string'
+			},
+			boolean: {
+				title: 'Is not',
+				type: 'boolean',
+				textTrue: 'Enabled',
+				textFalse: 'Disabled'
 			}
 		}, {
 			id: '$in',
@@ -233,7 +245,7 @@ angular.module('angular-ui-query-builder', [])
 					valueEdit: firstKeyVal || v,
 					valueOperand: wrappingKey,
 					isMeta: k.startsWith('$'),
-					spec: $ctrl.getSpec(k, v, ''),
+					spec: $ctrl.getSpec(k, v, k),
 					path: pathSegments.concat([k])
 				};
 
@@ -261,10 +273,10 @@ angular.module('angular-ui-query-builder', [])
 		// Convert branch -> properties {{{
 		// We have to do this to sort appropriately and allow iteration over dollar prefixed keys
 		$ctrl.properties;
-		$ctrl.$onInit = function () {
+		$scope.$watchGroup(['$ctrl.branch', '$ctrl.spec'], function () {
+			if (!$ctrl.branch || !$ctrl.spec) return; // Not yet ready
 			$ctrl.properties = $ctrl.translateBranch($ctrl.branch);
-			console.log('INIT', $ctrl.properties);
-		};
+		});
 		// }}}
 
 		// Branch interaction {{{
