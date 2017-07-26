@@ -9,6 +9,7 @@
 .ui-query-builder .query-container {
 	font-size: 0; /* Hack to remove all spacing between inline-blocks. @see https://css-tricks.com/fighting-the-space-between-inline-block-elements/ */
 	min-height: 40px;
+	padding-bottom: 2px;
 }
 
 .ui-query-builder .query-container .query-stem,
@@ -24,21 +25,28 @@
 /* }}} */
 /* Query block stems (connecting lines between blocks) {{{ */
 /* Root line {{{ */
-.ui-query-builder .query-container .query-stem:first-child {
+/* The root verical line is really just a hacky thick left border on all query elements */
+.ui-query-builder .query-container {
+	border-left: 10px solid #BBB;
+}
+
+/* Horrible hacky 'cover' to disguise the top first border of the query list */
+.ui-query-builder .query-container-leadin {
+	position: absolute;
+	display: inline-block;
 	width: 20px;
+	height: 30px;
+	background: #FFF;
+	margin-top: -11px;
 }
 
-.ui-query-builder .query-container .query-stem:first-child > div {
-	display: block;
-	background: #BBB;
-	height: 50px;
-	width: 10px;
-	margin-left: 13px;
-	margin-top: 0px;
-}
-
-.ui-query-builder .query-container .query-stem.query-stem-root-last:first-child > div {
-	height: 10px;
+/* Horrible hacky 'cover' to disguise the bottom final border of the query list */
+.ui-query-builder .query-container-leadout {
+	display: inline-block;
+	width: 20px;
+	height: 11px;
+	background: #FFF;
+	margin-top: -11px;
 }
 /* }}} */
 /* Connector lines {{{ */

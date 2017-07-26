@@ -47,9 +47,9 @@ angular.module('angular-ui-query-builder',[])
 		spec: '<',
 	},
 	template: `
+		<div class="query-container-leadin"></div>
 		<div ng-repeat="leaf in $ctrl.properties track by leaf.id" ng-switch="leaf.spec.type" class="query-container">
 			<!-- Root branch display {{{ -->
-			<div class="query-stem"><div></div></div>
 			<div class="query-stem"><div></div></div>
 			<!-- }}} -->
 			<!-- Path component {{{ -->
@@ -132,7 +132,6 @@ angular.module('angular-ui-query-builder',[])
 		</div>
 		<!-- Add button {{{ -->
 		<div class="query-container">
-			<div class="query-stem query-stem-root-last"><div></div></div>
 			<div class="query-stem"><div></div></div>
 			<div class="query-block btn-group">
 				<a ng-click="$ctrl.add()" class="btn btn-lg btn-add btn-default">
@@ -140,6 +139,7 @@ angular.module('angular-ui-query-builder',[])
 				</a>
 			</div>
 		</div>
+		<div class="query-container-leadout"></div>
 		<!-- }}} -->
 	`,
 	controller: function($scope) {
