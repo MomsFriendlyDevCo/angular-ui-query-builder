@@ -47,12 +47,13 @@ angular.module('angular-ui-query-builder',[])
 		spec: '<',
 	},
 	template: `
-		<div ng-repeat="leaf in $ctrl.properties track by leaf.id" ng-switch="leaf.spec.type" class="container row">
+		<div ng-repeat="leaf in $ctrl.properties track by leaf.id" ng-switch="leaf.spec.type" class="query-container">
 			<!-- Root branch display {{{ -->
-			<div class="col-md-1 col-join-root" ng-class="$first && 'col-join-root-first'"></div>
+			<div class="query-stem"><div></div></div>
+			<div class="query-stem"><div></div></div>
 			<!-- }}} -->
 			<!-- Path component {{{ -->
-			<div class="col-md-2" ng-class="leaf.id ? 'col-join-both' : 'col-join-left'">
+			<div class="query-block">
 				<div class="btn-group btn-block">
 					<a class="btn btn-1 btn-block dropdown-toggle" data-toggle="dropdown">
 						{{$ctrl.spec[leaf.id].title || 'Select...'}}
@@ -68,8 +69,9 @@ angular.module('angular-ui-query-builder',[])
 				</div>
 			</div>
 			<!-- }}} -->
+			<div ng-show="leaf.valueOperand" class="query-stem"><div></div></div>
 			<!-- Query type component {{{ -->
-			<div ng-show="leaf.valueOperand" class="col-md-2 col-join-both">
+			<div ng-show="leaf.valueOperand" class="query-block">
 				<div class="btn-group btn-block">
 					<a class="btn btn-2 btn-block dropdown-toggle" data-toggle="dropdown">
 						{{($ctrl.operandsByID[leaf.valueOperand][leaf.spec.type] || $ctrl.operandsByID[leaf.valueOperand].base).title}}
@@ -89,14 +91,15 @@ angular.module('angular-ui-query-builder',[])
 				</div>
 			</div>
 			<!-- }}} -->
+			<div ng-show="leaf.valueOperand" class="query-stem"><div></div></div>
 			<!-- Query operand component {{{ -->
-			<div ng-show="leaf.valueOperand" class="col-md-2 col-join-left btn-group" ng-switch="(operandConfig = $ctrl.operandsByID[leaf.valueOperand][leaf.spec.type] || $ctrl.operandsByID[leaf.valueOperand].base).type">
+			<div ng-show="leaf.valueOperand" class="query-block btn-group" ng-switch="(operandConfig = $ctrl.operandsByID[leaf.valueOperand][leaf.spec.type] || $ctrl.operandsByID[leaf.valueOperand].base).type">
 				<div ng-switch-when="string" class="btn btn-block btn-3">
 					<input ng-model="leaf.valueEdit" ng-change="$ctrl.setValue(leaf)" type="text" class="form-control"/>
 				</div>
 				<div ng-switch-when="array" class="btn btn-block btn-3 btn-group">
-					<div class="btn-fill dropdown-toggle" data-toggle="dropdown">
-						<span class="badge badge-info" ng-repeat="item in $ctrl.spec[leaf.id].enum | uiQueryBuilderFilterSelected:leaf track by item.id">
+					<div class="btn-fill text-left dropdown-toggle" data-toggle="dropdown">
+						<span class="pill" ng-repeat="item in $ctrl.spec[leaf.id].enum | uiQueryBuilderFilterSelected:leaf track by item.id">
 							{{item.title}}
 						</span>
 						<span ng-if="!leaf.valueEdit.length">...</span>
@@ -128,17 +131,12 @@ angular.module('angular-ui-query-builder',[])
 			<!-- }}} -->
 		</div>
 		<!-- Add button {{{ -->
-		<div class="container row">
-			<div ng-show="$ctrl.properties.length" class="col-md-1 col-join-root col-join-root-last"></div>
-			<div ng-show="$ctrl.properties.length" class="col-md-2 btn-group col-join-left-add">
+		<div class="query-container">
+			<div class="query-stem query-stem-root-last"><div></div></div>
+			<div class="query-stem"><div></div></div>
+			<div class="query-block btn-group">
 				<a ng-click="$ctrl.add()" class="btn btn-lg btn-add btn-default">
 					<i class="fa fa-fw fa-plus fa-lg"></i>
-				</a>
-			</div>
-			<div ng-show="!$ctrl.properties.length" class="col-md-2 col-md-offset-1 btn-group">
-				<a ng-click="$ctrl.add()" class="btn btn-lg btn-add btn-default">
-					<i class="fa fa-fw fa-plus fa-lg"></i>
-					Add filter
 				</a>
 			</div>
 		</div>
