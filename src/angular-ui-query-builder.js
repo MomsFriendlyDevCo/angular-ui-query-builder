@@ -47,7 +47,6 @@ angular.module('angular-ui-query-builder',[])
 		spec: '<',
 	},
 	template: `
-		<div class="query-container-leadin"></div>
 		<div ng-repeat="leaf in $ctrl.properties track by leaf.id" ng-switch="leaf.spec.type" class="query-container">
 			<!-- Root branch display {{{ -->
 			<div class="query-stem"><div></div></div>
@@ -139,7 +138,6 @@ angular.module('angular-ui-query-builder',[])
 				</a>
 			</div>
 		</div>
-		<div class="query-container-leadout"></div>
 		<!-- }}} -->
 	`,
 	controller: function($scope) {

@@ -29,25 +29,6 @@
 .ui-query-builder .query-container {
 	border-left: 10px solid #BBB;
 }
-
-/* Horrible hacky 'cover' to disguise the top first border of the query list */
-.ui-query-builder .query-container-leadin {
-	position: absolute;
-	display: inline-block;
-	width: 20px;
-	height: 30px;
-	background: #FFF;
-	margin-top: -11px;
-}
-
-/* Horrible hacky 'cover' to disguise the bottom final border of the query list */
-.ui-query-builder .query-container-leadout {
-	display: inline-block;
-	width: 20px;
-	height: 11px;
-	background: #FFF;
-	margin-top: -11px;
-}
 /* }}} */
 /* Connector lines {{{ */
 .ui-query-builder .query-container .query-stem {
