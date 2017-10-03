@@ -29,25 +29,6 @@
 .ui-query-builder .query-container {
 	border-left: 10px solid #BBB;
 }
-
-/* Horrible hacky 'cover' to disguise the top first border of the query list */
-.ui-query-builder .query-container-leadin {
-	position: absolute;
-	display: inline-block;
-	width: 20px;
-	height: 30px;
-	background: #FFF;
-	margin-top: -11px;
-}
-
-/* Horrible hacky 'cover' to disguise the bottom final border of the query list */
-.ui-query-builder .query-container-leadout {
-	display: inline-block;
-	width: 20px;
-	height: 11px;
-	background: #FFF;
-	margin-top: -11px;
-}
 /* }}} */
 /* Connector lines {{{ */
 .ui-query-builder .query-container .query-stem {
@@ -87,7 +68,6 @@
 .ui-query-builder .btn.btn-4
 {
 	color: #FFF;
-	z-index: 1;
 	min-height: 33px;
 }
 
@@ -116,6 +96,23 @@
 	cursor: pointer;
 	border: 0;
 }
+
+/* Trash buttons {{{ */
+.ui-query-builder .btn > .btn.btn-trash {
+	display: none;
+	padding: 8px 11px;
+	margin: 0px -36px -15px 0;
+	position: relative;
+	left: -13px;
+	top: -7px;
+	height: 33px;
+	font-size: 1.5rem;
+}
+
+.ui-query-builder .btn:hover > .btn.btn-trash {
+	display: block;
+}
+/* }}} */
 
 /* BUGFIX: Disable silly box-shadow when opening a dropdown {{{ */
 .btn-group.open .dropdown-toggle {
