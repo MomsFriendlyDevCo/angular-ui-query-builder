@@ -4,8 +4,7 @@
   "description": "MongoDB format query-builder UI component for Angular",
   "main": "dist/angular-ui-query-builder.js",
   "scripts": {
-    "serve": "node demo/server.js",
-    "prepublish": "gulp build"
+    "serve": "node demo/server.js"
   },
   "repository": {
     "type": "git",
