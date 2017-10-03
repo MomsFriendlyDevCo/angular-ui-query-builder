@@ -59,7 +59,6 @@ angular.module('angular-ui-query-builder',[])
 							<i class="fa fa-times"></i>
 						</div>
 						{{$ctrl.spec[leaf.id].title || 'Select...'}}
-						({{leaf.id ? 'HASID' : 'NOID'}})
 						<i class="fa fa-caret-down"></i>
 					</a>
 					<ul class="dropdown-menu pull-right">
