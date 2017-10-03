@@ -58,7 +58,7 @@ angular.module('angular-ui-query-builder',[])
 						{{$ctrl.spec[leaf.id].title || 'Select...'}}
 						<i class="fa fa-caret-down"></i>
 					</a>
-					<ul class="dropdown-menu">
+					<ul class="dropdown-menu pull-right">
 						<li ng-repeat="(key, val) in $ctrl.spec track by key" ng-class="key == leaf.id && 'active'">
 							<a ng-click="$ctrl.setField(leaf, key)">
 								{{$ctrl.spec[key].title}}
@@ -76,7 +76,7 @@ angular.module('angular-ui-query-builder',[])
 						{{($ctrl.operandsByID[leaf.valueOperand][leaf.spec.type] || $ctrl.operandsByID[leaf.valueOperand].base).title}}
 						<i class="fa fa-caret-down"></i>
 					</a>
-					<ul class="dropdown-menu">
+					<ul class="dropdown-menu pull-right">
 						<li><a ng-click="$ctrl.setWrapper(leaf, '$eq')">Is</a></li>
 						<li><a ng-click="$ctrl.setWrapper(leaf, '$ne')">Is not</a></li>
 						<li><a ng-click="$ctrl.setWrapper(leaf, '$in')">One of</a></li>
@@ -104,7 +104,7 @@ angular.module('angular-ui-query-builder',[])
 						<span ng-if="!leaf.valueEdit.length">...</span>
 						<i class="fa fa-caret-down"></i>
 					</div>
-					<ul class="dropdown-menu">
+					<ul class="dropdown-menu pull-right">
 						<li ng-repeat="item in $ctrl.spec[leaf.id].enum | uiQueryBuilderFilterSelected:leaf:false track by item.id">
 							<a ng-click="$ctrl.setValueIncluded(leaf, item.id, false)">
 								<i class="fa fa-fw fa-check-square text-primary"></i>
