@@ -55,6 +55,9 @@ angular.module('angular-ui-query-builder',[])
 			<div class="query-block">
 				<div class="btn-group btn-block">
 					<a class="btn btn-1 btn-block dropdown-toggle" data-toggle="dropdown">
+						<div ng-click="$ctrl.remove(leaf.id); $event.stopPropagation()" class="btn btn-trash btn-danger btn-xs pull-left">
+							<i class="fa fa-times"></i>
+						</div>
 						{{$ctrl.spec[leaf.id].title || 'Select...'}}
 						<i class="fa fa-caret-down"></i>
 					</a>
@@ -384,6 +387,7 @@ angular.module('angular-ui-query-builder',[])
 		};
 		// }}}
 
+		// Utility functions {{{
 		/**
 		* Set whether the specified value is included in the leaf array of values
 		* @param {Object} leaf The leaf to change the value of
@@ -405,11 +409,17 @@ angular.module('angular-ui-query-builder',[])
 
 			leaf.valueEdit = _.isObject(leaf.value) && _.size(leaf.value) ? _(leaf.value).map().first() : leaf.value;
 		};
+		// }}}
 
-		// New branches {{{
+		// Branch CRUD {{{
 		$ctrl.add = ()=> {
 			if ($ctrl.properties.every(p => p.id)) // Check there are no new items currently in the process of being added
 				$ctrl.properties.push({});
+		};
+
+		$ctrl.remove = id => {
+			$ctrl.properties = $ctrl.properties.filter(p => p.id != id);
+			$ctrl.exportBranch();
 		};
 		// }}}
 	},
