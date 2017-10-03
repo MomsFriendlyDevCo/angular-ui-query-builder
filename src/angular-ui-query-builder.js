@@ -47,18 +47,19 @@ angular.module('angular-ui-query-builder',[])
 		spec: '<',
 	},
 	template: `
-		<div ng-repeat="leaf in $ctrl.properties track by leaf.id" ng-switch="leaf.spec.type" class="query-container">
+		<div ng-repeat="leaf in $ctrl.properties track by leaf.id" ng-switch="leaf.spec.type" ng-repeat-emit="uiQueryQueryRepaint" class="query-container">
 			<!-- Root branch display {{{ -->
 			<div class="query-stem"><div></div></div>
 			<!-- }}} -->
 			<!-- Path component {{{ -->
 			<div class="query-block">
-				<div class="btn-group btn-block">
+				<div class="btn-group btn-block" ng-class="{new: !leaf.id}">
 					<a class="btn btn-1 btn-block dropdown-toggle" data-toggle="dropdown">
 						<div ng-click="$ctrl.remove(leaf.id); $event.stopPropagation()" class="btn btn-trash btn-danger btn-xs pull-left">
 							<i class="fa fa-times"></i>
 						</div>
 						{{$ctrl.spec[leaf.id].title || 'Select...'}}
+						({{leaf.id ? 'HASID' : 'NOID'}})
 						<i class="fa fa-caret-down"></i>
 					</a>
 					<ul class="dropdown-menu pull-right">
@@ -143,7 +144,7 @@ angular.module('angular-ui-query-builder',[])
 		</div>
 		<!-- }}} -->
 	`,
-	controller: function($scope) {
+	controller: function($element, $scope) {
 		var $ctrl = this;
 
 		// Operands {{{
@@ -413,8 +414,14 @@ angular.module('angular-ui-query-builder',[])
 
 		// Branch CRUD {{{
 		$ctrl.add = ()=> {
-			if ($ctrl.properties.every(p => p.id)) // Check there are no new items currently in the process of being added
-				$ctrl.properties.push({});
+			if ($ctrl.properties.some(p => !p.id)) return; // Check there are no new items currently in the process of being added
+			$ctrl.properties.push({});
+
+			// Wait for the page to redraw then force the dropdown to open
+			// Yes I know this is a weird work around but we have to wait for the DOM to settle for some reason before we can add the `open` class - MC 2017-10-03
+			var eventUnbind = $scope.$on('uiQueryQueryRepaint', ()=> {
+				$element.find('.query-block > .new').addClass('open');
+			});
 		};
 
 		$ctrl.remove = id => {
@@ -441,6 +448,21 @@ angular.module('angular-ui-query-builder',[])
 			var doesInclude = leaf.valueEdit.includes(i.id);
 			return (invert ? !doesInclude : doesInclude);
 		});
+	};
+})
+
+/**
+* Fire a $scope.$emit() with the given message when an ng-repeat render finishes
+* @param {string} message The message to emit to this element scope upwards
+* @example
+* <div ng-repeat="widget in widgets" ng-repeat-emit="finished"></div>
+*/
+.directive('ngRepeatEmit', function($rootScope, $timeout) {
+	return {
+		restrict: 'A',
+		link: function (scope, elem, attr) {
+			if (scope.$last === true) $timeout(()=> scope.$emit(attr.ngRepeatEmit));
+		},
 	};
 })
 // }}}
