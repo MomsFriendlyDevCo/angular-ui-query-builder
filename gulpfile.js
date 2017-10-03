@@ -1,5 +1,4 @@
 var _ = require('lodash');
-var annotate = require('gulp-ng-annotate');
 var babel = require('gulp-babel');
 var cleanCSS = require('gulp-clean-css');
 var ghPages = require('gulp-gh-pages');
@@ -12,15 +11,16 @@ var rimraf = require('rimraf');
 var uglify = require('gulp-uglify');
 var watch = require('gulp-watch');
 
-gulp.task('default', ['build']);
-gulp.task('build', ['js', 'js:min', 'css', 'css:min']);
+gulp.task('default', ['serve']);
+gulp.task('build', ['js', 'css']);
+gulp.on('stop', ()=> process.exit(0));
 
 
-gulp.task('serve', ['build'], function() {
+gulp.task('serve', ['build'], function(done) {
 	var monitor = nodemon({
 		script: './demo/server.js',
 		ext: 'js css',
-		ignore: ['**/*.js', '**/.css'], // Ignore everything else as its watched seperately
+		ignore: ['./src/**/*.js', '**/.css'], // Ignore everything else as its watched seperately
 	})
 		.on('start', function() {
 			console.log('Server started');
@@ -38,10 +38,12 @@ gulp.task('serve', ['build'], function() {
 		console.log('Rebuild client-side CSS files...');
 		gulp.start('css');
 	});
+
+	// Intentionally never call 'done()' to exit
 });
 
 
-gulp.task('js', ()=> {
+gulp.task('js', ()=>
 	gulp.src('./src/angular-ui-query-builder.js')
 		.pipe(plumber({
 			errorHandler: function(err) {
@@ -51,28 +53,20 @@ gulp.task('js', ()=> {
 			},
 		}))
 		.pipe(rename('angular-ui-query-builder.js'))
-		.pipe(babel({presets: ['es2015']}))
-		.pipe(annotate())
-		.pipe(gulp.dest('./dist'));
-});
-
-gulp.task('js:min', ()=> {
-	gulp.src('./src/angular-ui-query-builder.js')
+		.pipe(babel({
+			presets: ['es2015'],
+			plugins: ['angularjs-annotate'],
+		}))
+		.pipe(gulp.dest('./dist'))
 		.pipe(rename('angular-ui-query-builder.min.js'))
-		.pipe(babel({presets: ['es2015']}))
-		.pipe(annotate())
-		.pipe(uglify({mangle: false}))
-		.pipe(gulp.dest('./dist'));
-});
+		.pipe(uglify())
+		.pipe(gulp.dest('./dist'))
+);
 
 gulp.task('css', ()=>
 	gulp.src('./src/angular-ui-query-builder.css')
 		.pipe(rename('angular-ui-query-builder.css'))
 		.pipe(gulp.dest('./dist'))
-);
-
-gulp.task('css:min', ()=>
-	gulp.src('./src/angular-ui-query-builder.css')
 		.pipe(rename('angular-ui-query-builder.min.css'))
 		.pipe(cleanCSS())
 		.pipe(gulp.dest('./dist'))
