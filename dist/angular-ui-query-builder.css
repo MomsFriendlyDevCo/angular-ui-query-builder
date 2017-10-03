@@ -68,7 +68,6 @@
 .ui-query-builder .btn.btn-4
 {
 	color: #FFF;
-	z-index: 1;
 	min-height: 33px;
 }
 
@@ -97,6 +96,23 @@
 	cursor: pointer;
 	border: 0;
 }
+
+/* Trash buttons {{{ */
+.ui-query-builder .btn > .btn.btn-trash {
+	display: none;
+	padding: 8px 11px;
+	margin: 0px -36px -15px 0;
+	position: relative;
+	left: -13px;
+	top: -7px;
+	height: 33px;
+	font-size: 1.5rem;
+}
+
+.ui-query-builder .btn:hover > .btn.btn-trash {
+	display: block;
+}
+/* }}} */
 
 /* BUGFIX: Disable silly box-shadow when opening a dropdown {{{ */
 .btn-group.open .dropdown-toggle {
