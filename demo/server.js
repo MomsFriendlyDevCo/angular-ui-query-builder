@@ -23,17 +23,11 @@ app.get('/', function(req, res) {
 	res.sendFile('index.html', {root: __dirname});
 });
 
-app.get('/app.js', function(req, res) {
-	res.sendFile('app.js', {root: root + '/demo'});
-});
+app.get('/app.js', (req, res) => res.sendFile('app.js', {root: root + '/demo'}));
+app.get('/app.css', (req, res) => res.sendFile('app.css', {root: root + '/demo'}));
 
-app.get('/dist/angular-ui-query-builder.js', function(req, res) {
-	res.sendFile('angular-ui-query-builder.js', {root: root + '/dist'});
-});
-
-app.get('/dist/angular-ui-query-builder.css', function(req, res) {
-	res.sendFile('angular-ui-query-builder.css', {root: root + '/dist'});
-});
+app.get('/dist/angular-ui-query-builder.js', (req, res) => res.sendFile('angular-ui-query-builder.js', {root: root + '/dist'}));
+app.get('/dist/angular-ui-query-builder.css', (req, res) => res.sendFile('angular-ui-query-builder.css', {root: root + '/dist'}));
 
 // Generate fake data on load {{{
 var faker = require('faker');
