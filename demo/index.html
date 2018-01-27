@@ -46,13 +46,13 @@
 			<table class="table table-bordered table-striped table-hover" q-table="query">
 				<thead>
 					<tr>
-						<th>Name</th>
-						<th>Username</th>
-						<th>Email</th>
-						<th>Address</th>
-						<th>Phone</th>
-						<th>Website</th>
-						<th>Company</th>
+						<th q="name" sortable>Name</th>
+						<th q="username" sortable>Username</th>
+						<th q="email" sortable>Email</th>
+						<th q="address">Address</th>
+						<th q="phone" sortable>Phone</th>
+						<th q="website" sortable>Website</th>
+						<th q="company.name" sortable>Company</th>
 					</tr>
 				</thead>
 				<tbody ng-repeat="row in data track by row.id">

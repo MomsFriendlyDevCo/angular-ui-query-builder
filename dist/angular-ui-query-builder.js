@@ -407,5 +407,120 @@ angular.module('angular-ui-query-builder', [])
 			});
 		}
 	};
-}]);
+}])
+// }}}
+
+// Table decorator {{{
+.service('qTableSettings', function () {
+	return {
+		icons: {
+			sortNone: 'fa fa-fw fa-sort text-muted',
+			sortAsc: 'fa fa-fw fa-sort-alpha-asc text-primary',
+			sortDesc: 'fa fa-fw fa-sort-alpha-desc text-primary'
+		}
+	};
+})
+
+/**
+* Directive applied to a table element to indicate that we should manage that table via angular-ui-query
+* @param {Object} qTable The query object to modify
+* @emits qTableQueryChange Emitted to child elements as (e, query) when the query object changes
+*/
+.directive('qTable', function () {
+	return {
+		scope: {
+			qTable: '='
+		},
+		restrict: 'AC',
+		controller: ['$scope', 'qTableSettings', function controller($scope, qTableSettings) {
+			var $ctrl = this;
+			$ctrl.query = $scope.qTable; // Copy into $ctrl so children can access it / $watch it
+
+			$scope.$watch('qTable', function () {
+				console.log('qTable change from parent', $ctrl.query);
+			});
+
+			$ctrl.setField = function (field, value) {
+				switch (field) {
+					case 'sort':
+						if ($ctrl.query.sort === value) {
+							// If already sorting by field switch the sort direction
+							$ctrl.query.sort = '-' + value;
+						} else if ($ctrl.query.sort === '-' + value) {
+							// If reverse sorting switch the right way up again
+							$ctrl.query.sort = value;
+						} else {
+							// Just set the sorting
+							$ctrl.query.sort = value;
+						}
+						break;
+					default:
+						console.log('QUERY SET', field, value);
+						$scope.qTable[field] = value;
+				}
+			};
+		}]
+	};
+})
+
+/**
+* Added to header elements to add angular-ui-query functionality
+* @param {string} q The field to operate on
+* @param {string} [sortable=q] Indicates that the column should switch to being sorted if the user clicks on it, if a value is specified that is used instead of `q` as the sort field
+*/
+.directive('q', function () {
+	return {
+		scope: {
+			q: '@', // The field to operate on
+			sortable: '@'
+		},
+		require: '^qTable',
+		restrict: 'A',
+		transclude: true,
+		controller: ['$attrs', '$scope', 'qTableSettings', function controller($attrs, $scope, qTableSettings) {
+			var $ctrl = this;
+
+			$scope.qTableSettings = qTableSettings;
+
+			// Sort functionality {{{
+			$scope.canSort = false; // True if either sortable has a specific value or is at least present
+			$scope.isSorted = false; // False, 'asc', 'desc'
+
+			$ctrl.$onInit = function () {
+				$scope.canSort = $scope.sortable || $attrs.sortable === '';
+			};
+
+			$scope.$watch('qTable.query.sort', function (sorter) {
+				var sortField = $scope.sortable || $scope.q;
+				if (!sorter) {
+					$scope.isSorted = false;
+				} else if (angular.isArray(sorter) && sorter.some(function (i) {
+					return i == sortField;
+				}) || sorter == sortField) {
+					$scope.isSorted = 'asc';
+				} else if (angular.isArray(sorter) && sorter.some(function (i) {
+					return i == '-' + sortField;
+				}) || sorter == '-' + sortField) {
+					$scope.isSorted = 'desc';
+				} else {
+					$scope.isSorted = false;
+				}
+			});
+
+			$scope.toggleSort = function () {
+				if ($scope.sortable) {
+					$scope.qTable.setField('sort', $scope.sortable);
+				} else if ($scope.q && $attrs.sortable === '') {
+					// Has attribute but no value - assume main key if we have one
+					$scope.qTable.setField('sort', $scope.q);
+				}
+			};
+			// }}}
+		}],
+		link: function link(scope, element, attrs, parentScope) {
+			scope.qTable = parentScope;
+		},
+		template: '\n\t\t<ng-transclude></ng-transclude>\n\t\t<a ng-if="canSort" ng-click="toggleSort()" class="pull-right">\n\t\t\t<i class="{{\n\t\t\t\tisSorted == \'asc\' ? qTableSettings.icons.sortAsc\n\t\t\t\t: isSorted == \'desc\' ? qTableSettings.icons.sortDesc\n\t\t\t\t: qTableSettings.icons.sortNone\n\t\t\t}}"></i>\n\t\t</a>\n\t'
+	};
+});
 // }}}
