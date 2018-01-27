@@ -12,6 +12,68 @@ angular.module('angular-ui-query-builder',[])
 				branch="$ctrl.query"
 				spec="$ctrl.spec"
 			></ui-query-builder-branch>
+
+			<!-- Meta field: sort {{{ -->
+			<div class="query-container">
+				<!-- Root branch display {{{ -->
+				<div class="query-stem"><div></div></div>
+				<!-- }}} -->
+				<!-- Path component {{{ -->
+				<div class="query-block">
+					<div class="btn-group btn-block">
+						<a class="btn btn-1 btn-block">
+							Sort by
+						</a>
+					</div>
+				</div>
+				<!-- }}} -->
+				<div class="query-stem"><div></div></div>
+				<!-- Query operand component {{{ -->
+				<div class="query-block btn-group">
+					<div class="btn btn-block btn-2">
+						<input ng-model="$ctrl.query.sort" type="text" class="form-control"/>
+					</div>
+				</div>
+				<!-- }}} -->
+			</div>
+			<!-- }}} -->
+			<!-- Meta field: limit {{{ -->
+			<div class="query-container">
+				<!-- Root branch display {{{ -->
+				<div class="query-stem"><div></div></div>
+				<!-- }}} -->
+				<!-- Path component {{{ -->
+				<div class="query-block">
+					<div class="btn-group btn-block">
+						<a class="btn btn-1 btn-block">
+							Limited to
+						</a>
+					</div>
+				</div>
+				<!-- }}} -->
+				<div class="query-stem"><div></div></div>
+				<!-- Query operand component {{{ -->
+				<div class="query-block btn-group">
+					<div class="btn btn-block btn-2">
+						<input ng-model="$ctrl.query.limit" type="number" class="form-control"/>
+					</div>
+				</div>
+				<div class="query-stem"><div></div></div>
+				<div class="query-block btn-group">
+					<div class="btn btn-block btn-3">
+						Skipping
+					</div>
+				</div>
+				<div class="query-stem"><div></div></div>
+				<div class="query-block btn-group">
+					<div class="btn btn-block btn-4">
+						<input ng-model="$ctrl.query.skip" type="number" class="form-control"/>
+					</div>
+				</div>
+				<!-- }}} -->
+			</div>
+			<!-- }}} -->
+
 		</div>
 	`,
 	controller: function($scope) {
@@ -320,6 +382,7 @@ angular.module('angular-ui-query-builder',[])
 
 					return newBranch;
 				})
+				.filter(p => !['sort', 'skip', 'limit'].includes(p.id))
 				.sortBy(p => p.isMeta ? `Z${p.id}` : `A${p.id}`) // Force meta items to the end
 				.value();
 		// }}}
