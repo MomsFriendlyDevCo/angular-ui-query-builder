@@ -87,6 +87,11 @@ app.get('/api/data', function(req, res) {
 	}
 	// }}}
 
+	// Limiting / Skip {{{
+	if (req.query.skip) outData = outData.slice(req.query.skip);
+	if (req.query.limit) outData = outData.slice(0, req.query.limit);
+	// }}}
+
 	// }}}
 
 	res.send(outData);

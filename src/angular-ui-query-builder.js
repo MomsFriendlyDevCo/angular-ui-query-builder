@@ -497,6 +497,11 @@ angular.module('angular-ui-query-builder',[])
 		});
 
 		$ctrl.setField = (field, value) => {
+			if (value == undefined) { // Remove from query
+				delete $ctrl.query[field];
+				return;
+			}
+
 			switch (field) {
 				case 'sort':
 					if ($ctrl.query.sort === value) { // If already sorting by field switch the sort direction
@@ -517,7 +522,7 @@ angular.module('angular-ui-query-builder',[])
 
 
 /**
-* Added to header elements to add angular-ui-query functionality
+* Directive for header elements to add angular-ui-query functionality
 * @param {string} q The field to operate on
 * @param {string} [sortable=q] Indicates that the column should switch to being sorted if the user clicks on it, if a value is specified that is used instead of `q` as the sort field
 */
@@ -584,4 +589,50 @@ angular.module('angular-ui-query-builder',[])
 		</a>
 	`,
 }})
+
+
+/**
+* Directive to add table pagination
+*/
+.directive('qPagination', function() { return {
+	scope: {
+	},
+	require: '^qTable',
+	restrict: 'EA',
+	controller: function($attrs, $scope, qTableSettings) {
+		var $ctrl = this;
+
+		$scope.qTableSettings = qTableSettings;
+
+		$scope.canPrev = true;
+		$scope.canNext = true;
+
+		$scope.$watchGroup(['qTable.query.limit', 'qTable.query.skip'], sorter => {
+			$scope.canPrev = $scope.qTable.query.skip > 0;
+			$scope.canNext = !$scope.total || $scope.qTable.query.skip + $scope.qTable.query.limit < $scope.total;
+		});
+
+		$scope.navPageRelative = pageRelative => {
+			if (pageRelative == -1) {
+				$scope.qTable.setField('skip', Math.min(($scope.qTable.query.skip || 0) - ($scope.qTable.query.limit || 10), 0));
+			} else if (pageRelative == 1) {
+				$scope.qTable.setField('skip', ($scope.qTable.query.skip || 0) + ($scope.qTable.query.limit || 10), 0);
+			} else {
+				throw new Error('Unsupported page move: ' + pageRelative);
+			}
+		};
+	},
+	link: function(scope, element, attrs, parentScope) {
+		scope.qTable = parentScope;
+	},
+	template: `
+		<nav>
+			<ul class="pager">
+				<li ng-class="canPrev ? '' : 'disabled'" class="previous"><a ng-click="navPageRelative(-1)"><i class="fa fa-arrow-left"></i></a></li>
+				<li ng-class="canNext ? '' : 'disabled'" class="next"><a ng-click="navPageRelative(1)"><i class="fa fa-arrow-right"></i></a></li>
+			</ul>
+		</nav>
+	`,
+}})
+
 // }}}
