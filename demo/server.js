@@ -13,6 +13,7 @@
 *
 */
 
+var _ = require('lodash');
 var express = require('express');
 
 var root = __dirname + '/..';
@@ -35,7 +36,9 @@ var data = [...Array(100)].map((i, offset) => ({
 	id: `user${offset}`,
 	name: `${faker.name.firstName()} ${faker.name.lastName()}`,
 	username: faker.internet.userName(),
-	email: faker.internet.email(),
+	email: Math.random() > 0.8
+		? faker.internet.email()
+		: undefined,
 	address: {
 		street: faker.address.streetAddress(),
 		city: faker.address.city(),
@@ -43,7 +46,7 @@ var data = [...Array(100)].map((i, offset) => ({
 		state: faker.address.state(),
 		country: faker.address.country(),
 	},
-	phone: Math.random() < 0.5
+	phone: Math.random() > 0.5
 		? faker.phone.phoneNumber()
 		: undefined,
 	website: Math.random() > 0.5
@@ -52,13 +55,41 @@ var data = [...Array(100)].map((i, offset) => ({
 	company: Math.random() > 0.7
 		? {name: faker.company.companyName()}
 		: undefined,
-
+	role:
+		Math.random() > 0.3 ? 'user'
+		: Math.random() > 0.3 ? 'admin'
+		: 'root',
+	status:
+		Math.random() > 0.3 ? 'active'
+		: Math.random() > 0.3 ? 'pending'
+		: 'deleted',
+	lastLogin: Math.random() > 0.5
+		? faker.date.past()
+		: faker.date.recent(),
 }));
 // }}}
 
 app.get('/api/data', function(req, res) {
-	// FIXME: Insert really dumb ReST server like function here
-	res.send(data);
+	var outData = [...data];
+
+	// Very basic simulation of a ReST server to sort / mutate output data {{{
+
+	// Sorting {{{
+	if (req.query.sort) {
+		if (!req.query.sort.startsWith('-')) {
+			outData = _.sortBy(outData, req.query.sort);
+		} else { // Sort reverse
+			outData = _(outData)
+				.sortBy(req.query.sort.substr(1))
+				.reverse()
+				.value();
+		}
+	}
+	// }}}
+
+	// }}}
+
+	res.send(outData);
 });
 
 app.use(function(err, req, res, next){

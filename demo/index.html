@@ -46,30 +46,45 @@
 			<table class="table table-bordered table-striped table-hover" q-table="query">
 				<thead>
 					<tr>
+						<th q="status" sortable width="60px">Status</th>
 						<th q="name" sortable>Name</th>
 						<th q="username" sortable>Username</th>
 						<th q="email" sortable>Email</th>
 						<th q="address">Address</th>
-						<th q="phone" sortable>Phone</th>
 						<th q="website" sortable>Website</th>
 						<th q="company.name" sortable>Company</th>
+						<th q="role" sortable>Role</th>
 					</tr>
 				</thead>
 				<tbody ng-repeat="row in data track by row.id">
 					<tr>
+						<td class="text-center">
+							<i class="fa fa-fw fa-lg" ng-class="
+								row.status == 'active' ? 'fa-check text-success'
+								: row.status == 'pending' ? 'fa-question-circle text-warning'
+								: row.status == 'deleted' ? 'fa-trash text-danger'
+								: 'fa-question text-danger'
+							"></i>
+						</td>
 						<td>{{row.name}}</td>
 						<td>{{row.username}}</td>
 						<td>{{row.email}}</td>
 						<td>
-							{{row.address.street}}
-							{{row.address.city}}
-							{{row.address.zipcode}}
-							{{row.address.state}}
-							{{row.address.country}}
+							<address>
+								{{row.address.street}}<br/>
+								{{row.address.city}}<br/>
+								{{row.address.zipcode}}<br/>
+								{{row.address.state}}<br/>
+								{{row.address.country}}<br/>
+								<span ng-if="row.phone">
+									<i class="fa fa-phone"></i>
+									{{row.phone}}
+								</span>
+							</address>
 						</td>
-						<td>{{row.phone}}</td>
 						<td>{{row.website}}</td>
 						<td>{{row.company.name}}</td>
+						<td>{{row.role}}</td>
 					</tr>
 				</tbody>
 			</table>

@@ -5,3 +5,7 @@ a {
 legend {
 	margin-top: 30px;
 }
+
+table > thead > tr > th {
+	vertical-align: middle !important;
+}
