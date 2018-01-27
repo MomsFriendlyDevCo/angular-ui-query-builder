@@ -43,18 +43,17 @@ var data = [...Array(100)].map((i, offset) => ({
 		state: faker.address.state(),
 		country: faker.address.country(),
 	},
-	phone: Math.random < 0.7
+	phone: Math.random() < 0.5
 		? faker.phone.phoneNumber()
 		: undefined,
 	website: Math.random() > 0.5
 		? faker.internet.url()
 		: undefined,
-	company: Math.random() > 0.5
+	company: Math.random() > 0.7
 		? {name: faker.company.companyName()}
 		: undefined,
 
 }));
-console.log('DATA', data);
 // }}}
 
 app.get('/api/data', function(req, res) {
