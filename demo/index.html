@@ -43,6 +43,40 @@
 
 			<legend>Generated query</legend>
 			<pre>{{query | json}}</pre>
+
+
+			<legend>Query builder + table</legend>
+
+			<table class="table table-bordered table-striped table-hover" q-table="query">
+				<thead>
+					<tr>
+						<th>Name</th>
+						<th>Username</th>
+						<th>Email</th>
+						<th>Address</th>
+						<th>Phone</th>
+						<th>Website</th>
+						<th>Company</th>
+					</tr>
+				</thead>
+				<tbody ng-repeat="row in data track by row.id">
+					<tr>
+						<td>{{row.name}}</td>
+						<td>{{row.username}}</td>
+						<td>{{row.email}}</td>
+						<td>
+							{{row.address.street}}
+							{{row.address.city}}
+							{{row.address.zipcode}}
+							{{row.address.state}}
+							{{row.address.country}}
+						</td>
+						<td>{{row.phone}}</td>
+						<td>{{row.website}}</td>
+						<td>{{row.company.name}}</td>
+					</tr>
+				</tbody>
+			</table>
 		</div>
 	</body>
 </html>

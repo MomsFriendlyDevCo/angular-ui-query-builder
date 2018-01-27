@@ -2,7 +2,7 @@ var app = angular.module("app", [
 	'angular-ui-query-builder'
 ]);
 
-app.controller("queryBuilderExampleCtrl", function($scope) {
+app.controller("queryBuilderExampleCtrl", function($http, $scope) {
 	$scope.spec = {
 		_id: {type: 'objectId'},
 		lastLogin: {type: 'date'},
@@ -23,4 +23,11 @@ app.controller("queryBuilderExampleCtrl", function($scope) {
 		],
 		*/
 	};
+
+	$scope.data;
+	$scope.$watch('query', ()=> {
+		console.log('REFRESH', $scope.query);
+		$http.get('api/data', $scope.query)
+			.then(res => $scope.data = res.data)
+	});
 });

@@ -465,3 +465,16 @@ angular.module('angular-ui-query-builder',[])
 	};
 })
 // }}}
+
+// Table decorator {{{
+.directive('qTable', function() { return {
+	scope: {
+		qTable: '=',
+	},
+	restrict: 'AC',
+	controller: function($scope) {
+		console.log('HELLO');
+		$scope.$watch('qTable', ()=> console.log('qTable change', $scope.qTable));
+	},
+}})
+// }}}
