@@ -56,8 +56,8 @@
 						<th q="role" sortable>Role</th>
 					</tr>
 				</thead>
-				<tbody ng-repeat="row in data track by row.id">
-					<tr>
+				<tbody>
+					<tr ng-repeat="row in data track by row.id">
 						<td class="text-center">
 							<i class="fa fa-fw fa-lg" ng-class="
 								row.status == 'active' ? 'fa-check text-success'
@@ -73,7 +73,7 @@
 							<address>
 								{{row.address.street}}<br/>
 								{{row.address.city}}<br/>
-								{{row.address.zipcode}}<br/>
+								{{row.address.zip}}<br/>
 								{{row.address.state}}<br/>
 								{{row.address.country}}<br/>
 								<span ng-if="row.phone">
