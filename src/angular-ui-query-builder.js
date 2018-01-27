@@ -60,13 +60,13 @@ angular.module('angular-ui-query-builder',[])
 				</div>
 				<div class="query-stem"><div></div></div>
 				<div class="query-block btn-group">
-					<div class="btn btn-block btn-3">
+					<div class="btn btn-block btn-1">
 						Skipping
 					</div>
 				</div>
 				<div class="query-stem"><div></div></div>
 				<div class="query-block btn-group">
-					<div class="btn btn-block btn-4">
+					<div class="btn btn-block btn-2">
 						<input ng-model="$ctrl.query.skip" type="number" class="form-control"/>
 					</div>
 				</div>
