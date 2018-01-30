@@ -619,10 +619,6 @@ angular.module('angular-ui-query-builder',[])
 		var $ctrl = this;
 		$ctrl.query = $scope.qTable; // Copy into $ctrl so children can access it / $watch it
 
-		$scope.$watch('qTable', ()=> {
-			console.log('qTable change from parent', $ctrl.query);
-		});
-
 		$ctrl.setField = (field, value) => {
 			if (value == undefined) { // Remove from query
 				delete $ctrl.query[field];
@@ -640,7 +636,6 @@ angular.module('angular-ui-query-builder',[])
 					}
 					break;
 				default:
-					console.log('QUERY SET', field, value);
 					$scope.qTable[field] = value;
 			}
 		};
