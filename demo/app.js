@@ -5,7 +5,7 @@ var app = angular.module("app", [
 // Force URL encoding to use jQuery syntax so we can pass JSON to the backend using URL query objects
 app.config($httpProvider => $httpProvider.defaults.paramSerializer = '$httpParamSerializerJQLike')
 
-app.controller("queryBuilderExampleCtrl", function($http, $scope) {
+app.controller('queryBuilderExampleCtrl', function($http, $scope) {
 	$scope.spec = {
 		_id: {type: 'objectId'},
 		name: {type: 'string'},
@@ -35,7 +35,7 @@ app.controller("queryBuilderExampleCtrl", function($http, $scope) {
 
 	$scope.data;
 	$scope.$watch('query', ()=> {
-		console.log('REFRESH', $scope.query);
+		// console.log('REFRESH', $scope.query);
 		$http.get('api/data', {params: $scope.query})
 			.then(res => $scope.data = res.data)
 	}, true);

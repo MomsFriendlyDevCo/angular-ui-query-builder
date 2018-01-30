@@ -46,17 +46,17 @@
 
 			<legend>Query builder + table</legend>
 
-			<table class="table table-bordered table-striped table-hover" q-table="query">
+			<table class="table table-bordered table-striped table-hover" qb-table="query">
 				<thead>
 					<tr>
-						<th q="status" sortable width="60px">Status</th>
-						<th q="name" sortable>Name</th>
-						<th q="username" sortable>Username</th>
-						<th q="email" sortable>Email</th>
-						<th q="address">Address</th>
-						<th q="website" sortable>Website</th>
-						<th q="company.name" sortable>Company</th>
-						<th q="role" sortable>Role</th>
+						<th qb-col="status" sortable width="60px">Status</th>
+						<th qb-col="name" sortable>Name</th>
+						<th qb-col="username" sortable>Username</th>
+						<th qb-col="email" sortable>Email</th>
+						<th qb-col="address">Address</th>
+						<th qb-col="website" sortable>Website</th>
+						<th qb-col="company.name" sortable>Company</th>
+						<th qb-col="role" sortable>Role</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -93,7 +93,7 @@
 				<tfoot>
 					<tr>
 						<td colspan="10">
-							<q-pagination></q-pagination>
+							<qb-pagination></qb-pagination>
 						</td>
 					</tr>
 				</tfoot>

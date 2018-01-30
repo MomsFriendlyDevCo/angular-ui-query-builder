@@ -1,12 +1,12 @@
 var _ = require('lodash');
 var babel = require('gulp-babel');
+var concat = require('gulp-concat');
 var cleanCSS = require('gulp-clean-css');
 var ghPages = require('gulp-gh-pages');
 var gulp = require('gulp');
 var gutil = require('gulp-util');
 var plumber = require('gulp-plumber');
 var nodemon = require('gulp-nodemon');
-var rename = require('gulp-rename');
 var rimraf = require('rimraf');
 var uglify = require('gulp-uglify');
 var watch = require('gulp-watch');
@@ -43,8 +43,13 @@ gulp.task('serve', ['build'], function(done) {
 });
 
 
-gulp.task('js', ()=>
-	gulp.src('./src/angular-ui-query-builder.js')
+gulp.task('js', ['js:all', 'js:core', 'js:tables']);
+
+gulp.task('js:all', ()=>
+	gulp.src([
+		'./src/angular-ui-query-builder-core.js',
+		'./src/angular-ui-query-builder-tables.js',
+	])
 		.pipe(plumber({
 			errorHandler: function(err) {
 				gutil.log(gutil.colors.red('ERROR DURING JS BUILD'));
@@ -52,22 +57,85 @@ gulp.task('js', ()=>
 				this.emit('end');
 			},
 		}))
-		.pipe(rename('angular-ui-query-builder.js'))
+		.pipe(concat('angular-ui-query-builder.js'))
 		.pipe(babel({
 			presets: ['es2015'],
 			plugins: ['angularjs-annotate'],
 		}))
 		.pipe(gulp.dest('./dist'))
-		.pipe(rename('angular-ui-query-builder.min.js'))
+		.pipe(concat('angular-ui-query-builder.min.js'))
 		.pipe(uglify())
 		.pipe(gulp.dest('./dist'))
 );
 
-gulp.task('css', ()=>
-	gulp.src('./src/angular-ui-query-builder.css')
-		.pipe(rename('angular-ui-query-builder.css'))
+gulp.task('js:core', ()=>
+	gulp.src('./src/angular-ui-query-builder-core.js')
+		.pipe(plumber({
+			errorHandler: function(err) {
+				gutil.log(gutil.colors.red('ERROR DURING JS BUILD'));
+				process.stdout.write(err.stack);
+				this.emit('end');
+			},
+		}))
+		.pipe(concat('angular-ui-query-builder-core.js'))
+		.pipe(babel({
+			presets: ['es2015'],
+			plugins: ['angularjs-annotate'],
+		}))
 		.pipe(gulp.dest('./dist'))
-		.pipe(rename('angular-ui-query-builder.min.css'))
+		.pipe(concat('angular-ui-query-builder-core.min.js'))
+		.pipe(uglify())
+		.pipe(gulp.dest('./dist'))
+);
+
+gulp.task('js:tables', ()=>
+	gulp.src('./src/angular-ui-query-builder-tables.js')
+		.pipe(plumber({
+			errorHandler: function(err) {
+				gutil.log(gutil.colors.red('ERROR DURING JS BUILD'));
+				process.stdout.write(err.stack);
+				this.emit('end');
+			},
+		}))
+		.pipe(concat('angular-ui-query-builder-tables.js'))
+		.pipe(babel({
+			presets: ['es2015'],
+			plugins: ['angularjs-annotate'],
+		}))
+		.pipe(gulp.dest('./dist'))
+		.pipe(concat('angular-ui-query-builder-tables.min.js'))
+		.pipe(uglify())
+		.pipe(gulp.dest('./dist'))
+);
+
+gulp.task('css', ['css:all', 'css:core', 'css:tables']);
+
+gulp.task('css:all', ()=>
+	gulp.src([
+		'./src/angular-ui-query-builder-core.css',
+		'./src/angular-ui-query-builder-tables.css',
+	])
+		.pipe(concat('angular-ui-query-builder.css'))
+		.pipe(gulp.dest('./dist'))
+		.pipe(concat('angular-ui-query-builder.min.css'))
+		.pipe(cleanCSS())
+		.pipe(gulp.dest('./dist'))
+);
+
+gulp.task('css:core', ()=>
+	gulp.src('./src/angular-ui-query-builder-core.css')
+		.pipe(concat('angular-ui-query-builder-core.css'))
+		.pipe(gulp.dest('./dist'))
+		.pipe(concat('angular-ui-query-builder-core.min.css'))
+		.pipe(cleanCSS())
+		.pipe(gulp.dest('./dist'))
+);
+
+gulp.task('css:tables', ()=>
+	gulp.src('./src/angular-ui-query-builder-tables.css')
+		.pipe(concat('angular-ui-query-builder-tables.css'))
+		.pipe(gulp.dest('./dist'))
+		.pipe(concat('angular-ui-query-builder-tables.min.css'))
 		.pipe(cleanCSS())
 		.pipe(gulp.dest('./dist'))
 );
@@ -92,7 +160,7 @@ gulp.task('gh-pages', ['build'], function() {
 		'./node_modules/font-awesome/fonts/fontawesome-webfont.woff',
 		'./node_modules/font-awesome/fonts/fontawesome-webfont.woff2',
 	], {base: __dirname})
-		.pipe(rename(function(path) {
+		.pipe(concat(function(path) {
 			if (path.dirname == 'demo') { // Move all demo files into root
 				path.dirname = '.';
 			}
