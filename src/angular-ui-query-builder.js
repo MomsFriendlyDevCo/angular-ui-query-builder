@@ -454,6 +454,10 @@ angular.module('angular-ui-query-builder',[])
 				leaf.valueOperand = '$in';
 				leaf.valueEdit = $ctrl.getFlatValue(leaf.value);
 				leaf.value = {$in: [leaf.valueEdit]};
+			} else if (type == '$exists') { // Convert anything to exists - force it to be a boolean
+				leaf.valueOperand = '$exists';
+				leaf.valueEdit = true;
+				leaf.value = {$exists: leaf.valueEdit};
 			} else { // Unknown swapping - convert to an object with one key
 				console.log('UNHANDLED TYPE CONVERT:', leaf.type, '=>', type);
 				var newValue = $ctrl.getFlatValue(leaf.value);
