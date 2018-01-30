@@ -28,6 +28,7 @@ app.controller("queryBuilderExampleCtrl", function($http, $scope) {
 		email: {$exists: true},
 		role: 'user',
 		status: {$in: ['pending', 'active']},
+		lastLogin: {$lt: moment().subtract(2, 'd').toDate()},
 		sort: 'username',
 		limit: 10,
 	};

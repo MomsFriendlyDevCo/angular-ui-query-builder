@@ -110,9 +110,7 @@ angular.module('angular-ui-query-builder',[])
 	},
 	template: `
 		<div ng-repeat="leaf in $ctrl.properties | filter:{isMeta:false} track by leaf.id" ng-switch="leaf.spec.type" ng-repeat-emit="uiQueryQueryRepaint" class="query-container">
-			<!-- Root branch display {{{ -->
 			<div class="query-stem"><div></div></div>
-			<!-- }}} -->
 			<!-- Path component {{{ -->
 			<div class="query-block">
 				<div class="btn-group btn-block" ng-class="{new: !leaf.id}">
@@ -148,8 +146,10 @@ angular.module('angular-ui-query-builder',[])
 						<li><a ng-click="$ctrl.setWrapper(leaf, '$nin')">Not one of</a></li>
 						<li ng-if="leaf.spec.type == 'number'"><a ng-click="$ctrl.setWrapper(leaf, '$gt')">Above</a></li>
 						<li ng-if="leaf.spec.type == 'number'"><a ng-click="$ctrl.setWrapper(leaf, '$lt')">Below</a></li>
-						<li ng-if="leaf.spec.type == 'date'"><a ng-click="$ctrl.setWrapper(leaf, '$gt')">After</a></li>
-						<li ng-if="leaf.spec.type == 'date'"><a ng-click="$ctrl.setWrapper(leaf, '$lt')">Before</a></li>
+						<li ng-if="leaf.spec.type == 'date'"><a ng-click="$ctrl.setWrapper(leaf, '$gt')">Is after</a></li>
+						<li ng-if="leaf.spec.type == 'date'"><a ng-click="$ctrl.setWrapper(leaf, '$gte')">Is at least</a></li>
+						<li ng-if="leaf.spec.type == 'date'"><a ng-click="$ctrl.setWrapper(leaf, '$lt')">Is before</a></li>
+						<li ng-if="leaf.spec.type == 'date'"><a ng-click="$ctrl.setWrapper(leaf, '$lte')">Is at most</a></li>
 						<li><a ng-click="$ctrl.setWrapper(leaf, '$exists')">Has a value</a></li>
 					</ul>
 				</div>
@@ -187,6 +187,9 @@ angular.module('angular-ui-query-builder',[])
 				<div ng-switch-when="boolean" class="btn btn-block btn-3" ng-click="$ctrl.setValue(leaf, !leaf.valueEdit)">
 					<i class="fa" ng-class="leaf.valueEdit ? 'fa-check-square-o' : 'fa-square-o'"></i>
 					{{leaf.valueEdit ? operandConfig.textTrue : operandConfig.textFalse}}
+				</div>
+				<div ng-switch-when="date" class="btn btn-block btn-3">
+					<input ng-model="leaf.valueEdit" ng-change="$ctrl.setValue(leaf)" type="date" class="form-control"/>
 				</div>
 				<div ng-switch-default class="btn btn-block btn-3">
 					Unknown operand: <code>{{leaf.valueOperand}}</code>
@@ -245,6 +248,10 @@ angular.module('angular-ui-query-builder',[])
 					textTrue: 'Enabled',
 					textFalse: 'Disabled',
 				},
+				date: {
+					title: 'Is exactly',
+					type: 'date',
+				},
 			},
 			{
 				id: '$ne',
@@ -259,6 +266,10 @@ angular.module('angular-ui-query-builder',[])
 					type: 'boolean',
 					textTrue: 'Enabled',
 					textFalse: 'Disabled',
+				},
+				date: {
+					title: 'Is not exactly',
+					type: 'date',
 				},
 			},
 			{
@@ -287,6 +298,10 @@ angular.module('angular-ui-query-builder',[])
 					title: 'Above',
 					type: 'number',
 				},
+				date: {
+					title: 'Is after',
+					type: 'date',
+				},
 			},
 			{
 				id: '$gte',
@@ -295,6 +310,10 @@ angular.module('angular-ui-query-builder',[])
 				base: {
 					title: 'Above or equals',
 					type: 'number',
+				},
+				date: {
+					title: 'Is at least',
+					type: 'date',
 				},
 			},
 			{
@@ -305,6 +324,10 @@ angular.module('angular-ui-query-builder',[])
 					title: 'Below',
 					type: 'number',
 				},
+				date: {
+					title: 'Is before',
+					type: 'date',
+				},
 			},
 			{
 				id: '$lte',
@@ -313,6 +336,10 @@ angular.module('angular-ui-query-builder',[])
 				base: {
 					title: 'Below or equals',
 					type: 'number',
+				},
+				date: {
+					title: 'Is at most',
+					type: 'date',
 				},
 			},
 			{
