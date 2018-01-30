@@ -74,6 +74,15 @@ app.get('/api/data', function(req, res) {
 
 	// Very basic simulation of a ReST server to sort / mutate output data {{{
 
+	// Filtering {{{
+	var dataFilter = _(req.query)
+		.omit(['sort', 'skip', 'limit'])
+		.pickBy(v => _.isString(v) || _.isNumber(v)) // Ignore all complex queries - yes this is wrong but we can't aford to include a full Mongo stack here
+		.value()
+
+	outData = _.filter(outData, dataFilter);
+	// }}}
+
 	// Sorting {{{
 	if (req.query.sort) {
 		if (!req.query.sort.startsWith('-')) {

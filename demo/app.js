@@ -2,6 +2,9 @@ var app = angular.module("app", [
 	'angular-ui-query-builder'
 ]);
 
+// Force URL encoding to use jQuery syntax so we can pass JSON to the backend using URL query objects
+app.config($httpProvider => $httpProvider.defaults.paramSerializer = '$httpParamSerializerJQLike')
+
 app.controller("queryBuilderExampleCtrl", function($http, $scope) {
 	$scope.spec = {
 		_id: {type: 'objectId'},
@@ -24,7 +27,7 @@ app.controller("queryBuilderExampleCtrl", function($http, $scope) {
 	$scope.query = {
 		email: {$exists: true},
 		role: 'user',
-		status: {$in: ['pending', 'approved']},
+		status: {$in: ['pending', 'active']},
 		sort: 'username',
 		limit: 10,
 	};
