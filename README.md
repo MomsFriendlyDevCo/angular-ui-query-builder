@@ -36,16 +36,99 @@ var app = angular.module('app', ['angular-ui-query-builder'])
 A demo is also available. To use this [follow the instructions in the demo directory](./demo/README.md).
 
 
+API
+====
+
+ui-query-builder (directive)
+----------------------------
+Simply create a query object and link it up to the directive.
+
+In a controller:
+
+```javascript
+$scope.mySpec = {
+	_id: {type: 'objectId'},
+	name: {type: 'string'},
+	email: {type: 'string'},
+	status: {type: 'string', enum: ['pending', 'active', 'deleted']},
+};
+
+$scope.myQuery = {
+	status: 'active', // Assumes you have a status field
+	limit: 10,
+	skip: 0,
+};
+```
+
+In a HTML template:
+
+```html
+<ui-query-builder query="$ctrl.myQuery" spec="$ctrl.mySpec"></ui-query-builder>
+```
+
+... or see the [Demo](https://momsfriendlydevco.github.io/angular-ui-query-builder).
+
+The ui-query-builder directive takes the following parameters:
+
+| Parameter | Type   | Description                                                                           |
+|-----------|--------|---------------------------------------------------------------------------------------|
+| `query`   | Object | The current query, this object will be mutated into / from a MongoDB compatible query |
+| `spec`    | Object | A base specification of field types to use when providing the UI                      |
+
+
+qb-table, qb-col, qb-pagination (directives)
+--------------------------------------------
+If using either the full JS release (`angular-ui-query-builder.js`) or the table add-on (`angular-ui-query-builder-tables.js`) additional functionality is provided for Tables including column setup, pagination and other functionality.
+
+To use:
+
+1. Add the `qb-table` directive to the table header with a pointer to the query object to mutate
+2. (Optional) Add the `qb-col` directive to any table column to extend, include attributes like `sortable` to add that functionality
+3. (Optional) Add the `qb-pagination` directive into the table footer to add pagination functionality
+
+For example:
+
+```html
+<table class="table table-bordered table-striped table-hover" qb-table="query">
+	<thead>
+		<tr>
+			<th qb-col="name" sortable>Name</th>
+			<th qb-col="username" sortable>Username</th>
+			<th qb-col="email" sortable>Email</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr ng-repeat="row in data track by row.id">
+			<td>{{row.name}}</td>
+			<td>{{row.username}}</td>
+			<td>{{row.email}}</td>
+		</tr>
+	</tbody>
+	<tfoot>
+		<tr>
+			<td colspan="3">
+				<qb-pagination></qb-pagination>
+			</td>
+		</tr>
+	</tfoot>
+</table>
+```
+
+For a more complex example see the [demo](https://momsfriendlydevco.github.io/angular-ui-query-builder).
+
+
+
+
 TODO
 ====
 
 * [x] Basic field filtering
 * [ ] CSS tidyup
 * [ ] Compound queries - `$or` / `$and`
-* [ ] Automatically moving from a static string (`$eq` condition) to a multiple choice enum (`$in`) when a comma is used in a string
+* [x] Automatically moving from a static string (`$eq` condition) to a multiple choice enum (`$in`) when a comma is used in a string
 * [ ] Convert string ENUMs to a `$in` type automatically
 * [ ] Number filtering - above, below, between
-* [ ] Date support - date selector, before, after
+* [x] Date support - date selector, before, after
 * [ ] Nicer syntax support for `$regexp`
 * [ ] Support for `$length`
 * [ ] Nicer multi level path support
