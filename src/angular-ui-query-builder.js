@@ -109,7 +109,7 @@ angular.module('angular-ui-query-builder',[])
 		spec: '<',
 	},
 	template: `
-		<div ng-repeat="leaf in $ctrl.properties track by leaf.id" ng-switch="leaf.spec.type" ng-repeat-emit="uiQueryQueryRepaint" class="query-container">
+		<div ng-repeat="leaf in $ctrl.properties | filter:{isMeta:false} track by leaf.id" ng-switch="leaf.spec.type" ng-repeat-emit="uiQueryQueryRepaint" class="query-container">
 			<!-- Root branch display {{{ -->
 			<div class="query-stem"><div></div></div>
 			<!-- }}} -->
@@ -249,7 +249,7 @@ angular.module('angular-ui-query-builder',[])
 			{
 				id: '$ne',
 				setter: v => ({$ne: v}),
-				export: leaf => leaf.valueEdit,
+				export: leaf => ({$ne: leaf.valueEdit}),
 				base: {
 					title: 'Is not',
 					type: 'string',
@@ -323,7 +323,7 @@ angular.module('angular-ui-query-builder',[])
 					title: 'Has a value',
 					type: 'boolean',
 					textTrue: 'Has a value',
-					textFalse: 'Has no value',
+					textFalse: 'Has a value', // This isn't technically right but its right next to a disabled checkbox so it makes sense in context
 				},
 			},
 			{
@@ -366,23 +366,15 @@ angular.module('angular-ui-query-builder',[])
 		// $ctrl.translateBranch() {{{
 		$ctrl.translateBranch = (branch, pathSegments = []) =>
 			_($ctrl.branch)
-				.map((v, k) => {
-					var wrappingKey = _.isObject(v) ? _(v).keys().first() : '$eq';
-					var firstKeyVal = _.isObject(v) && _.size(v) > 0 ? _(v).map().first() : undefined;
-
-					var newBranch = {
-						id: k,
-						value: v,
-						valueEdit: firstKeyVal || v,
-						valueOperand: wrappingKey,
-						isMeta: k.startsWith('$'),
-						spec: $ctrl.getSpec(k, v, k),
-						path: pathSegments.concat([k]),
-					};
-
-					return newBranch;
-				})
-				.filter(p => !['sort', 'skip', 'limit'].includes(p.id))
+				.map((v, k) => ({
+					id: k,
+					value: v,
+					valueEdit: $ctrl.getFlatValue(v),
+					valueOperand: _.isObject(v) ? _(v).keys().first() : '$eq',
+					isMeta: k.startsWith('$') || ['sort', 'skip', 'limit'].includes(k),
+					spec: $ctrl.getSpec(k, v, k),
+					path: pathSegments.concat([k]),
+				}))
 				.sortBy(p => p.isMeta ? `Z${p.id}` : `A${p.id}`) // Force meta items to the end
 				.value();
 		// }}}
@@ -420,18 +412,34 @@ angular.module('angular-ui-query-builder',[])
 		};
 
 		$ctrl.setWrapper = (leaf, type) => {
-			var newValue = {};
-			if (_.isObject(leaf.value) && _.size(leaf.value) == 1) { // Unwrap object value
-				newValue[type] = _(leaf.value).values().first();
-			} else { // Preseve value
-				newValue[type] = leaf.valueEdit;
+			if (leaf.valueOperand == '$eq' && type == '$ne') { // Negate
+				leaf.valueOperand = '$ne';
+				leaf.valueEdit = $ctrl.getFlatValue(leaf.value);
+				leaf.value = {$ne: leaf.valueEdit};
+			} else if (leaf.valueOperand == '$ne' && type == '$eq') {
+				leaf.valueOperand = '$eq';
+				leaf.valueEdit = $ctrl.getFlatValue(leaf.value);
+				leaf.value = {$eq: leaf.valueEdit};
+			} else if (leaf.valueOperand == '$in' && type == '$eq') { // Flatten array into scalar
+				leaf.valueOperand = '$eq';
+				leaf.value = leaf.valueEdit = $ctrl.getFlatValue(leaf.value);
+			} else if ((leaf.valueOperand == '$eq' || leaf.valueOperand === undefined) && type == '$in') { // Roll scalar into array
+				leaf.valueOperand = '$in';
+				leaf.valueEdit = $ctrl.getFlatValue(leaf.value);
+				leaf.value = {$in: [leaf.valueEdit]};
+			} else { // Unknown swapping - convert to an object with one key
+				console.log('UNHANDLED TYPE CONVERT:', leaf.type, '=>', type);
+				var newValue = $ctrl.getFlatValue(leaf.value);
+
+				leaf.valueOperand = type;
+				leaf.valueEdit = newValue;
+				leaf.value = {[leaf.valueOperand]: leaf.valueEdit};
 			}
 
-			leaf.valueOperand = type;
-			leaf.value = newValue;
-			leaf.valueEdit = _.isObject(newValue[type]) && _.size(newValue[type]) ? newValue[type] : newValue;
-			$ctrl.setValue(leaf);
+			// Set the upstream model value
+			$ctrl.exportBranch();
 		};
+
 
 		/**
 		* Set the value of a leaf
@@ -443,7 +451,7 @@ angular.module('angular-ui-query-builder',[])
 
 			// Run via operand setter
 			leaf.value = $ctrl.operandsByID[leaf.valueOperand].setter(newValue);
-			leaf.valueEdit = _.isObject(leaf.value) && _.size(leaf.value) ? _(leaf.value).map().first() : leaf.value;
+			leaf.valueEdit = $ctrl.getFlatValue(leaf.value);
 
 			// Set the upstream model value
 			$ctrl.exportBranch();
@@ -471,6 +479,31 @@ angular.module('angular-ui-query-builder',[])
 			leaf.value[wrapperKey].sort();
 
 			leaf.valueEdit = _.isObject(leaf.value) && _.size(leaf.value) ? _(leaf.value).map().first() : leaf.value;
+		};
+
+
+		/**
+		* Return the 'flat' value of a Mongo expression
+		* This will always return the closest thing we have to a scalar primative
+		* @param {Object|string} input The input expression to flatten
+		* @returns {string|number} The nearest thing we can evaluate to a primative (or an empty string)
+		*
+		* @example
+		* $ctrl.getFlatValue('foo') //= 'foo'
+		* @example
+		* $ctrl.getFlatValue({$eq: 'bar'}) //= 'bar'
+		* @example
+		* $ctrl.getFlatValue({$in: ['quz', 'qux']}) //= 'quz'
+		*/
+		$ctrl.getFlatValue = input => {
+			if (_.isString(input) || _.isNumber(input) || _.isBoolean(input) || _.isDate(input)) { // Already a primative
+				return input;
+			} else if (_.isObject(input) && _.size(input) == 1) { // Unwrap object value from object
+				return _(input).values().first();
+			} else { // No idea how to convert - just return an empty string
+				console.warn('Given up trying to flatten input value', input);
+				return input;
+			}
 		};
 		// }}}
 
