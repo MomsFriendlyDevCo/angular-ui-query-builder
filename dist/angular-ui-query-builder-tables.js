@@ -2,7 +2,7 @@
 
 angular.module('angular-ui-query-builder')
 
-// Table decorator {{{
+// qbTableSettings (service) {{{
 .service('qbTableSettings', function () {
 	return {
 		icons: {
@@ -12,7 +12,9 @@ angular.module('angular-ui-query-builder')
 		}
 	};
 })
+// }}}
 
+// qbTable (directive) {{{
 /**
 * Directive applied to a table element to indicate that we should manage that table via angular-ui-query
 * @param {Object} qbTable The query object to modify
@@ -59,15 +61,17 @@ angular.module('angular-ui-query-builder')
 
 			$element.addClass('qb-table');
 			$scope.$watch('stickyThead', function () {
-				return $element.toggleClass('qb-sticky-thead', 'stickyThead' in $attrs);
+				return $element.toggleClass('qb-sticky-thead', $scope.stickyThead || $attrs.stickyThead === '');
 			});
 			$scope.$watch('stickyTfoot', function () {
-				return $element.toggleClass('qb-sticky-tfoot', 'stickyTfoot' in $attrs);
+				return $element.toggleClass('qb-sticky-tfoot', $scope.stickyTfoot || $attrs.stickyTfoot === '');
 			});
 		}]
 	};
 })
+// }}}
 
+// qbCol (directive) {{{
 /**
 * Directive for header elements to add angular-ui-query functionality
 * @param {Object} ^qbTable.qbTable The query Object to mutate
@@ -93,7 +97,7 @@ angular.module('angular-ui-query-builder')
 			$scope.isSorted = false; // False, 'asc', 'desc'
 
 			$ctrl.$onInit = function () {
-				return $scope.canSort = 'sortable' in $attrs;
+				return $scope.canSort = $scope.sortable || $attrs.sortable === '';
 			};
 
 			$scope.$watch('qbTable.query.sort', function (sorter) {
@@ -115,10 +119,11 @@ angular.module('angular-ui-query-builder')
 
 			$scope.toggleSort = function () {
 				if ($scope.sortable) {
+					// Sort by a specific field
 					$scope.qbTable.setField('sort', $scope.sortable);
-				} else if ($scope.q && $attrs.sortable === '') {
+				} else if ($scope.qbCol && $attrs.sortable === '') {
 					// Has attribute but no value - assume main key if we have one
-					$scope.qbTable.setField('sort', $scope.q);
+					$scope.qbTable.setField('sort', $scope.qbCol);
 				}
 			};
 			// }}}
@@ -129,7 +134,9 @@ angular.module('angular-ui-query-builder')
 		template: '\n\t\t<ng-transclude></ng-transclude>\n\t\t<a ng-if="canSort" ng-click="toggleSort()" class="pull-right">\n\t\t\t<i class="{{\n\t\t\t\tisSorted == \'asc\' ? qbTableSettings.icons.sortAsc\n\t\t\t\t: isSorted == \'desc\' ? qbTableSettings.icons.sortDesc\n\t\t\t\t: qbTableSettings.icons.sortNone\n\t\t\t}}"></i>\n\t\t</a>\n\t'
 	};
 })
+// }}}
 
+// qbPagination {{{
 /**
 * Directive to add table pagination
 * @param {Object} ^qbTable.qbTable The query Object to mutate
@@ -168,5 +175,4 @@ angular.module('angular-ui-query-builder')
 		template: '\n\t\t<nav>\n\t\t\t<ul class="pager">\n\t\t\t\t<li ng-class="canPrev ? \'\' : \'disabled\'" class="previous"><a ng-click="navPageRelative(-1)"><i class="fa fa-arrow-left"></i></a></li>\n\t\t\t\t<li ng-class="canNext ? \'\' : \'disabled\'" class="next"><a ng-click="navPageRelative(1)"><i class="fa fa-arrow-right"></i></a></li>\n\t\t\t</ul>\n\t\t</nav>\n\t'
 	};
 });
-
 // }}}
