@@ -134,6 +134,9 @@ Valid attributes are:
 TODO
 ====
 
+ui-query-builder
+----------------
+
 * [x] Basic field filtering
 * [ ] CSS tidyup
 * [ ] Compound queries - `$or` / `$and`
@@ -144,3 +147,17 @@ TODO
 * [ ] Nicer syntax support for `$regexp`
 * [ ] Support for `$length`
 * [ ] Nicer multi level path support
+
+
+qb-tables
+---------
+* [x] Pagination
+* [x] Sticky headers on scroll
+* [x] Query-Builder intergration
+* [ ] Export to excel functionality
+* [x] Sorting per-column
+* [ ] Simple searching
+* [ ] Freezing columns (low priority)
+* [ ] Responsive layout compatible for mobiles (low priority)
+* [ ] Animated on load or transitions (low priority)
+* [ ] Column reorder capability (low priority)
