@@ -105,10 +105,10 @@ angular.module('angular-ui-query-builder')
 		});
 
 		$scope.toggleSort = ()=> {
-			if ($scope.sortable) {
+			if ($scope.sortable) { // Sort by a specific field
 				$scope.qbTable.setField('sort', $scope.sortable);
-			} else if ($scope.q && $attrs.sortable === '') { // Has attribute but no value - assume main key if we have one
-				$scope.qbTable.setField('sort', $scope.q);
+			} else if ($scope.qbCol && $attrs.sortable === '') { // Has attribute but no value - assume main key if we have one
+				$scope.qbTable.setField('sort', $scope.qbCol);
 			}
 		};
 		// }}}
