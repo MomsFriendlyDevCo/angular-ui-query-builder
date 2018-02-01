@@ -52,8 +52,8 @@ angular.module('angular-ui-query-builder')
 		};
 
 		$element.addClass('qb-table');
-		$scope.$watch('stickyThead', ()=> $element.toggleClass('qb-sticky-thead', 'stickyThead' in $attrs));
-		$scope.$watch('stickyTfoot', ()=> $element.toggleClass('qb-sticky-tfoot', 'stickyTfoot' in $attrs));
+		$scope.$watch('stickyThead', ()=> $element.toggleClass('qb-sticky-thead', $scope.stickyThead || $attrs.stickyThead === ''));
+		$scope.$watch('stickyTfoot', ()=> $element.toggleClass('qb-sticky-tfoot', $scope.stickyTfoot || $attrs.stickyTfoot === ''));
 	},
 }})
 
@@ -81,7 +81,7 @@ angular.module('angular-ui-query-builder')
 		$scope.canSort = false; // True if either sortable has a specific value or is at least present
 		$scope.isSorted = false; // False, 'asc', 'desc'
 
-		$ctrl.$onInit = ()=> $scope.canSort = 'sortable' in $attrs;
+		$ctrl.$onInit = ()=> $scope.canSort = $scope.sortable || $attrs.sortable === '';
 
 		$scope.$watch('qbTable.query.sort', sorter => {
 			var sortField = $scope.sortable || $scope.q;
