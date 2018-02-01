@@ -15,14 +15,18 @@ angular.module('angular-ui-query-builder')
 /**
 * Directive applied to a table element to indicate that we should manage that table via angular-ui-query
 * @param {Object} qbTable The query object to modify
+* @param {boolean} stickyThead Anything within the `thead` section of the table should remain on the screen while scrolling
+* @param {boolean} stickyTfoot Anything within the `tfoot` section of the table should remain on the screen while scrolling
 * @emits qbTableQueryChange Emitted to child elements as (e, query) when the query object changes
 */
 .directive('qbTable', function() { return {
 	scope: {
 		qbTable: '=',
+		stickyThead: '<',
+		stickyTfoot: '<',
 	},
 	restrict: 'AC',
-	controller: function($scope, qbTableSettings) {
+	controller: function($attrs, $element, $scope, qbTableSettings) {
 		var $ctrl = this;
 		$ctrl.query = $scope.qbTable; // Copy into $ctrl so children can access it / $watch it
 
@@ -46,6 +50,10 @@ angular.module('angular-ui-query-builder')
 					$scope.qbTable[field] = value;
 			}
 		};
+
+		$element.addClass('qb-table');
+		$scope.$watch('stickyThead', ()=> $element.toggleClass('qb-sticky-thead', 'stickyThead' in $attrs));
+		$scope.$watch('stickyTfoot', ()=> $element.toggleClass('qb-sticky-tfoot', 'stickyTfoot' in $attrs));
 	},
 }})
 
@@ -73,9 +81,7 @@ angular.module('angular-ui-query-builder')
 		$scope.canSort = false; // True if either sortable has a specific value or is at least present
 		$scope.isSorted = false; // False, 'asc', 'desc'
 
-		$ctrl.$onInit = ()=> {
-			$scope.canSort = $scope.sortable || $attrs.sortable === '';
-		};
+		$ctrl.$onInit = ()=> $scope.canSort = 'sortable' in $attrs;
 
 		$scope.$watch('qbTable.query.sort', sorter => {
 			var sortField = $scope.sortable || $scope.q;

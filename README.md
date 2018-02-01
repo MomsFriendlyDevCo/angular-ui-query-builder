@@ -117,6 +117,18 @@ For example:
 For a more complex example see the [demo](https://momsfriendlydevco.github.io/angular-ui-query-builder).
 
 
+qb-table (directive)
+--------------------
+Use on a `<table/>` element to designate that it should be managed by this module.
+
+Valid attributes are:
+
+| Attribute      | Type      | Description                                                                               |
+|----------------|-----------|-------------------------------------------------------------------------------------------|
+| `qb-table`     | `Object`  | The main query object to mutate when the table is interacted with                         |
+| `sticky-thead` | `boolean` | Indicates that the `<thead/>` portion of the table should remain on screen when scrolling |
+| `sticky-tfoot` | `boolean` | Indicates that the `<tfoot/>` portion of the table should remain on screen when scrolling |
+
 
 
 TODO
