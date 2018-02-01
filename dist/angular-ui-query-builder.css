@@ -137,3 +137,49 @@
 }
 /* }}} */
 
+.qb-table {
+}
+
+/* Adjust margins of Bootstrap pagers as they are far too tall */
+.qb-table .pager {
+	margin: 5px 0;
+}
+
+/* table.qb-sticky-thead {{{ */
+.qb-sticky-thead thead > tr > td,
+.qb-sticky-thead thead > tr > th {
+	top: -1px;
+	position: sticky;
+	background: #FFF;
+	z-index: 1;
+}
+
+.qb-sticky-thead thead > tr > td:after,
+.qb-sticky-thead thead > tr > th:after {
+	content: '';
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	border-bottom: 2px solid #ddd;
+}
+/* }}} */
+
+/* table.qb-sticky-tfoot {{{ */
+.qb-sticky-tfoot tfoot > tr > td,
+.qb-sticky-tfoot tfoot > tr > th {
+	bottom: -1px;
+	position: sticky;
+	background: #FFF;
+}
+
+.qb-sticky-tfoot tfoot > tr > td:before,
+.qb-sticky-tfoot tfoot > tr > th:before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	border-top: 2px solid #ddd;
+}
+/* }}} */
