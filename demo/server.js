@@ -15,6 +15,7 @@
 
 var _ = require('lodash');
 var express = require('express');
+var data = require('./testData');
 
 var root = __dirname + '/..';
 var app = express();
@@ -29,45 +30,6 @@ app.get('/app.css', (req, res) => res.sendFile('app.css', {root: root + '/demo'}
 
 app.get('/dist/angular-ui-query-builder.js', (req, res) => res.sendFile('angular-ui-query-builder.js', {root: root + '/dist'}));
 app.get('/dist/angular-ui-query-builder.css', (req, res) => res.sendFile('angular-ui-query-builder.css', {root: root + '/dist'}));
-
-// Generate fake data on load {{{
-var faker = require('faker');
-var data = [...Array(100)].map((i, offset) => ({
-	id: `user${offset}`,
-	name: `${faker.name.firstName()} ${faker.name.lastName()}`,
-	username: faker.internet.userName(),
-	email: Math.random() > 0.8
-		? faker.internet.email()
-		: undefined,
-	address: {
-		street: faker.address.streetAddress(),
-		city: faker.address.city(),
-		zip: faker.address.zipCode(),
-		state: faker.address.state(),
-		country: faker.address.country(),
-	},
-	phone: Math.random() > 0.5
-		? faker.phone.phoneNumber()
-		: undefined,
-	website: Math.random() > 0.5
-		? faker.internet.url()
-		: undefined,
-	company: Math.random() > 0.7
-		? {name: faker.company.companyName()}
-		: undefined,
-	role:
-		Math.random() > 0.3 ? 'user'
-		: Math.random() > 0.3 ? 'admin'
-		: 'root',
-	status:
-		Math.random() > 0.3 ? 'active'
-		: Math.random() > 0.3 ? 'pending'
-		: 'deleted',
-	lastLogin: Math.random() > 0.5
-		? faker.date.past()
-		: faker.date.recent(),
-}));
-// }}}
 
 app.get('/api/data', function(req, res) {
 	var outData = [...data];

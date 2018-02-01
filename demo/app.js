@@ -39,4 +39,6 @@ app.controller('queryBuilderExampleCtrl', function($http, $scope) {
 		$http.get('api/data', {params: $scope.query})
 			.then(res => $scope.data = res.data)
 	}, true);
+
+	$scope.isGitHub = /\.github.io$/.test(document.location.hostname);
 });

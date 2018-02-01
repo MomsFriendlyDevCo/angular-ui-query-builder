@@ -2,11 +2,14 @@ var _ = require('lodash');
 var babel = require('gulp-babel');
 var concat = require('gulp-concat');
 var cleanCSS = require('gulp-clean-css');
+var file = require('gulp-file');
 var ghPages = require('gulp-gh-pages');
 var gulp = require('gulp');
 var gutil = require('gulp-util');
 var plumber = require('gulp-plumber');
 var nodemon = require('gulp-nodemon');
+var rename = require('gulp-rename');
+var replace = require('gulp-replace');
 var rimraf = require('rimraf');
 var uglify = require('gulp-uglify');
 var watch = require('gulp-watch');
@@ -147,8 +150,8 @@ gulp.task('gh-pages', ['build'], function() {
 		'./LICENSE',
 		'./demo/_config.yml',
 		'./demo/app.js',
+		'./demo/app.css',
 		'./demo/index.html',
-		'./demo/style.css',
 		'./dist/**/*',
 		'./node_modules/angular/angular.min.js',
 		'./node_modules/bootstrap/dist/css/bootstrap.min.css',
@@ -159,13 +162,16 @@ gulp.task('gh-pages', ['build'], function() {
 		'./node_modules/font-awesome/fonts/fontawesome-webfont.ttf',
 		'./node_modules/font-awesome/fonts/fontawesome-webfont.woff',
 		'./node_modules/font-awesome/fonts/fontawesome-webfont.woff2',
+		'./node_modules/moment/min/moment.min.js',
 	], {base: __dirname})
-		.pipe(concat(function(path) {
+		.pipe(rename(function(path) {
 			if (path.dirname == 'demo') { // Move all demo files into root
 				path.dirname = '.';
 			}
 			return path;
 		}))
+		.pipe(file('data.json', JSON.stringify(require('./demo/testData.js'))))
+		.pipe(replace(/api\/data/, 'data.json', {skipBinary: true}))
 		.pipe(ghPages({
 			cacheDir: 'gh-pages',
 			push: true, // Change to false for dryrun (files dumped to cacheDir)

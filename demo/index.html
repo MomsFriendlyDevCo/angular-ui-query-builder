@@ -46,6 +46,12 @@
 
 			<legend>Query builder + table</legend>
 
+			<div ng-if="isGitHub" class="alert alert-warning">
+				<h4>Warning - GitHub data unsupported</h4>
+				GitHub hosting does not support dynamic content so the table contents will not change when sorting, filtering etc.<br/>
+				You can still see the live queries to the server in the network panel however.
+			</div>
+
 			<table class="table table-bordered table-striped table-hover" qb-table="query" sticky-thead sticky-tfoot>
 				<thead>
 					<tr>
