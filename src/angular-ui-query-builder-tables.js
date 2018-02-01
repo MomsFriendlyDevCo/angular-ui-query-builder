@@ -22,9 +22,9 @@ angular.module('angular-ui-query-builder')
 */
 .directive('qbTable', function() { return {
 	scope: {
-		qbTable: '=',
-		stickyThead: '<',
-		stickyTfoot: '<',
+		qbTable: '=?',
+		stickyThead: '<?',
+		stickyTfoot: '<?',
 	},
 	restrict: 'AC',
 	controller: function($attrs, $element, $scope, qbTableSettings) {
@@ -74,10 +74,17 @@ angular.module('angular-ui-query-builder')
 	require: '^qbTable',
 	restrict: 'A',
 	transclude: true,
-	controller: function($attrs, $scope, qbTableSettings) {
+	controller: function($attrs, $element, $scope, qbTableSettings) {
 		var $ctrl = this;
 
 		$scope.qbTableSettings = qbTableSettings;
+
+		// Sanity checks {{{
+		var unSanityChecks = $scope.$watchGroup(['qbTable', 'sortable'], ()=> {
+			if ($attrs.sortable === '' && !$scope.qbTable) console.warn('Added qb-col + sortable onto element', $element, 'but no qb-table query has been assigned on the table element!');
+			unSanityChecks();
+		});
+		// }}}
 
 		// Sort functionality {{{
 		$scope.canSort = false; // True if either sortable has a specific value or is at least present
