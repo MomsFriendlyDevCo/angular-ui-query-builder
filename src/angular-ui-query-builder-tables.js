@@ -1,6 +1,6 @@
 angular.module('angular-ui-query-builder')
 
-// Table decorator {{{
+// qbTableSettings (service) {{{
 .service('qbTableSettings', function() {
 	return {
 		icons: {
@@ -10,8 +10,9 @@ angular.module('angular-ui-query-builder')
 		},
 	};
 })
+// }}}
 
-
+// qbTable (directive) {{{
 /**
 * Directive applied to a table element to indicate that we should manage that table via angular-ui-query
 * @param {Object} qbTable The query object to modify
@@ -56,8 +57,9 @@ angular.module('angular-ui-query-builder')
 		$scope.$watch('stickyTfoot', ()=> $element.toggleClass('qb-sticky-tfoot', $scope.stickyTfoot || $attrs.stickyTfoot === ''));
 	},
 }})
+// }}}
 
-
+// qbCol (directive) {{{
 /**
 * Directive for header elements to add angular-ui-query functionality
 * @param {Object} ^qbTable.qbTable The query Object to mutate
@@ -125,8 +127,9 @@ angular.module('angular-ui-query-builder')
 		</a>
 	`,
 }})
+// }}}
 
-
+// qbPagination {{{
 /**
 * Directive to add table pagination
 * @param {Object} ^qbTable.qbTable The query Object to mutate
@@ -170,5 +173,4 @@ angular.module('angular-ui-query-builder')
 		</nav>
 	`,
 }})
-
 // }}}
