@@ -36,7 +36,7 @@ app.controller('queryBuilderExampleCtrl', function($http, $scope) {
 	$scope.data;
 	$scope.$watch('query', ()=> {
 		// console.log('REFRESH', $scope.query);
-		$http.get('api/data', {params: $scope.query})
+		$http.get('data.json', {params: $scope.query})
 			.then(res => $scope.data = res.data)
 	}, true);
 
