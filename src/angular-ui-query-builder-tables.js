@@ -31,6 +31,12 @@ angular.module('angular-ui-query-builder')
 		var $ctrl = this;
 		$ctrl.query = $scope.qbTable; // Copy into $ctrl so children can access it / $watch it
 
+		$ctrl.$broadcast = (msg, ...args) => {
+			console.log('BROADCAST DOWN', msg, ...args);
+			$scope.$broadcast(msg, ...args); // Rebind broadcast so its accessible from children
+		};
+		$ctrl.$on = (event, cb) => $scope.$on(event, cb);
+
 		$ctrl.setField = (field, value) => {
 			if (value == undefined) { // Remove from query
 				delete $ctrl.query[field];
@@ -65,6 +71,13 @@ angular.module('angular-ui-query-builder')
 * @param {Object} ^qbTable.qbTable The query Object to mutate
 * @param {string} qbCol The field to operate on
 * @param {string} [sortable=q] Indicates that the column should switch to being sorted if the user clicks on it, if a value is specified that is used instead of `q` as the sort field
+*
+* @example
+* <thead>
+*   <tr>
+*     <td qb-col="name" sortable>Name</td>
+*   </tr>
+* </thead>
 */
 .directive('qbCol', function() { return {
 	scope: {
@@ -132,6 +145,94 @@ angular.module('angular-ui-query-builder')
 				: qbTableSettings.icons.sortNone
 			}}"></i>
 		</a>
+	`,
+}})
+// }}}
+
+// qbCell (directive) {{{
+/**
+* Directive for cell elements within a table
+* @param {boolean} selector Whether the cell should act as a select / unselect prompt, if any value bind to this as the selection variable
+* @param {Object} ^qbTable.qbTable The query Object to mutate
+* @example
+* <td qb-cell selector="row.selected"></td>
+*/
+.directive('qbCell', function() { return {
+	scope: {
+		selector: '=?',
+	},
+	require: '^qbTable',
+	restrict: 'A',
+	transclude: true,
+	controller: function($attrs, $element, $scope, $timeout, qbTableSettings) {
+		var $ctrl = this;
+
+		$scope.qbTableSettings = qbTableSettings;
+
+		// Meta selection support {{{
+		// A cell `isMeta` if it detects its located in the `thead` section of a table
+		$scope.isMeta = $element.parents('thead').length > 0;
+		// }}}
+
+		// Selection support {{{
+		$scope.isSelector = 'selector' in $attrs;
+		$scope.$watch('selector', ()=> {
+			if ($scope.isSelector) {
+				$element.toggleClass('selector', $scope.isSelector);
+			}
+
+			if ($scope.isSelector && !$scope.isMeta) {
+				$element.parents('tr').toggleClass('selected', !! $scope.selector);
+				$element.find('input[type=checkbox]').prop('checked', !! $scope.selector);
+			}
+		});
+
+		// Also respond to clicking anywhere in the 'TD' tag
+		$element.on('click', e => {
+			if (e.target.tagName != 'INPUT') e.preventDefault(); // Clicking on the background should also disable bubbling
+			$scope.$apply(()=> $scope.selector = !$scope.selector);
+		});
+
+		// Handle meta interaction
+		$scope.metaSelect = type => $scope.qbTable.$broadcast('qbTableCellSelect', type);
+
+		// Bind to event listener and respond to selection directives from meta element
+		if ($scope.isSelector) {
+			$timeout(()=> $scope.qbTable.$on('qbTableCellSelect', (e, type) => {
+				switch (type) {
+					case 'all': $scope.selector = true; break;
+					case 'invert': $scope.selector = !$scope.selector; break;
+					case 'none': $scope.selector = false; break;
+					default: throw new Error (`Unknown selection type: ${type}`);
+				}
+			}));
+		}
+		// }}}
+
+		// Style up the selector
+		$element.addClass('qb-cell')
+	},
+	link: function(scope, element, attrs, parentScope) {
+		scope.qbTable = parentScope;
+	},
+	template: `
+		<ng-transclude></ng-transclude>
+		<div ng-if="isSelector && isMeta" class="btn-group">
+			<a class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+				<input type="checkbox"/>
+				<i class="fa fa-caret-down"></i>
+			</a>
+			<ul class="dropdown-menu">
+				<li><a ng-click="metaSelect('all')">All</a></li>
+				<li><a ng-click="metaSelect('invert')">Invert</a></li>
+				<li><a ng-click="metaSelect('none')">None</a></li>
+			</ul>
+		</div>
+		<div ng-if="isSelector && !isMeta" class="checkbox">
+			<label>
+				<input type="checkbox"/>
+			</label>
+		</div>
 	`,
 }})
 // }}}

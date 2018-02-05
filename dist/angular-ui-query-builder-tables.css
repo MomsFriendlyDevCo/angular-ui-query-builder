@@ -7,16 +7,16 @@
 }
 
 /* table.qb-sticky-thead {{{ */
-.qb-sticky-thead thead > tr > td,
-.qb-sticky-thead thead > tr > th {
+.qb-table.qb-sticky-thead thead > tr > td,
+.qb-table.qb-sticky-thead thead > tr > th {
 	top: -1px;
 	position: sticky;
 	background: #FFF;
 	z-index: 1;
 }
 
-.qb-sticky-thead thead > tr > td:after,
-.qb-sticky-thead thead > tr > th:after {
+.qb-table.qb-sticky-thead thead > tr > td:after,
+.qb-table.qb-sticky-thead thead > tr > th:after {
 	content: '';
 	position: absolute;
 	bottom: 0;
@@ -27,15 +27,15 @@
 /* }}} */
 
 /* table.qb-sticky-tfoot {{{ */
-.qb-sticky-tfoot tfoot > tr > td,
-.qb-sticky-tfoot tfoot > tr > th {
+.qb-table.qb-sticky-tfoot tfoot > tr > td,
+.qb-table.qb-sticky-tfoot tfoot > tr > th {
 	bottom: -1px;
 	position: sticky;
 	background: #FFF;
 }
 
-.qb-sticky-tfoot tfoot > tr > td:before,
-.qb-sticky-tfoot tfoot > tr > th:before {
+.qb-table.qb-sticky-tfoot tfoot > tr > td:before,
+.qb-table.qb-sticky-tfoot tfoot > tr > th:before {
 	content: '';
 	position: absolute;
 	top: 0;
@@ -43,4 +43,40 @@
 	right: 0;
 	border-top: 2px solid #ddd;
 }
+/* }}} */
+
+/* qb-row (virtual directive) {{{ */
+.qb-table tr.selected td,
+.qb-table tr.selected th {
+	background: #337ab7;
+	color: #fff;
+}
+/* }}} */
+
+/* qb-cell {{{ */
+.qb-table .qb-cell.selector {
+	cursor: pointer;
+	width: 30px;
+	text-align: center;
+}
+
+.qb-table .qb-cell.selector > .checkbox {
+	display: block;
+}
+
+.qb-table .qb-cell.selector input[type=checkbox] {
+	width: 20px;
+	height: 20px;
+}
+
+/* Meta selector {{{ */
+.qb-table thead .qb-cell.selector .btn {
+	padding: 2px 8px;
+}
+
+.qb-table thead .qb-cell.selector .btn > i {
+	margin-top: 8px;
+	vertical-align: top;
+}
+/* }}} */
 /* }}} */

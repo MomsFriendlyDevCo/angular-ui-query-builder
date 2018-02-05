@@ -2,6 +2,13 @@ angular-ui-query-builder
 ========================
 MongoDB format query-builder UI component for Angular.
 
+This component comes in two parts:
+
+1. An interactive UI element to edit a MongoDB query
+2. Functionality to extend basic HTML tables with additional features (column sorting, filtering etc.) by changing the MongoDB query
+
+
+
 [Demo](https://momsfriendlydevco.github.io/angular-ui-query-builder).
 
 
@@ -76,8 +83,8 @@ The ui-query-builder directive takes the following parameters:
 | `spec`    | Object | A base specification of field types to use when providing the UI                      |
 
 
-qb-table, qb-col, qb-pagination (directives)
---------------------------------------------
+qb-table & qb-* (directives)
+----------------------------
 If using either the full JS release (`angular-ui-query-builder.js`) or the table add-on (`angular-ui-query-builder-tables.js`) additional functionality is provided for Tables including column setup, pagination and other functionality.
 
 To use:
@@ -130,6 +137,85 @@ Valid attributes are:
 | `sticky-tfoot` | `boolean` | Indicates that the `<tfoot/>` portion of the table should remain on screen when scrolling |
 
 
+qb-col (directive)
+------------------
+Use on ` <td>` / `<th>` element within a `<thead>` to provide column level interaction.
+
+```html
+<table class="table table-bordered table-striped table-hover" qb-table="query">
+	<thead>
+		<tr>
+			<th qb-col="name" sortable>Name</th>
+			<th qb-col="username" sortable>Username</th>
+			<th qb-col="email" sortable>Email</th>
+		</tr>
+	</thead>
+	...
+</table>
+```
+
+Valid attributes are:
+
+| Attribute      | Type                  | Description                                                                               |
+|----------------|-----------------------|-------------------------------------------------------------------------------------------|
+| `qb-col`       | `string`              | The database field to link against in dotted notation                                     |
+| `sortable`     | `boolean` or `string` | Indicates that this column can be sorted, if blank or boolean true this simply uses the `qb-col` value as the field to sort by, if its a string it uses that field instead |
+
+
+qb-cell (directive)
+-------------------
+Use on ` <td>` / `<th>` element within a `<thead>` / `<thead>` to provide column level interaction.
+
+If this element is within `<thead>` it adds table level meta functionality (such as controlling which rows are selected if `selector` is truthy). If its within a `<tbody>` it adds per-row functionality.
+
+```html
+<table class="table table-bordered table-striped table-hover" qb-table="query">
+	<thead>
+		...
+	</thead>
+	<tbody>
+		<tr ng-repeat="row in data track by row.id">
+			<td qb-cell selector="row.selected"></td>
+			<td>{{row.name}}</td>
+		</tr>
+	</tbody>
+</table>
+```
+
+Valid attributes are:
+
+| Attribute      | Type     | Description                                                                               |
+|----------------|----------|-------------------------------------------------------------------------------------------|
+| `selector`     | `Object` | Indicates the field to bind against + mutate when selection is toggled. This usually resembles something like `row.selected` |
+
+
+
+qb-pagination
+-------------
+An element, usually found in the `<tfoot>` section of a table which provides general pagination functionality.
+
+
+```html
+<table class="table table-bordered table-striped table-hover" qb-table="query">
+	<thead>
+		...
+	</thead>
+	<tbody>
+		...
+	</tbody>
+	<tfoot>
+		<tr>
+			<td colspan="10">
+				<qb-pagination></qb-pagination>
+			</td>
+		</tr>
+	</tfoot>
+</table>
+```
+
+This directive has no attributes.
+
+
 
 TODO
 ====
@@ -153,9 +239,10 @@ qb-tables
 ---------
 * [x] Pagination
 * [x] Sticky headers on scroll
-* [x] Query-Builder intergration
-* [ ] Export to excel functionality
+* [x] Query-Builder integration
 * [x] Sorting per-column
+* [ ] Export to excel functionality
+* [ ] Row selection
 * [ ] Simple searching
 * [ ] Freezing columns (low priority)
 * [ ] Responsive layout compatible for mobiles (low priority)
