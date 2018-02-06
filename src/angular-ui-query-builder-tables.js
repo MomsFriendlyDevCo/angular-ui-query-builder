@@ -204,6 +204,7 @@ angular.module('angular-ui-query-builder')
 *
 * @emits qbTableCellSelectMeta Issued by the meta-selector element to peer selection elements that the selection criteria has changed. Called as (arg) where arg is 'all', 'none', 'invert'
 * @emits qbTableCellSelect Issued by a regular selector element to broadcast its state has changed
+* @emits qbTableCellSelectStatus Sent to one or more child elements as (array) to enquire their status, used to figure out if everything / partial / no items are selected. Each item is expected to add its status to `status` as a boolean
 *
 * @example
 * <td qb-cell selector="row.selected"></td>
@@ -225,9 +226,15 @@ angular.module('angular-ui-query-builder')
 		$scope.isMeta = $element.parents('thead').length > 0;
 
 		if ($scope.isMeta) {
-			console.log('IAMMETA');
 			$timeout(()=> $scope.qbTable.$on('qbTableCellSelect', ()=> {
-				console.log('CHILD CHANGE!');
+				// Ask all children what their status is
+				var status = [];
+				$scope.qbTable.$broadcast('qbTableCellSelectStatus', status);
+
+				$scope.metaStatus =
+					status.every(i => i) ? 'all'
+					: status.some(i => i) ? 'some'
+					: 'none';
 			}));
 		}
 		// }}}
@@ -241,24 +248,34 @@ angular.module('angular-ui-query-builder')
 		});
 
 		// Respond to clicking anywhere in the 'TD' tag
-		$element.on('click', e => $scope.$apply(()=> {
-			$scope.selector = !$scope.selector;
-			$scope.qbTable.$broadcast('qbTableCellSelect');
-		}));
+		if ($scope.isSelector && !$scope.isMeta) {
+			$element.on('click', e => $scope.$apply(()=> {
+				$scope.selector = !$scope.selector;
+				$scope.qbTable.$broadcast('qbTableCellSelect');
+			}));
+		}
 
 		// Handle meta interaction
 		$scope.metaSelect = type => $scope.qbTable.$broadcast('qbTableCellSelectMeta', type);
 
 		// Bind to event listener and respond to selection directives from meta element
-		if ($scope.isSelector) {
-			$timeout(()=> $scope.qbTable.$on('qbTableCellSelectMeta', (e, type) => {
-				switch (type) {
-					case 'all': $scope.selector = true; break;
-					case 'invert': $scope.selector = !$scope.selector; break;
-					case 'none': $scope.selector = false; break;
-					default: throw new Error (`Unknown selection type: ${type}`);
-				}
-			}));
+		if ($scope.isSelector && !$scope.isMeta) {
+			// If we're a standard per-row minion respond to certain events
+			$timeout(()=> {
+
+				$scope.qbTable.$on('qbTableCellSelectMeta', (e, type) => {
+					switch (type) {
+						case 'all': $scope.selector = true; break;
+						case 'invert': $scope.selector = !$scope.selector; break;
+						case 'none': $scope.selector = false; break;
+						default: throw new Error (`Unknown selection type: ${type}`);
+					}
+					$scope.qbTable.$broadcast('qbTableCellSelect'); // Trigger a recount of what is/isn't selected
+				});
+
+				$scope.qbTable.$on('qbTableCellSelectStatus', (e, status) => status.push($scope.selector));
+
+			});
 		}
 		// }}}
 
@@ -272,7 +289,7 @@ angular.module('angular-ui-query-builder')
 		<ng-transclude></ng-transclude>
 		<div ng-if="isSelector && isMeta" class="btn-group">
 			<a class="btn btn-default dropdown-toggle" data-toggle="dropdown">
-				<i class="fa fa-lg fa-fw fa-square-o text-primary"></i>
+				<i class="fa fa-lg fa-fw" ng-class="metaStatus == 'all' ? 'fa-check-square-o text-primary' : metaStatus == 'some' ? 'fa-minus-square-o' : 'fa-square-o'"></i>
 				<i class="fa fa-caret-down"></i>
 			</a>
 			<ul class="dropdown-menu">
@@ -472,7 +489,7 @@ angular.module('angular-ui-query-builder')
 										</div>
 										<div id="qb-export-columns-{{$id}}-columns" class="panel-collapse collapse row">
 											<div class="col-xs-12">
-												<table qb-table class="table table-bordered table-striped table-hover">
+												<table qb-table class="table table-hover">
 													<thead>
 														<tr>
 															<th qb-cell selector></th>
