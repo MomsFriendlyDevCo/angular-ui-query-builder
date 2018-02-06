@@ -50,6 +50,28 @@
 }
 /* }}} */
 
+/* qb-col {{{ */
+.qb-table .qb-col .qb-col-wrapper {
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	overflow: hidden;
+}
+
+.qb-table .qb-col .qb-col-wrapper i {
+	margin-top: 2px;
+}
+
+/* Add slight right margin if we have to show the sort control */
+.qb-table .qb-col.sortable .qb-col-wrapper {
+	margin-right: 10px;
+}
+
+.qb-table .qb-col .qb-col-right {
+	position: absolute;
+	right: 0;
+}
+/* }}} */
+
 /* qb-row (virtual directive) {{{ */
 .qb-table tr.selected td,
 .qb-table tr.selected th {

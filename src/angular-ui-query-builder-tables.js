@@ -103,7 +103,10 @@ angular.module('angular-ui-query-builder')
 		$scope.canSort = false; // True if either sortable has a specific value or is at least present
 		$scope.isSorted = false; // False, 'asc', 'desc'
 
-		$ctrl.$onInit = ()=> $scope.canSort = $scope.sortable || $attrs.sortable === '';
+		$ctrl.$onInit = ()=> {
+			$scope.canSort = $scope.sortable || $attrs.sortable === '';
+			$element.toggleClass('sortable', $scope.canSort);
+		};
 
 		$scope.$watch('qbTable.query.sort', sorter => {
 			var sortField = $scope.sortable || $scope.qbCol;
@@ -133,19 +136,23 @@ angular.module('angular-ui-query-builder')
 			}
 		};
 		// }}}
+
+		$element.addClass('qb-col');
 	},
 	link: function(scope, element, attrs, parentScope) {
 		scope.qbTable = parentScope;
 	},
 	template: `
-		<ng-transclude></ng-transclude>
-		<a ng-if="canSort" ng-click="toggleSort()" class="pull-right">
-			<i class="{{
-				isSorted == 'asc' ? qbTableSettings.icons.sortAsc
-				: isSorted == 'desc' ? qbTableSettings.icons.sortDesc
-				: qbTableSettings.icons.sortNone
-			}}"></i>
-		</a>
+		<div class="qb-col-wrapper">
+			<ng-transclude></ng-transclude>
+			<a ng-if="canSort" ng-click="toggleSort()" class="qb-col-right">
+				<i class="{{
+					isSorted == 'asc' ? qbTableSettings.icons.sortAsc
+					: isSorted == 'desc' ? qbTableSettings.icons.sortDesc
+					: qbTableSettings.icons.sortNone
+				}}"></i>
+			</a>
+		</div>
 	`,
 }})
 // }}}
