@@ -106,7 +106,8 @@ angular.module('angular-ui-query-builder')
 		$ctrl.$onInit = ()=> $scope.canSort = $scope.sortable || $attrs.sortable === '';
 
 		$scope.$watch('qbTable.query.sort', sorter => {
-			var sortField = $scope.sortable || $scope.q;
+			var sortField = $scope.sortable || $scope.qbCol;
+
 			if (!sorter) {
 				$scope.isSorted = false;
 			} else if (
