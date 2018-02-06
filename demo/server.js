@@ -19,6 +19,7 @@ var data = require('./testData');
 
 var root = __dirname + '/..';
 var app = express();
+
 app.use('/node_modules', express.static(root + '/node_modules'));
 
 app.get('/', function(req, res) {
@@ -66,6 +67,21 @@ app.get('/api/data', function(req, res) {
 	// }}}
 
 	res.send(outData);
+});
+
+app.get('/api/data/export', function(req, res) {
+	res.send(`
+		<html>
+			<head>
+				<title>Export data</title>
+			</head>
+			<body>
+				<p><strong>Beep Boop. I'm pretending to be a data-server</strong></p>
+				<p>At this point I would export data matching the ReST (like) query below:</p>
+	` + '<pre>' + JSON.stringify(req.query, null, '\t') + '</pre>' + `
+			</body>
+		</html>
+	`);
 });
 
 app.use(function(err, req, res, next){

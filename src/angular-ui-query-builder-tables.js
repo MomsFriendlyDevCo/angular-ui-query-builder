@@ -8,8 +8,47 @@ angular.module('angular-ui-query-builder')
 			sortAsc: 'fa fa-fw fa-sort-alpha-asc text-primary',
 			sortDesc: 'fa fa-fw fa-sort-alpha-desc text-primary',
 		},
+		export: {
+			defaults: {
+				format: 'xlsx',
+			},
+			formats: [
+				{id: 'xlsx', title: 'Excel (XLSX)'},
+				{id: 'csv', title: 'CSV'},
+				{id: 'json', title: 'JSON'},
+				{id: 'html', title: 'HTML (display in browser)'},
+			],
+		},
 	};
 })
+// }}}
+
+// qbTableUtilities (service) {{{
+.service('qbTableUtilities', function() { return {
+	getSynopsis: query => {
+		var filters = _.keys(query).filter(i => !['sort', 'skip', 'limit', 'select'].includes(i));
+
+		return [
+			filters.length ? `${filters.length} filters` : 'All records',
+			query.sort
+				? (
+					query.sort.startsWith('-')
+						? `sorted by ${query.sort.substr(1)} (reverse order)`
+						: `sorted by ${query.sort}`
+				)
+				: null,
+			query.limit
+				? `limited to ${query.limit} rows`
+				: null,
+			query.offset
+				? `starting at record ${query.skip}`
+				: null,
+			query.select
+				? `selecting only ${query.select.length} columns`
+				: null,
+		].filter(i => i).join(', ');
+	},
+}})
 // }}}
 
 // qbTable (directive) {{{
@@ -287,6 +326,183 @@ angular.module('angular-ui-query-builder')
 				<li ng-class="canNext ? '' : 'disabled'" class="next"><a ng-click="navPageRelative(1)"><i class="fa fa-arrow-right"></i></a></li>
 			</ul>
 		</nav>
+	`,
+}})
+// }}}
+
+// qbExport {{{
+/**
+* Directive to export a table via a query
+* NOTE: This element draws a simple 'Export...' button by default but can be replaced by any valid transcluded HTML. Simply call `exportPrompt()` to action
+* @param {Object} query The query Object to use when exporting
+* @param {Object} spec The specification object of the collection
+* @param {string} url The URL endpoint to redirect to for the query to be executed (typically something like `/api/widgets`)
+*
+* @example Simple export button
+* <qb-export query="myQuery" spec="mySpec"></qb-export>
+* @example Custom button
+* <qb-export query="myQuery" spec="mySpec">
+*   <a class="btn btn-primary" ng-click="exportPrompt()">Export this list</a>
+* </qb-export>
+*/
+.directive('qbExport', function() { return {
+	scope: {
+		query: '<',
+		spec: '<',
+		url: '@',
+	},
+	transclude: true,
+	restrict: 'EA',
+	controller: function($element, $httpParamSerializer, $scope, $timeout, $window, qbTableSettings, qbTableUtilities) {
+		var $ctrl = this;
+
+		$scope.qbTableSettings = qbTableSettings;
+
+		$scope.settings = {};
+
+		$scope.isShowing = false;
+		$scope.exportPrompt = ()=> {
+			$scope.settings = angular.extend(
+				angular.copy(qbTableSettings.export.defaults),
+				{
+					query: _($scope.query)
+						.omitBy((v, k) => ['skip', 'limit'].includes(k))
+						.value(),
+					columns: _.map($scope.spec, (v, k) => {
+						v.id = k;
+						v.title = _.startCase(k);
+						v.selected = true;
+						return v;
+					}),
+				}
+			);
+
+			$element.find('.modal')
+				.on('show.bs.modal', ()=> $timeout(()=> $scope.isShowing = true))
+				.on('hidden.bs.modal', ()=> $timeout(()=> $scope.isShowing = false))
+				.modal('show');
+		};
+
+		$scope.exportExecute = ()=> {
+			var query = angular.extend($scope.settings.query, {
+				select: $scope.settings.columns
+					.filter(c => c.selected)
+					.map(c => c.id),
+				format: $scope.settings.format,
+			});
+
+			$window.open(`${$scope.url}?${$httpParamSerializer(query)}`);
+		};
+
+		// Generate a readable synopsis of the query {{{
+		$scope.querySynopsis;
+		$scope.$watchGroup(['isShowing', 'settings.query'], ()=> {
+			if (!$scope.isShowing) return; // Don't bother if we're not showing anything anyway
+			$scope.querySynopsis = qbTableUtilities.getSynopsis($scope.settings.query);
+		});
+		// }}}
+
+		// Generate a readable synopsis of the columns collapse {{{
+		$scope.columnSynopsis;
+		$scope.$watchGroup([
+			'isShowing',
+			()=> _.get($scope.settings, 'columns', []).map(c => c.id + '=' + c.selected).join('&'), // Create a digest of what columns are selected
+		], ()=> {
+			if (!$scope.isShowing) return; // Don't bother if we're not showing anything anyway
+			$scope.columnSynopsis = $scope.settings.columns.filter(c => c.selected).length + ' columns';
+		});
+		// }}}
+	},
+	template: `
+		<div class="modal fade">
+			<div class="modal-dialog modal-lg">
+				<div ng-if="isShowing" class="modal-content">
+					<div class="modal-header">
+						<a class="close" data-dismiss="modal"><i class="fa fa-times"></i></a>
+						<h4 class="modal-title">Export</h4>
+					</div>
+					<div class="modal-body form-horizontal">
+						<div class="form-group">
+							<label class="col-sm-3 control-label">Output format</label>
+							<div class="col-sm-9">
+								<select ng-model="settings.format" class="form-control">
+									<option ng-repeat="format in qbTableSettings.export.formats track by format.id" value="{{format.id}}">{{format.title}}</option>
+								</select>
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="col-sm-3 control-label">Criteria</label>
+							<div class="col-sm-9">
+								<div class="panel-group" id="qb-export-criteria-{{$id}}">
+									<div class="panel panel-default">
+										<div class="panel-heading">
+											<h4 class="panel-title">
+												<a data-toggle="collapse" data-target="#qb-export-criteria-{{$id}}-query" data-parent="#qb-export-criteria-{{$id}}" class="btn-block collapsed">
+													{{querySynopsis}}
+													<i class="fa fa-caret-right pull-right"></i>
+												</a>
+											</h4>
+										</div>
+										<div id="qb-export-criteria-{{$id}}-query" class="panel-collapse collapse container">
+											<ui-query-builder
+												query="settings.query"
+												spec="spec"
+											></ui-query-builder>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="col-sm-3 control-label">Columns</label>
+							<div class="col-sm-9">
+								<div class="panel-group" id="qb-export-columns-{{$id}}">
+									<div class="panel panel-default">
+										<div class="panel-heading">
+											<h4 class="panel-title">
+												<a data-toggle="collapse" data-target="#qb-export-columns-{{$id}}-columns" data-parent="#qb-export-columns-{{$id}}" class="btn-block collapsed">
+													{{columnSynopsis}}
+													<i class="fa fa-caret-right pull-right"></i>
+												</a>
+											</h4>
+										</div>
+										<div id="qb-export-columns-{{$id}}-columns" class="panel-collapse collapse row">
+											<div class="col-xs-12">
+												<table qb-table class="table table-bordered table-striped table-hover">
+													<thead>
+														<tr>
+															<th qb-cell selector></th>
+															<th>Column</th>
+														</tr>
+													</thead>
+													<tbody>
+														<tr ng-repeat="col in settings.columns track by col.id">
+															<td qb-cell selector="col.selected"></td>
+															<td>{{col.title}}</td>
+														</tr>
+													</tbody>
+												</table>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="modal-footer">
+						<div class="pull-left">
+							<a class="btn btn-danger" data-dismiss="modal">Cancel</a>
+						</div>
+						<div class="pull-right">
+							<a ng-click="exportExecute()" class="btn btn-primary" data-dismiss="modal">Export</a>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<ng-transclude>
+			<a ng-click="exportPrompt()" class="btn btn-default">Export...</a>
+		</ng-transclude>
 	`,
 }})
 // }}}

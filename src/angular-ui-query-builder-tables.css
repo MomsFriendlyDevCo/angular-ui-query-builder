@@ -85,6 +85,7 @@
 	cursor: pointer;
 	width: 30px;
 	text-align: center;
+	vertical-align: middle;
 }
 
 .qb-table .qb-cell.selector > .checkbox {
@@ -104,6 +105,26 @@
 .qb-table thead .qb-cell.selector .btn > i {
 	margin-top: 8px;
 	vertical-align: top;
+}
+/* }}} */
+/* }}} */
+
+/* qb-export {{{ */
+qb-export .panel-group {
+	margin-bottom: 0px;
+}
+
+/* Caret dropdown animations {{{ */
+@keyframes qb-export-caret-open {
+	from {
+		transform: rotate(0deg);
+	} to {
+		transform: rotate(90deg);
+	}
+}
+
+qb-export a:not(.collapsed) i.fa.fa-caret-right {
+	animation: qb-export-caret-open 0.4s ease 1 forwards;
 }
 /* }}} */
 /* }}} */

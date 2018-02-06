@@ -1,6 +1,6 @@
 {
   "name": "@momsfriendlydevco/angular-ui-query-builder",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "MongoDB format query-builder UI component for Angular",
   "main": "dist/angular-ui-query-builder.js",
   "scripts": {
@@ -19,7 +19,6 @@
   "devDependencies": {
     "babel-plugin-angularjs-annotate": "^0.8.2",
     "babel-preset-es2015": "^6.24.1",
-    "body-parser": "^1.18.2",
     "express": "^4.16.1",
     "faker": "^4.1.0",
     "font-awesome": "^4.7.0",

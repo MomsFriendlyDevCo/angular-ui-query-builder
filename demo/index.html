@@ -44,6 +44,13 @@
 			<pre>{{query | json}}</pre>
 
 
+			<div class="pull-right">
+				<qb-export
+					query="query"
+					spec="spec"
+					url="/api/data/export"
+				></qb-export>
+			</div>
 			<legend>Query builder + table</legend>
 
 			<div ng-if="isGitHub" class="alert alert-warning">
