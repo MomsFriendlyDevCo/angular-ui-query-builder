@@ -195,6 +195,10 @@ angular.module('angular-ui-query-builder')
 * Directive for cell elements within a table
 * @param {boolean} selector Whether the cell should act as a select / unselect prompt, if any value bind to this as the selection variable
 * @param {Object} ^qbTable.qbTable The query Object to mutate
+*
+* @emits qbTableCellSelectMeta Issued by the meta-selector element to peer selection elements that the selection criteria has changed. Called as (arg) where arg is 'all', 'none', 'invert'
+* @emits qbTableCellSelect Issued by a regular selector element to broadcast its state has changed
+*
 * @example
 * <td qb-cell selector="row.selected"></td>
 */
@@ -214,38 +218,42 @@ angular.module('angular-ui-query-builder')
 			// Meta selection support {{{
 			// A cell `isMeta` if it detects its located in the `thead` section of a table
 			$scope.isMeta = $element.parents('thead').length > 0;
+
+			if ($scope.isMeta) {
+				console.log('IAMMETA');
+				$timeout(function () {
+					return $scope.qbTable.$on('qbTableCellSelect', function () {
+						console.log('CHILD CHANGE!');
+					});
+				});
+			}
 			// }}}
 
 			// Selection support {{{
 			$scope.isSelector = 'selector' in $attrs;
 			$scope.$watch('selector', function () {
-				if ($scope.isSelector) {
-					$element.toggleClass('selector', $scope.isSelector);
-				}
+				if ($scope.isSelector) $element.toggleClass('selector', $scope.isSelector);
 
-				if ($scope.isSelector && !$scope.isMeta) {
-					$element.parents('tr').toggleClass('selected', !!$scope.selector);
-					$element.find('input[type=checkbox]').prop('checked', !!$scope.selector);
-				}
+				if ($scope.isSelector && !$scope.isMeta) $element.parents('tr').toggleClass('selected', !!$scope.selector);
 			});
 
-			// Also respond to clicking anywhere in the 'TD' tag
+			// Respond to clicking anywhere in the 'TD' tag
 			$element.on('click', function (e) {
-				if (e.target.tagName != 'INPUT') e.preventDefault(); // Clicking on the background should also disable bubbling
-				$scope.$apply(function () {
-					return $scope.selector = !$scope.selector;
+				return $scope.$apply(function () {
+					$scope.selector = !$scope.selector;
+					$scope.qbTable.$broadcast('qbTableCellSelect');
 				});
 			});
 
 			// Handle meta interaction
 			$scope.metaSelect = function (type) {
-				return $scope.qbTable.$broadcast('qbTableCellSelect', type);
+				return $scope.qbTable.$broadcast('qbTableCellSelectMeta', type);
 			};
 
 			// Bind to event listener and respond to selection directives from meta element
 			if ($scope.isSelector) {
 				$timeout(function () {
-					return $scope.qbTable.$on('qbTableCellSelect', function (e, type) {
+					return $scope.qbTable.$on('qbTableCellSelectMeta', function (e, type) {
 						switch (type) {
 							case 'all':
 								$scope.selector = true;break;
@@ -267,7 +275,7 @@ angular.module('angular-ui-query-builder')
 		link: function link(scope, element, attrs, parentScope) {
 			scope.qbTable = parentScope;
 		},
-		template: '\n\t\t<ng-transclude></ng-transclude>\n\t\t<div ng-if="isSelector && isMeta" class="btn-group">\n\t\t\t<a class="btn btn-default dropdown-toggle" data-toggle="dropdown">\n\t\t\t\t<input type="checkbox"/>\n\t\t\t\t<i class="fa fa-caret-down"></i>\n\t\t\t</a>\n\t\t\t<ul class="dropdown-menu">\n\t\t\t\t<li><a ng-click="metaSelect(\'all\')">All</a></li>\n\t\t\t\t<li><a ng-click="metaSelect(\'invert\')">Invert</a></li>\n\t\t\t\t<li><a ng-click="metaSelect(\'none\')">None</a></li>\n\t\t\t</ul>\n\t\t</div>\n\t\t<div ng-if="isSelector && !isMeta" class="checkbox">\n\t\t\t<label>\n\t\t\t\t<input type="checkbox"/>\n\t\t\t</label>\n\t\t</div>\n\t'
+		template: '\n\t\t<ng-transclude></ng-transclude>\n\t\t<div ng-if="isSelector && isMeta" class="btn-group">\n\t\t\t<a class="btn btn-default dropdown-toggle" data-toggle="dropdown">\n\t\t\t\t<i class="fa fa-lg fa-fw fa-square-o text-primary"></i>\n\t\t\t\t<i class="fa fa-caret-down"></i>\n\t\t\t</a>\n\t\t\t<ul class="dropdown-menu">\n\t\t\t\t<li><a ng-click="metaSelect(\'all\')">All</a></li>\n\t\t\t\t<li><a ng-click="metaSelect(\'invert\')">Invert</a></li>\n\t\t\t\t<li><a ng-click="metaSelect(\'none\')">None</a></li>\n\t\t\t</ul>\n\t\t</div>\n\t\t<div ng-if="isSelector && !isMeta">\n\t\t\t<i class="fa fa-lg fa-fw" ng-class="selector ? \'fa-check-square-o\' : \'fa-square-o\'"></i>\n\t\t</div>\n\t'
 	};
 })
 // }}}

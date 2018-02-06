@@ -227,23 +227,14 @@
 	vertical-align: middle;
 }
 
-.qb-table .qb-cell.selector > .checkbox {
-	display: block;
-}
-
-.qb-table .qb-cell.selector input[type=checkbox] {
-	width: 20px;
-	height: 20px;
-}
-
 /* Meta selector {{{ */
 .qb-table thead .qb-cell.selector .btn {
-	padding: 2px 8px;
+	padding: 4px 6px;
+	margin: -4px -6px;
+	vertical-align: middle;
 }
 
 .qb-table thead .qb-cell.selector .btn > i {
-	margin-top: 8px;
-	vertical-align: top;
 }
 /* }}} */
 /* }}} */
