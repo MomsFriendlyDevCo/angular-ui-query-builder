@@ -70,10 +70,7 @@ angular.module('angular-ui-query-builder')
 		var $ctrl = this;
 		$ctrl.query = $scope.qbTable; // Copy into $ctrl so children can access it / $watch it
 
-		$ctrl.$broadcast = (msg, ...args) => {
-			console.log('BROADCAST DOWN', msg, ...args);
-			$scope.$broadcast(msg, ...args); // Rebind broadcast so its accessible from children
-		};
+		$ctrl.$broadcast = (msg, ...args) => $scope.$broadcast(msg, ...args); // Rebind broadcast so its accessible from children
 		$ctrl.$on = (event, cb) => $scope.$on(event, cb);
 
 		$ctrl.setField = (field, value) => {
