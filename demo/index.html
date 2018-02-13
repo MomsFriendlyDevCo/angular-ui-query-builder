@@ -75,7 +75,7 @@
 				</thead>
 				<tbody>
 					<tr ng-repeat="row in data track by row.id">
-						<td qb-cell selector="row.selected"></td>
+						<td qb-cell selector="row.selected" on-select="notifyChange(row.id, value)"></td>
 						<td class="text-center">
 							<i class="fa fa-fw fa-lg" ng-class="
 								row.status == 'active' ? 'fa-check text-success'

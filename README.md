@@ -184,9 +184,10 @@ If this element is within `<thead>` it adds table level meta functionality (such
 
 Valid attributes are:
 
-| Attribute      | Type     | Description                                                                               |
-|----------------|----------|-------------------------------------------------------------------------------------------|
-| `selector`     | `Object` | Indicates the field to bind against + mutate when selection is toggled. This usually resembles something like `row.selected` |
+| Attribute      | Type       | Description                                                                               |
+|----------------|------------|-------------------------------------------------------------------------------------------|
+| `selector`     | `Object`   | Indicates the field to bind against + mutate when selection is toggled. This usually resembles something like `row.selected` |
+| `onSelect`     | `function` | Function called with `({value})` when the selection value changes                         |
 
 
 

@@ -199,8 +199,9 @@ angular.module('angular-ui-query-builder')
 // qbCell (directive) {{{
 /**
 * Directive for cell elements within a table
-* @param {boolean} selector Whether the cell should act as a select / unselect prompt, if any value bind to this as the selection variable
 * @param {Object} ^qbTable.qbTable The query Object to mutate
+* @param {boolean} [selector] Whether the cell should act as a select / unselect prompt, if any value bind to this as the selection variable
+* @param {function} [onSelect] Function to run when the selection value changes. Called as ({value})
 *
 * @emits qbTableCellSelectMeta Issued by the meta-selector element to peer selection elements that the selection criteria has changed. Called as (arg) where arg is 'all', 'none', 'invert'
 * @emits qbTableCellSelect Issued by a regular selector element to broadcast its state has changed
@@ -212,6 +213,7 @@ angular.module('angular-ui-query-builder')
 .directive('qbCell', function() { return {
 	scope: {
 		selector: '=?',
+		onSelect: '&?',
 	},
 	require: '^qbTable',
 	restrict: 'A',
@@ -251,6 +253,7 @@ angular.module('angular-ui-query-builder')
 		if ($scope.isSelector && !$scope.isMeta) {
 			$element.on('click', e => $scope.$apply(()=> {
 				$scope.selector = !$scope.selector;
+				if ($scope.onSelect) $scope.onSelect({value: $scope.selector});
 				$scope.qbTable.$broadcast('qbTableCellSelect');
 			}));
 		}

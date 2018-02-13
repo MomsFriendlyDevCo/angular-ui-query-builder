@@ -40,5 +40,7 @@ app.controller('queryBuilderExampleCtrl', function($http, $scope) {
 			.then(res => $scope.data = res.data)
 	}, true);
 
+	$scope.notifyChange = (id, value) => console.log('Value of', id, 'changed to', value);
+
 	$scope.isGitHub = /\.github.io$/.test(document.location.hostname);
 });
