@@ -216,6 +216,7 @@
 .qb-table tr.selected th {
 	background: #337ab7;
 	color: #fff;
+	border: 1px solid #7aa9d2;
 }
 /* }}} */
 
