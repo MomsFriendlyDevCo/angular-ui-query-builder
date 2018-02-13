@@ -671,8 +671,9 @@ angular.module('angular-ui-query-builder')
 // qbCell (directive) {{{
 /**
 * Directive for cell elements within a table
-* @param {boolean} selector Whether the cell should act as a select / unselect prompt, if any value bind to this as the selection variable
 * @param {Object} ^qbTable.qbTable The query Object to mutate
+* @param {boolean} [selector] Whether the cell should act as a select / unselect prompt, if any value bind to this as the selection variable
+* @param {function} [onSelect] Function to run when the selection value changes. Called as ({value})
 *
 * @emits qbTableCellSelectMeta Issued by the meta-selector element to peer selection elements that the selection criteria has changed. Called as (arg) where arg is 'all', 'none', 'invert'
 * @emits qbTableCellSelect Issued by a regular selector element to broadcast its state has changed
@@ -684,7 +685,8 @@ angular.module('angular-ui-query-builder')
 .directive('qbCell', function () {
 	return {
 		scope: {
-			selector: '=?'
+			selector: '=?',
+			onSelect: '&?'
 		},
 		require: '^qbTable',
 		restrict: 'A',
@@ -728,6 +730,7 @@ angular.module('angular-ui-query-builder')
 				$element.on('click', function (e) {
 					return $scope.$apply(function () {
 						$scope.selector = !$scope.selector;
+						if ($scope.onSelect) $scope.onSelect({ value: $scope.selector });
 						$scope.qbTable.$broadcast('qbTableCellSelect');
 					});
 				});
@@ -778,6 +781,7 @@ angular.module('angular-ui-query-builder')
 // qbPagination {{{
 /**
 * Directive to add table pagination
+* NOTE: Any transcluded content will be inserted in the center of the pagination area
 * @param {Object} ^qbTable.qbTable The query Object to mutate
 */
 .directive('qbPagination', function () {
@@ -785,6 +789,7 @@ angular.module('angular-ui-query-builder')
 		scope: {},
 		require: '^qbTable',
 		restrict: 'EA',
+		transclude: true,
 		controller: ['$attrs', '$scope', 'qbTableSettings', function controller($attrs, $scope, qbTableSettings) {
 			var $ctrl = this;
 
@@ -811,7 +816,7 @@ angular.module('angular-ui-query-builder')
 		link: function link(scope, element, attrs, parentScope) {
 			scope.qbTable = parentScope;
 		},
-		template: '\n\t\t<nav>\n\t\t\t<ul class="pager">\n\t\t\t\t<li ng-class="canPrev ? \'\' : \'disabled\'" class="previous"><a ng-click="navPageRelative(-1)"><i class="fa fa-arrow-left"></i></a></li>\n\t\t\t\t<li ng-class="canNext ? \'\' : \'disabled\'" class="next"><a ng-click="navPageRelative(1)"><i class="fa fa-arrow-right"></i></a></li>\n\t\t\t</ul>\n\t\t</nav>\n\t'
+		template: '\n\t\t<nav>\n\t\t\t<ul class="pager">\n\t\t\t\t<li ng-class="canPrev ? \'\' : \'disabled\'" class="previous"><a ng-click="navPageRelative(-1)"><i class="fa fa-arrow-left"></i></a></li>\n\t\t\t\t<ng-transclude class="text-center"></ng-transclude>\n\t\t\t\t<li ng-class="canNext ? \'\' : \'disabled\'" class="next"><a ng-click="navPageRelative(1)"><i class="fa fa-arrow-right"></i></a></li>\n\t\t\t</ul>\n\t\t</nav>\n\t'
 	};
 })
 // }}}
