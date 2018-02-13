@@ -311,12 +311,14 @@ angular.module('angular-ui-query-builder')
 // qbPagination {{{
 /**
 * Directive to add table pagination
+* NOTE: Any transcluded content will be inserted in the center of the pagination area
 * @param {Object} ^qbTable.qbTable The query Object to mutate
 */
 .directive('qbPagination', function() { return {
 	scope: {},
 	require: '^qbTable',
 	restrict: 'EA',
+	transclude: true,
 	controller: function($attrs, $scope, qbTableSettings) {
 		var $ctrl = this;
 
@@ -347,6 +349,7 @@ angular.module('angular-ui-query-builder')
 		<nav>
 			<ul class="pager">
 				<li ng-class="canPrev ? '' : 'disabled'" class="previous"><a ng-click="navPageRelative(-1)"><i class="fa fa-arrow-left"></i></a></li>
+				<ng-transclude class="text-center"></ng-transclude>
 				<li ng-class="canNext ? '' : 'disabled'" class="next"><a ng-click="navPageRelative(1)"><i class="fa fa-arrow-right"></i></a></li>
 			</ul>
 		</nav>

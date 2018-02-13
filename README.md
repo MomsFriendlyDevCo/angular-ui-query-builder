@@ -216,6 +216,8 @@ An element, usually found in the `<tfoot>` section of a table which provides gen
 
 This directive has no attributes.
 
+**NOTE:** This is an optionally transcludable element. Any content within its tags will be inserted in the center of the pagination controls.
+
 
 
 TODO
