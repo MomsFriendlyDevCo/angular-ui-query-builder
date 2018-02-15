@@ -15,9 +15,6 @@ angular.module('angular-ui-query-builder',[])
 
 			<!-- Meta field: sort {{{ -->
 			<div class="query-container">
-				<!-- Root branch display {{{ -->
-				<div class="query-stem"><div></div></div>
-				<!-- }}} -->
 				<!-- Path component {{{ -->
 				<div class="query-block">
 					<div class="btn-group btn-block">
@@ -27,7 +24,6 @@ angular.module('angular-ui-query-builder',[])
 					</div>
 				</div>
 				<!-- }}} -->
-				<div class="query-stem"><div></div></div>
 				<!-- Query operand component {{{ -->
 				<div class="query-block btn-group">
 					<div class="btn btn-block btn-2">
@@ -39,9 +35,6 @@ angular.module('angular-ui-query-builder',[])
 			<!-- }}} -->
 			<!-- Meta field: limit {{{ -->
 			<div class="query-container">
-				<!-- Root branch display {{{ -->
-				<div class="query-stem"><div></div></div>
-				<!-- }}} -->
 				<!-- Path component {{{ -->
 				<div class="query-block">
 					<div class="btn-group btn-block">
@@ -51,20 +44,17 @@ angular.module('angular-ui-query-builder',[])
 					</div>
 				</div>
 				<!-- }}} -->
-				<div class="query-stem"><div></div></div>
 				<!-- Query operand component {{{ -->
 				<div class="query-block btn-group">
 					<div class="btn btn-block btn-2">
 						<input ng-model="$ctrl.query.limit" type="number" class="form-control"/>
 					</div>
 				</div>
-				<div class="query-stem"><div></div></div>
 				<div class="query-block btn-group">
 					<div class="btn btn-block btn-1">
 						Skipping
 					</div>
 				</div>
-				<div class="query-stem"><div></div></div>
 				<div class="query-block btn-group">
 					<div class="btn btn-block btn-2">
 						<input ng-model="$ctrl.query.skip" type="number" class="form-control"/>
@@ -110,7 +100,6 @@ angular.module('angular-ui-query-builder',[])
 	},
 	template: `
 		<div ng-repeat="leaf in $ctrl.properties | filter:{isMeta:false} track by leaf.id" ng-switch="leaf.spec.type" ng-repeat-emit="uiQueryQueryRepaint" class="query-container">
-			<div class="query-stem"><div></div></div>
 			<!-- Path component {{{ -->
 			<div class="query-block">
 				<div class="btn-group btn-block" ng-class="{new: !leaf.id}">
@@ -131,7 +120,6 @@ angular.module('angular-ui-query-builder',[])
 				</div>
 			</div>
 			<!-- }}} -->
-			<div ng-show="leaf.valueOperand" class="query-stem"><div></div></div>
 			<!-- Query type component {{{ -->
 			<div ng-show="leaf.valueOperand" class="query-block">
 				<div class="btn-group btn-block">
@@ -155,7 +143,6 @@ angular.module('angular-ui-query-builder',[])
 				</div>
 			</div>
 			<!-- }}} -->
-			<div ng-show="leaf.valueOperand" class="query-stem"><div></div></div>
 			<!-- Query operand component {{{ -->
 			<div ng-show="leaf.valueOperand" class="query-block btn-group" ng-switch="(operandConfig = $ctrl.operandsByID[leaf.valueOperand][leaf.spec.type] || $ctrl.operandsByID[leaf.valueOperand].base).type">
 				<div ng-switch-when="string" class="btn btn-block btn-3">
@@ -199,7 +186,6 @@ angular.module('angular-ui-query-builder',[])
 		</div>
 		<!-- Add button {{{ -->
 		<div class="query-container">
-			<div class="query-stem"><div></div></div>
 			<div class="query-block btn-group">
 				<a ng-click="$ctrl.add()" class="btn btn-lg btn-add btn-default">
 					<i class="fa fa-fw fa-plus fa-lg"></i>
