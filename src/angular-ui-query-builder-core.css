@@ -20,26 +20,50 @@
 	position: relative;
 	vertical-align: middle;
 }
+.ui-query-builder .query-container > .query-block:first-child {
+	margin-left: 17px;
+}
 /* }}} */
 /* Query block stems (connecting lines between blocks) {{{ */
-.ui-query-builder .query-block:first-child::before,
-.ui-query-builder .query-block + .query-block::before {
+.ui-query-builder .query-block:first-child::after,
+.ui-query-builder .query-block::before {
+	background-color: #ccc;
 	content: '';
 	display: block;
+	position: absolute;
+	z-index: -1;
+}
+/* Connector lines {{{ */
+.ui-query-builder .query-block::before {
 	height: 4px;
 	left: -30px;
-	position: absolute;
-}
-/* Root line {{{ */
-.ui-query-builder .query-block:first-child::before {
-	width: 4px;
-}
-/* }}} */
-/* Connector lines {{{ */
-.ui-query-builder .query-block + .query-block::before {
-	background-color: #ccc;
 	top: calc(50% - 2px);
 	width: 30px;
+}
+/* }}} */
+/* Root line {{{ */
+.ui-query-builder .query-block:first-child::after {
+	left: -17px;
+	width: 4px;
+}
+.ui-query-builder .query-block:first-child::before {
+	left: -17px;
+}
+/* Middle piece */
+.ui-query-builder .query-block:first-child::after {
+	height: 150%;
+	top: -25%;
+}
+/* Top piece */
+.ui-query-builder .query-container:first-of-type .query-block:first-child::after {
+	height: 100%;
+	top: 50%;
+}
+/* Bottom piece */
+.ui-query-builder .query-container:last-child .query-block:first-child::after {
+	bottom: 50%;
+	height: 100%;
+	top: initial;
 }
 /* }}} */
 /* }}} */
@@ -131,6 +155,10 @@
 	visibility: visible;
 }
 
+.ui-query-builder .btn > input.form-control {
+	border-bottom: 1px solid transparent;
+	border-radius: 0;
+}
 .ui-query-builder .btn:hover > input.form-control {
 	border-bottom: 1px solid #AAA;
 }
