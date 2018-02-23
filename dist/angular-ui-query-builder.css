@@ -103,6 +103,7 @@
 
 .ui-query-builder .btn.btn-add {
 	z-index: 1;
+	padding: 6px 3px;
 }
 
 .ui-query-builder .btn.btn-1 {background: #104E8B}
