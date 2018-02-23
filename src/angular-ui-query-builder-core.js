@@ -187,8 +187,8 @@ angular.module('angular-ui-query-builder',[])
 		<!-- Add button {{{ -->
 		<div class="query-container">
 			<div class="query-block btn-group">
-				<a ng-click="$ctrl.add()" class="btn btn-lg btn-add btn-default">
-					<i class="fa fa-fw fa-plus fa-lg"></i>
+				<a ng-click="$ctrl.add()" class="btn btn-add btn-default">
+					<i class="fa fa-fw fa-plus"></i>
 				</a>
 			</div>
 		</div>
