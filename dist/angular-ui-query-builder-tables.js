@@ -2,13 +2,53 @@
 
 angular.module('angular-ui-query-builder')
 
-// qbTableSettings (service) {{{
-.service('qbTableSettings', function () {
+// qbTableSettings (provider) {{{
+.provider('qbTableSettings', function () {
+	var qbTableSettings = this;
+
+	qbTableSettings.icons = {
+		sortNone: 'fa fa-fw fa-sort text-muted',
+		sortAsc: 'fa fa-fw fa-sort-alpha-asc text-primary',
+		sortDesc: 'fa fa-fw fa-sort-alpha-desc text-primary'
+	};
+
+	qbTableSettings.export = {
+		defaults: {
+			format: 'xlsx'
+		},
+		formats: [{ id: 'xlsx', title: 'Excel (XLSX)' }, { id: 'csv', title: 'CSV' }, { id: 'json', title: 'JSON' }, { id: 'html', title: 'HTML (display in browser)' }],
+		questions: [
+			/*
+   {
+   	id: String, // Unique ID for each question (will be sent in submitted query)
+   	type: String, // How to render the question. ENUM: 'text'
+   	title: String, // The question to ask
+   	default: String, // Default value of field if any
+   	help: String, // Optional help text,
+   },
+   */
+		]
+	};
+
+	qbTableSettings.$get = function () {
+		return qbTableSettings;
+	};
+
+	return qbTableSettings;
+})
+// }}}
+
+// qbTableUtilities (service) {{{
+.service('qbTableUtilities', function () {
 	return {
-		icons: {
-			sortNone: 'fa fa-fw fa-sort text-muted',
-			sortAsc: 'fa fa-fw fa-sort-alpha-asc text-primary',
-			sortDesc: 'fa fa-fw fa-sort-alpha-desc text-primary'
+		getSynopsis: function getSynopsis(query) {
+			var filters = _.keys(query).filter(function (i) {
+				return !['sort', 'skip', 'limit', 'select'].includes(i);
+			});
+
+			return [filters.length ? filters.length + ' filters' : 'All records', query.sort ? query.sort.startsWith('-') ? 'sorted by ' + query.sort.substr(1) + ' (reverse order)' : 'sorted by ' + query.sort : null, query.limit ? 'limited to ' + query.limit + ' rows' : null, query.offset ? 'starting at record ' + query.skip : null, query.select ? 'selecting only ' + query.select.length + ' columns' : null].filter(function (i) {
+				return i;
+			}).join(', ');
 		}
 	};
 })
@@ -35,15 +75,12 @@ angular.module('angular-ui-query-builder')
 			$ctrl.query = $scope.qbTable; // Copy into $ctrl so children can access it / $watch it
 
 			$ctrl.$broadcast = function (msg) {
-				var _console;
-
 				for (var _len = arguments.length, args = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
 					args[_key - 1] = arguments[_key];
 				}
 
-				(_console = console).log.apply(_console, ['BROADCAST DOWN', msg].concat(args));
-				$scope.$broadcast.apply($scope, [msg].concat(args)); // Rebind broadcast so its accessible from children
-			};
+				return $scope.$broadcast.apply($scope, [msg].concat(args));
+			}; // Rebind broadcast so its accessible from children
 			$ctrl.$on = function (event, cb) {
 				return $scope.$on(event, cb);
 			};
@@ -125,11 +162,13 @@ angular.module('angular-ui-query-builder')
 			$scope.isSorted = false; // False, 'asc', 'desc'
 
 			$ctrl.$onInit = function () {
-				return $scope.canSort = $scope.sortable || $attrs.sortable === '';
+				$scope.canSort = $scope.sortable || $attrs.sortable === '';
+				$element.toggleClass('sortable', $scope.canSort);
 			};
 
 			$scope.$watch('qbTable.query.sort', function (sorter) {
-				var sortField = $scope.sortable || $scope.q;
+				var sortField = $scope.sortable || $scope.qbCol;
+
 				if (!sorter) {
 					$scope.isSorted = false;
 				} else if (angular.isArray(sorter) && sorter.some(function (i) {
@@ -155,11 +194,13 @@ angular.module('angular-ui-query-builder')
 				}
 			};
 			// }}}
+
+			$element.addClass('qb-col');
 		}],
 		link: function link(scope, element, attrs, parentScope) {
 			scope.qbTable = parentScope;
 		},
-		template: '\n\t\t<ng-transclude></ng-transclude>\n\t\t<a ng-if="canSort" ng-click="toggleSort()" class="pull-right">\n\t\t\t<i class="{{\n\t\t\t\tisSorted == \'asc\' ? qbTableSettings.icons.sortAsc\n\t\t\t\t: isSorted == \'desc\' ? qbTableSettings.icons.sortDesc\n\t\t\t\t: qbTableSettings.icons.sortNone\n\t\t\t}}"></i>\n\t\t</a>\n\t'
+		template: '\n\t\t<div class="qb-col-wrapper">\n\t\t\t<ng-transclude></ng-transclude>\n\t\t\t<a ng-if="canSort" ng-click="toggleSort()" class="qb-col-right">\n\t\t\t\t<i class="{{\n\t\t\t\t\tisSorted == \'asc\' ? qbTableSettings.icons.sortAsc\n\t\t\t\t\t: isSorted == \'desc\' ? qbTableSettings.icons.sortDesc\n\t\t\t\t\t: qbTableSettings.icons.sortNone\n\t\t\t\t}}"></i>\n\t\t\t</a>\n\t\t</div>\n\t'
 	};
 })
 // }}}
@@ -167,15 +208,22 @@ angular.module('angular-ui-query-builder')
 // qbCell (directive) {{{
 /**
 * Directive for cell elements within a table
-* @param {boolean} selector Whether the cell should act as a select / unselect prompt, if any value bind to this as the selection variable
 * @param {Object} ^qbTable.qbTable The query Object to mutate
+* @param {boolean} [selector] Whether the cell should act as a select / unselect prompt, if any value bind to this as the selection variable
+* @param {function} [onSelect] Function to run when the selection value changes. Called as ({value})
+*
+* @emits qbTableCellSelectMeta Issued by the meta-selector element to peer selection elements that the selection criteria has changed. Called as (arg) where arg is 'all', 'none', 'invert'
+* @emits qbTableCellSelect Issued by a regular selector element to broadcast its state has changed
+* @emits qbTableCellSelectStatus Sent to one or more child elements as (array) to enquire their status, used to figure out if everything / partial / no items are selected. Each item is expected to add its status to `status` as a boolean
+*
 * @example
 * <td qb-cell selector="row.selected"></td>
 */
 .directive('qbCell', function () {
 	return {
 		scope: {
-			selector: '=?'
+			selector: '=?',
+			onSelect: '&?'
 		},
 		require: '^qbTable',
 		restrict: 'A',
@@ -188,38 +236,54 @@ angular.module('angular-ui-query-builder')
 			// Meta selection support {{{
 			// A cell `isMeta` if it detects its located in the `thead` section of a table
 			$scope.isMeta = $element.parents('thead').length > 0;
+
+			if ($scope.isMeta) {
+				$timeout(function () {
+					return $scope.qbTable.$on('qbTableCellSelect', function () {
+						// Ask all children what their status is
+						var status = [];
+						$scope.qbTable.$broadcast('qbTableCellSelectStatus', status);
+
+						$scope.metaStatus = status.every(function (i) {
+							return i;
+						}) ? 'all' : status.some(function (i) {
+							return i;
+						}) ? 'some' : 'none';
+					});
+				});
+			}
 			// }}}
 
 			// Selection support {{{
 			$scope.isSelector = 'selector' in $attrs;
 			$scope.$watch('selector', function () {
-				if ($scope.isSelector) {
-					$element.toggleClass('selector', $scope.isSelector);
-				}
+				if ($scope.isSelector) $element.toggleClass('selector', $scope.isSelector);
 
-				if ($scope.isSelector && !$scope.isMeta) {
-					$element.parents('tr').toggleClass('selected', !!$scope.selector);
-					$element.find('input[type=checkbox]').prop('checked', !!$scope.selector);
-				}
+				if ($scope.isSelector && !$scope.isMeta) $element.parents('tr').toggleClass('selected', !!$scope.selector);
 			});
 
-			// Also respond to clicking anywhere in the 'TD' tag
-			$element.on('click', function (e) {
-				if (e.target.tagName != 'INPUT') e.preventDefault(); // Clicking on the background should also disable bubbling
-				$scope.$apply(function () {
-					return $scope.selector = !$scope.selector;
+			// Respond to clicking anywhere in the 'TD' tag
+			if ($scope.isSelector && !$scope.isMeta) {
+				$element.on('click', function (e) {
+					return $scope.$apply(function () {
+						$scope.selector = !$scope.selector;
+						if ($scope.onSelect) $scope.onSelect({ value: $scope.selector });
+						$scope.qbTable.$broadcast('qbTableCellSelect');
+					});
 				});
-			});
+			}
 
 			// Handle meta interaction
 			$scope.metaSelect = function (type) {
-				return $scope.qbTable.$broadcast('qbTableCellSelect', type);
+				return $scope.qbTable.$broadcast('qbTableCellSelectMeta', type);
 			};
 
 			// Bind to event listener and respond to selection directives from meta element
-			if ($scope.isSelector) {
+			if ($scope.isSelector && !$scope.isMeta) {
+				// If we're a standard per-row minion respond to certain events
 				$timeout(function () {
-					return $scope.qbTable.$on('qbTableCellSelect', function (e, type) {
+
+					$scope.qbTable.$on('qbTableCellSelectMeta', function (e, type) {
 						switch (type) {
 							case 'all':
 								$scope.selector = true;break;
@@ -230,6 +294,11 @@ angular.module('angular-ui-query-builder')
 							default:
 								throw new Error('Unknown selection type: ' + type);
 						}
+						$scope.qbTable.$broadcast('qbTableCellSelect'); // Trigger a recount of what is/isn't selected
+					});
+
+					$scope.qbTable.$on('qbTableCellSelectStatus', function (e, status) {
+						return status.push($scope.selector);
 					});
 				});
 			}
@@ -241,7 +310,7 @@ angular.module('angular-ui-query-builder')
 		link: function link(scope, element, attrs, parentScope) {
 			scope.qbTable = parentScope;
 		},
-		template: '\n\t\t<ng-transclude></ng-transclude>\n\t\t<div ng-if="isSelector && isMeta" class="btn-group">\n\t\t\t<a class="btn btn-default dropdown-toggle" data-toggle="dropdown">\n\t\t\t\t<input type="checkbox"/>\n\t\t\t\t<i class="fa fa-caret-down"></i>\n\t\t\t</a>\n\t\t\t<ul class="dropdown-menu">\n\t\t\t\t<li><a ng-click="metaSelect(\'all\')">All</a></li>\n\t\t\t\t<li><a ng-click="metaSelect(\'invert\')">Invert</a></li>\n\t\t\t\t<li><a ng-click="metaSelect(\'none\')">None</a></li>\n\t\t\t</ul>\n\t\t</div>\n\t\t<div ng-if="isSelector && !isMeta" class="checkbox">\n\t\t\t<label>\n\t\t\t\t<input type="checkbox"/>\n\t\t\t</label>\n\t\t</div>\n\t'
+		template: '\n\t\t<ng-transclude></ng-transclude>\n\t\t<div ng-if="isSelector && isMeta" class="btn-group">\n\t\t\t<a class="btn btn-default dropdown-toggle" data-toggle="dropdown">\n\t\t\t\t<i class="fa fa-lg fa-fw" ng-class="metaStatus == \'all\' ? \'fa-check-square-o text-primary\' : metaStatus == \'some\' ? \'fa-minus-square-o\' : \'fa-square-o\'"></i>\n\t\t\t\t<i class="fa fa-caret-down"></i>\n\t\t\t</a>\n\t\t\t<ul class="dropdown-menu">\n\t\t\t\t<li><a ng-click="metaSelect(\'all\')">All</a></li>\n\t\t\t\t<li><a ng-click="metaSelect(\'invert\')">Invert</a></li>\n\t\t\t\t<li><a ng-click="metaSelect(\'none\')">None</a></li>\n\t\t\t</ul>\n\t\t</div>\n\t\t<div ng-if="isSelector && !isMeta">\n\t\t\t<i class="fa fa-lg fa-fw" ng-class="selector ? \'fa-check-square-o\' : \'fa-square-o\'"></i>\n\t\t</div>\n\t'
 	};
 })
 // }}}
@@ -249,6 +318,7 @@ angular.module('angular-ui-query-builder')
 // qbPagination {{{
 /**
 * Directive to add table pagination
+* NOTE: Any transcluded content will be inserted in the center of the pagination area
 * @param {Object} ^qbTable.qbTable The query Object to mutate
 */
 .directive('qbPagination', function () {
@@ -256,6 +326,7 @@ angular.module('angular-ui-query-builder')
 		scope: {},
 		require: '^qbTable',
 		restrict: 'EA',
+		transclude: true,
 		controller: ['$attrs', '$scope', 'qbTableSettings', function controller($attrs, $scope, qbTableSettings) {
 			var $ctrl = this;
 
@@ -282,7 +353,109 @@ angular.module('angular-ui-query-builder')
 		link: function link(scope, element, attrs, parentScope) {
 			scope.qbTable = parentScope;
 		},
-		template: '\n\t\t<nav>\n\t\t\t<ul class="pager">\n\t\t\t\t<li ng-class="canPrev ? \'\' : \'disabled\'" class="previous"><a ng-click="navPageRelative(-1)"><i class="fa fa-arrow-left"></i></a></li>\n\t\t\t\t<li ng-class="canNext ? \'\' : \'disabled\'" class="next"><a ng-click="navPageRelative(1)"><i class="fa fa-arrow-right"></i></a></li>\n\t\t\t</ul>\n\t\t</nav>\n\t'
+		template: '\n\t\t<nav>\n\t\t\t<ul class="pager">\n\t\t\t\t<li ng-class="canPrev ? \'\' : \'disabled\'" class="previous"><a ng-click="navPageRelative(-1)"><i class="fa fa-arrow-left"></i></a></li>\n\t\t\t\t<ng-transclude class="text-center"></ng-transclude>\n\t\t\t\t<li ng-class="canNext ? \'\' : \'disabled\'" class="next"><a ng-click="navPageRelative(1)"><i class="fa fa-arrow-right"></i></a></li>\n\t\t\t</ul>\n\t\t</nav>\n\t'
+	};
+})
+// }}}
+
+// qbExport {{{
+/**
+* Directive to export a table via a query
+* NOTE: This element draws a simple 'Export...' button by default but can be replaced by any valid transcluded HTML. Simply call `exportPrompt()` to action
+* @param {Object} query The query Object to use when exporting
+* @param {Object} spec The specification object of the collection
+* @param {string} url The URL endpoint to redirect to for the query to be executed (typically something like `/api/widgets`)
+*
+* @example Simple export button
+* <qb-export query="myQuery" spec="mySpec"></qb-export>
+* @example Custom button
+* <qb-export query="myQuery" spec="mySpec">
+*   <a class="btn btn-primary" ng-click="exportPrompt()">Export this list</a>
+* </qb-export>
+*/
+.directive('qbExport', function () {
+	return {
+		scope: {
+			query: '<',
+			spec: '<',
+			url: '@'
+		},
+		transclude: true,
+		restrict: 'EA',
+		controller: ['$element', '$httpParamSerializer', '$scope', '$timeout', '$window', 'qbTableSettings', 'qbTableUtilities', function controller($element, $httpParamSerializer, $scope, $timeout, $window, qbTableSettings, qbTableUtilities) {
+			var $ctrl = this;
+
+			$scope.qbTableSettings = qbTableSettings;
+
+			$scope.settings = {}; // Set in $scope.exportPrompt()
+
+			$scope.isShowing = false;
+			$scope.exportPrompt = function () {
+				$scope.settings = angular.extend(angular.copy(qbTableSettings.export.defaults), {
+					query: _($scope.query).omitBy(function (v, k) {
+						return ['skip', 'limit'].includes(k);
+					}).value(),
+					columns: _.map($scope.spec, function (v, k) {
+						v.id = k;
+						v.title = _.startCase(k);
+						v.selected = true;
+						return v;
+					}),
+					questions: _(qbTableSettings.export.questions) // Populate questions with defaults
+					.mapKeys(function (v) {
+						return v.id;
+					}).mapValues(function (v) {
+						return v.default;
+					}).value()
+				});
+
+				$element.find('.modal').on('show.bs.modal', function () {
+					return $timeout(function () {
+						return $scope.isShowing = true;
+					});
+				}).on('hidden.bs.modal', function () {
+					return $timeout(function () {
+						return $scope.isShowing = false;
+					});
+				}).modal('show');
+			};
+
+			$scope.exportExecute = function () {
+				var query = angular.extend($scope.settings.query, {
+					select: $scope.settings.columns.filter(function (c) {
+						return c.selected;
+					}).map(function (c) {
+						return c.id;
+					}),
+					format: $scope.settings.format
+				}, $scope.settings.questions);
+
+				$window.open($scope.url + '?' + $httpParamSerializer(query));
+			};
+
+			// Generate a readable synopsis of the query {{{
+			$scope.querySynopsis;
+			$scope.$watchGroup(['isShowing', 'settings.query'], function () {
+				if (!$scope.isShowing) return; // Don't bother if we're not showing anything anyway
+				$scope.querySynopsis = qbTableUtilities.getSynopsis($scope.settings.query);
+			});
+			// }}}
+
+			// Generate a readable synopsis of the columns collapse {{{
+			$scope.columnSynopsis;
+			$scope.$watchGroup(['isShowing', function () {
+				return _.get($scope.settings, 'columns', []).map(function (c) {
+					return c.id + '=' + c.selected;
+				}).join('&');
+			}], function () {
+				if (!$scope.isShowing) return; // Don't bother if we're not showing anything anyway
+				$scope.columnSynopsis = $scope.settings.columns.filter(function (c) {
+					return c.selected;
+				}).length + ' columns';
+			});
+			// }}}
+		}],
+		template: '\n\t\t<div class="modal fade">\n\t\t\t<div class="modal-dialog modal-lg">\n\t\t\t\t<div ng-if="isShowing" class="modal-content">\n\t\t\t\t\t<div class="modal-header">\n\t\t\t\t\t\t<a class="close" data-dismiss="modal"><i class="fa fa-times"></i></a>\n\t\t\t\t\t\t<h4 class="modal-title">Export</h4>\n\t\t\t\t\t</div>\n\t\t\t\t\t<div class="modal-body form-horizontal">\n\t\t\t\t\t\t<div class="form-group">\n\t\t\t\t\t\t\t<label class="col-sm-3 control-label">Output format</label>\n\t\t\t\t\t\t\t<div class="col-sm-9">\n\t\t\t\t\t\t\t\t<select ng-model="settings.format" class="form-control">\n\t\t\t\t\t\t\t\t\t<option ng-repeat="format in qbTableSettings.export.formats track by format.id" value="{{format.id}}">{{format.title}}</option>\n\t\t\t\t\t\t\t\t</select>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t\t<div class="form-group">\n\t\t\t\t\t\t\t<label class="col-sm-3 control-label">Criteria</label>\n\t\t\t\t\t\t\t<div class="col-sm-9">\n\t\t\t\t\t\t\t\t<div class="panel-group" id="qb-export-criteria-{{$id}}">\n\t\t\t\t\t\t\t\t\t<div class="panel panel-default">\n\t\t\t\t\t\t\t\t\t\t<div class="panel-heading">\n\t\t\t\t\t\t\t\t\t\t\t<h4 class="panel-title">\n\t\t\t\t\t\t\t\t\t\t\t\t<a data-toggle="collapse" data-target="#qb-export-criteria-{{$id}}-query" data-parent="#qb-export-criteria-{{$id}}" class="btn-block collapsed">\n\t\t\t\t\t\t\t\t\t\t\t\t\t{{querySynopsis}}\n\t\t\t\t\t\t\t\t\t\t\t\t\t<i class="fa fa-caret-right pull-right"></i>\n\t\t\t\t\t\t\t\t\t\t\t\t</a>\n\t\t\t\t\t\t\t\t\t\t\t</h4>\n\t\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t\t\t<div id="qb-export-criteria-{{$id}}-query" class="panel-collapse collapse container">\n\t\t\t\t\t\t\t\t\t\t\t<ui-query-builder\n\t\t\t\t\t\t\t\t\t\t\t\tquery="settings.query"\n\t\t\t\t\t\t\t\t\t\t\t\tspec="spec"\n\t\t\t\t\t\t\t\t\t\t\t></ui-query-builder>\n\t\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t\t<div class="form-group">\n\t\t\t\t\t\t\t<label class="col-sm-3 control-label">Columns</label>\n\t\t\t\t\t\t\t<div class="col-sm-9">\n\t\t\t\t\t\t\t\t<div class="panel-group" id="qb-export-columns-{{$id}}">\n\t\t\t\t\t\t\t\t\t<div class="panel panel-default">\n\t\t\t\t\t\t\t\t\t\t<div class="panel-heading">\n\t\t\t\t\t\t\t\t\t\t\t<h4 class="panel-title">\n\t\t\t\t\t\t\t\t\t\t\t\t<a data-toggle="collapse" data-target="#qb-export-columns-{{$id}}-columns" data-parent="#qb-export-columns-{{$id}}" class="btn-block collapsed">\n\t\t\t\t\t\t\t\t\t\t\t\t\t{{columnSynopsis}}\n\t\t\t\t\t\t\t\t\t\t\t\t\t<i class="fa fa-caret-right pull-right"></i>\n\t\t\t\t\t\t\t\t\t\t\t\t</a>\n\t\t\t\t\t\t\t\t\t\t\t</h4>\n\t\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t\t\t<div id="qb-export-columns-{{$id}}-columns" class="panel-collapse collapse row">\n\t\t\t\t\t\t\t\t\t\t\t<div class="col-xs-12">\n\t\t\t\t\t\t\t\t\t\t\t\t<table qb-table class="table table-hover">\n\t\t\t\t\t\t\t\t\t\t\t\t\t<thead>\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t<tr>\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t<th qb-cell selector></th>\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t<th>Column</th>\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t</tr>\n\t\t\t\t\t\t\t\t\t\t\t\t\t</thead>\n\t\t\t\t\t\t\t\t\t\t\t\t\t<tbody>\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t<tr ng-repeat="col in settings.columns track by col.id">\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t<td qb-cell selector="col.selected"></td>\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t<td>{{col.title}}</td>\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t</tr>\n\t\t\t\t\t\t\t\t\t\t\t\t\t</tbody>\n\t\t\t\t\t\t\t\t\t\t\t\t</table>\n\t\t\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t\t<div ng-repeat="question in qbTableSettings.export.questions track by question.id" class="form-group">\n\t\t\t\t\t\t\t<label class="col-sm-3 control-label">{{question.title}}</label>\n\t\t\t\t\t\t\t<div ng-switch="question.type" class="col-sm-9">\n\t\t\t\t\t\t\t\t<div ng-switch-when="text">\n\t\t\t\t\t\t\t\t\t<input type="text" ng-model="settings.questions[question.id]" class="form-control"/>\n\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t<div ng-switch-default>\n\t\t\t\t\t\t\t\t\t<div class="alert alert-danger">\n\t\t\t\t\t\t\t\t\t\tUnknown question type: "{{question.type}}"\n\t\t\t\t\t\t\t\t\t\t<pre>{{question | json}}</pre>\n\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t<div ng-if="question.help" class="help-block">{{question.help}}</div>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t</div>\n\t\t\t\t\t<div class="modal-footer">\n\t\t\t\t\t\t<div class="pull-left">\n\t\t\t\t\t\t\t<a class="btn btn-danger" data-dismiss="modal">Cancel</a>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t\t<div class="pull-right">\n\t\t\t\t\t\t\t<a ng-click="exportExecute()" class="btn btn-primary" data-dismiss="modal">Export</a>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t</div>\n\t\t<ng-transclude>\n\t\t\t<a ng-click="exportPrompt()" class="btn btn-default">Export...</a>\n\t\t</ng-transclude>\n\t'
 	};
 });
 // }}}
