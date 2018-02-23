@@ -1,25 +1,41 @@
 angular.module('angular-ui-query-builder')
 
-// qbTableSettings (service) {{{
-.service('qbTableSettings', function() {
-	return {
-		icons: {
-			sortNone: 'fa fa-fw fa-sort text-muted',
-			sortAsc: 'fa fa-fw fa-sort-alpha-asc text-primary',
-			sortDesc: 'fa fa-fw fa-sort-alpha-desc text-primary',
-		},
-		export: {
-			defaults: {
-				format: 'xlsx',
-			},
-			formats: [
-				{id: 'xlsx', title: 'Excel (XLSX)'},
-				{id: 'csv', title: 'CSV'},
-				{id: 'json', title: 'JSON'},
-				{id: 'html', title: 'HTML (display in browser)'},
-			],
-		},
+// qbTableSettings (provider) {{{
+.provider('qbTableSettings', function() {
+	var qbTableSettings = this;
+
+	qbTableSettings.icons = {
+		sortNone: 'fa fa-fw fa-sort text-muted',
+		sortAsc: 'fa fa-fw fa-sort-alpha-asc text-primary',
+		sortDesc: 'fa fa-fw fa-sort-alpha-desc text-primary',
 	};
+
+	qbTableSettings.export = {
+		defaults: {
+			format: 'xlsx',
+		},
+		formats: [
+			{id: 'xlsx', title: 'Excel (XLSX)'},
+			{id: 'csv', title: 'CSV'},
+			{id: 'json', title: 'JSON'},
+			{id: 'html', title: 'HTML (display in browser)'},
+		],
+		questions: [
+			/*
+			{
+				id: String, // Unique ID for each question (will be sent in submitted query)
+				type: String, // How to render the question. ENUM: 'text'
+				title: String, // The question to ask
+				default: String, // Default value of field if any
+				help: String, // Optional help text,
+			},
+			*/
+		],
+	};
+
+	qbTableSettings.$get = function() { return qbTableSettings };
+
+	return qbTableSettings;
 })
 // }}}
 
@@ -382,7 +398,7 @@ angular.module('angular-ui-query-builder')
 
 		$scope.qbTableSettings = qbTableSettings;
 
-		$scope.settings = {};
+		$scope.settings = {}; // Set in $scope.exportPrompt()
 
 		$scope.isShowing = false;
 		$scope.exportPrompt = ()=> {
@@ -398,6 +414,10 @@ angular.module('angular-ui-query-builder')
 						v.selected = true;
 						return v;
 					}),
+					questions: _(qbTableSettings.export.questions) // Populate questions with defaults
+						.mapKeys(v => v.id)
+						.mapValues(v => v.default)
+						.value(),
 				}
 			);
 
@@ -413,7 +433,7 @@ angular.module('angular-ui-query-builder')
 					.filter(c => c.selected)
 					.map(c => c.id),
 				format: $scope.settings.format,
-			});
+			}, $scope.settings.questions);
 
 			$window.open(`${$scope.url}?${$httpParamSerializer(query)}`);
 		};
@@ -510,6 +530,21 @@ angular.module('angular-ui-query-builder')
 										</div>
 									</div>
 								</div>
+							</div>
+						</div>
+						<div ng-repeat="question in qbTableSettings.export.questions track by question.id" class="form-group">
+							<label class="col-sm-3 control-label">{{question.title}}</label>
+							<div ng-switch="question.type" class="col-sm-9">
+								<div ng-switch-when="text">
+									<input type="text" ng-model="settings.questions[question.id]" class="form-control"/>
+								</div>
+								<div ng-switch-default>
+									<div class="alert alert-danger">
+										Unknown question type: "{{question.type}}"
+										<pre>{{question | json}}</pre>
+									</div>
+								</div>
+								<div ng-if="question.help" class="help-block">{{question.help}}</div>
 							</div>
 						</div>
 					</div>

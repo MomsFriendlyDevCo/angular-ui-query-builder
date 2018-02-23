@@ -5,6 +5,18 @@ var app = angular.module("app", [
 // Force URL encoding to use jQuery syntax so we can pass JSON to the backend using URL query objects
 app.config($httpProvider => $httpProvider.defaults.paramSerializer = '$httpParamSerializerJQLike')
 
+// Add a custom quesiton to the exporter
+app.config(qbTableSettingsProvider => {
+	qbTableSettingsProvider.export.questions.push({
+		id: 'docTitle',
+		type: 'text',
+		title: 'Document title',
+		default: 'Exported Data',
+		help: 'What your document will be called when exported',
+	});
+
+});
+
 app.controller('queryBuilderExampleCtrl', function($http, $scope) {
 	$scope.spec = {
 		_id: {type: 'objectId'},

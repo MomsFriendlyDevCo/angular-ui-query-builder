@@ -219,6 +219,37 @@ This directive has no attributes.
 **NOTE:** This is an optionally transcludable element. Any content within its tags will be inserted in the center of the pagination controls.
 
 
+qbTableSettings (Provider)
+--------------------------
+Simple shared resource that can be used to set qbTable settings globally in an App.
+
+```javascript
+// Add a custom question into the exporter
+app.config(qbTableSettingsProvider => {
+	qbTableSettingsProvider.export.questions.push({
+		id: 'docTitle',
+		type: 'text',
+		title: 'Document title',
+		default: 'Exported Data',
+		help: 'What your document will be called when exported',
+	});
+});
+```
+
+Valid properties are:
+
+| Attribute          | Type         | Description                                                                                                                                                                                                          |
+|--------------------|--------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `icons`            | `object`     | Generic icon choices in your application. See the individual contents of this object for more details                                                                                                                |
+| `export`           | `object`     | Options relevent to the qbExport directive                                                                                                                                                                           |
+| `export.formats`   | `array`      | Collection of suported output formats. Each entity should have an `id` + `title` property                                                                                                                            |
+| `export.questions` | `array`      | Additional questions to ask when exporting. Each question will be apptended onto the query posted to the server. Questions should have `id`, `type` and `title` properties with optional `default` and `help` fields |
+
+
+NOTE: Since this is an Angular Provider this service is exposed as `qbTableSettingsProvider` during the config stage and `qbTableSettings` if you require it in a controller / component.
+
+
+
 
 TODO
 ====
