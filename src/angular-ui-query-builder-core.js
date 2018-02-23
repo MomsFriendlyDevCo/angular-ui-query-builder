@@ -527,7 +527,7 @@ angular.module('angular-ui-query-builder',[])
 		// Branch CRUD {{{
 		$ctrl.add = ()=> {
 			if ($ctrl.properties.some(p => !p.id)) return; // Check there are no new items currently in the process of being added
-			$ctrl.properties.push({});
+			$ctrl.properties.push({isMeta: false});
 
 			// Wait for the page to redraw then force the dropdown to open
 			// Yes I know this is a weird work around but we have to wait for the DOM to settle for some reason before we can add the `open` class - MC 2017-10-03
