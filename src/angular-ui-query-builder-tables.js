@@ -41,29 +41,7 @@ angular.module('angular-ui-query-builder')
 
 // qbTableUtilities (service) {{{
 .service('qbTableUtilities', function() { return {
-	getSynopsis: query => {
-		var filters = _.keys(query).filter(i => !['sort', 'skip', 'limit', 'select'].includes(i));
-
-		return [
-			filters.length ? `${filters.length} filters` : 'All records',
-			query.sort
-				? (
-					query.sort.startsWith('-')
-						? `sorted by ${query.sort.substr(1)} (reverse order)`
-						: `sorted by ${query.sort}`
-				)
-				: null,
-			query.limit
-				? `limited to ${query.limit} rows`
-				: null,
-			query.offset
-				? `starting at record ${query.skip}`
-				: null,
-			query.select
-				? `selecting only ${query.select.length} columns`
-				: null,
-		].filter(i => i).join(', ');
-	},
+	// @include ./utilities.js
 }})
 // }}}
 
@@ -561,6 +539,98 @@ angular.module('angular-ui-query-builder')
 		</div>
 		<ng-transclude>
 			<a ng-click="exportPrompt()" class="btn btn-default">Export...</a>
+		</ng-transclude>
+	`,
+}})
+// }}}
+
+// qbSearch {{{
+/**
+* Directive to automatically populate a generic search into a query via a single textbox
+* NOTE: Any transcluded content will replace the basic `<input/>` template. Bind to `search` to set the search criteria and fire `submit()` to submit the change, 'clear()' to clear the search
+* @param {Object} query The query object to populate
+* @param {Object} spec The specification object of the collection
+*/
+.directive('qbSearch', function() { return {
+	scope: {
+		query: '=',
+		spec: '<',
+	},
+	restrict: 'AE',
+	transclude: true,
+	controller: function($scope, qbTableUtilities) {
+		var $ctrl = this;
+
+		$scope.search = '';
+
+		$scope.submit = ()=> {
+			if (!$scope.search) return $scope.clear();
+
+			var searchQuery = {
+				$comment: 'search',
+				$or: _($scope.spec)
+					.pickBy(v => v.type == 'string')
+					.mapValues((v, k) => [{$regexp: '/' + qbTableUtilities.escapeRegExp($scope.search) + '/', options: 'i'}])
+					.value()
+			};
+
+
+			var existingQuery = qbTableUtilities.find($scope.query, {$comment: 'search'});
+			if (existingQuery && _.isEqual(existingQuery, ['$comment'])) { // Existing - found at root level
+				$scope.query = searchQuery;
+			} else if (existingQuery && existingQuery[0] == '$and') { // Existing - Found within $and wrapper
+				_.set($scope.query, existingQuery, searchQuery);
+			} else if (_.isEqual(_.keys($scope.query), ['$and'])) { // Non-existing - Query is of form {$and: QUERY} --
+				$scope.query.$and.push(searchQuery);
+			} else if (_.isObject($scope.query)) { // Non-existing - Wrap entire query in {$and}
+				$scope.query = {$and: [$scope.query, searchQuery]};
+			} else { // Give up
+				console.warn('Unable to place search query', searchQuery, 'within complex query', $scope.query);
+			}
+		};
+
+		$scope.clear = ()=> {
+			var existingQuery = qbTableUtilities.find($scope.query, {$comment: 'search'});
+			if (existingQuery && _.isEqual(existingQuery, ['$comment'])) { // Existing - found at root level
+				$scope.query = {};
+			} else if (existingQuery && existingQuery[0] == '$and') { // Existing - Found within $and wrapper, unwrap and return to simple key/val format
+				$scope.query = $scope.query.$and.find((v, k) => v.$comment != 'search');
+			} else if (existingQuery) { // Existing - Delete by path
+				_.unset($scope.query, existingQuery);
+			} else { // Give up
+				console.warn('Unable to clear search query within complex query', $scope.query);
+			}
+		};
+
+		// Try and populate initial query
+		$scope.check = ()=> {
+			var existingQuery = qbTableUtilities.find($scope.query, {$comment: 'search'});
+			if (!existingQuery) return;
+
+			var searchExpression = _.chain($scope.query)
+				.get(existingQuery.concat(['$or', 0])) // Look at found path + $or.0 (first element within $or expression)
+				.values() // Flatten into an array
+				.get([0, '$regexp']) // Find the first $regexp matcher
+				.value()
+
+			if (searchExpression)
+				$scope.search = qbTableUtilities.unescapeRegExp(_.trim(searchExpression, '/'));
+		};
+
+		$ctrl.$onInit = ()=> $scope.check();
+	},
+	template: `
+		<ng-transclude>
+			<form ng-submit="submit()" class="form-inline">
+				<div class="form-group">
+					<div class="input-group">
+						<input type="text" ng-model="search" class="form-control"/>
+						<a ng-click="submit()" class="btn btn-default input-group-addon">
+							<i class="fa fa-search"/>
+						</a>
+					</div>
+				</div>
+			</div>
 		</ng-transclude>
 	`,
 }})

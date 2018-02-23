@@ -6,6 +6,7 @@ var file = require('gulp-file');
 var ghPages = require('gulp-gh-pages');
 var gulp = require('gulp');
 var gutil = require('gulp-util');
+var preprocess = require('gulp-preprocess');
 var plumber = require('gulp-plumber');
 var nodemon = require('gulp-nodemon');
 var rename = require('gulp-rename');
@@ -61,6 +62,7 @@ gulp.task('js:all', ()=>
 			},
 		}))
 		.pipe(concat('angular-ui-query-builder.js'))
+		.pipe(preprocess({context: {ANGULAR: true}}))
 		.pipe(babel({
 			presets: ['es2015'],
 			plugins: ['angularjs-annotate'],
@@ -81,6 +83,7 @@ gulp.task('js:core', ()=>
 			},
 		}))
 		.pipe(concat('angular-ui-query-builder-core.js'))
+		.pipe(preprocess({context: {ANGULAR: true}}))
 		.pipe(babel({
 			presets: ['es2015'],
 			plugins: ['angularjs-annotate'],
@@ -101,6 +104,7 @@ gulp.task('js:tables', ()=>
 			},
 		}))
 		.pipe(concat('angular-ui-query-builder-tables.js'))
+		.pipe(preprocess({context: {ANGULAR: true}}))
 		.pipe(babel({
 			presets: ['es2015'],
 			plugins: ['angularjs-annotate'],
