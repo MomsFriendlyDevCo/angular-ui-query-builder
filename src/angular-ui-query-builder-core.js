@@ -99,6 +99,27 @@ angular.module('angular-ui-query-builder',[])
 		spec: '<',
 	},
 	template: `
+		<!-- AND blocks {{{ -->
+		<div ng-repeat="leaf in $ctrl.properties | filter:{isMeta:true,id:'$and'} track by leaf.id" ng-switch="leaf.spec.type" ng-repeat-emit="uiQueryQueryRepaint" class="query-container">
+			<div ng-repeat="choiceLeaf in leaf.value">
+				<ui-query-builder-branch
+					branch="choiceLeaf"
+					spec="$ctrl.spec"
+				></ui-query-builder-branch>
+			</div>
+		</div>
+		<!-- }}} -->
+		<!-- OR blocks {{{ -->
+		<div ng-repeat="leaf in $ctrl.properties | filter:{isMeta:true,id:'$or'} track by leaf.id" ng-switch="leaf.spec.type" ng-repeat-emit="uiQueryQueryRepaint" class="query-container">
+			<div ng-repeat="choiceLeaf in leaf.value">
+				<ui-query-builder-branch
+					branch="choiceLeaf"
+					spec="$ctrl.spec"
+				></ui-query-builder-branch>
+			</div>
+		</div>
+		<!-- }}} -->
+		<!-- Main fields {{{ -->
 		<div ng-repeat="leaf in $ctrl.properties | filter:{isMeta:false} track by leaf.id" ng-switch="leaf.spec.type" ng-repeat-emit="uiQueryQueryRepaint" class="query-container">
 			<!-- Path component {{{ -->
 			<div class="query-block">
@@ -184,6 +205,7 @@ angular.module('angular-ui-query-builder',[])
 			</div>
 			<!-- }}} -->
 		</div>
+		<!-- }}} -->
 		<!-- Add button {{{ -->
 		<div class="query-container">
 			<div class="query-block btn-group">

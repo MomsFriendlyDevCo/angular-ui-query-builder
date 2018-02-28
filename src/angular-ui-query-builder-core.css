@@ -5,6 +5,12 @@
 	cursor: pointer;
 }
 
+ui-query-builder-branch {
+	/* ADAM - This is my pretty crappy attempt to display where the indentation of nested branches occurs - please correct this with a nicer layout */
+	border-left: 20px solid #f00;
+	display: block;
+}
+
 /* Query blocks {{{ */
 .ui-query-builder .query-container {
 	align-items: center;
