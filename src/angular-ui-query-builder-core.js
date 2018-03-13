@@ -406,7 +406,7 @@ angular.module('angular-ui-query-builder',[])
 					value: v,
 					valueEdit: $ctrl.getFlatValue(v),
 					valueOperand: _.isObject(v) ? _(v).keys().first() : '$eq',
-					isMeta: k.startsWith('$') || ['sort', 'skip', 'limit'].includes(k),
+					isMeta: (''+k).startsWith('$') || ['sort', 'skip', 'limit'].includes(k),
 					spec: $ctrl.getSpec(k, v, k),
 					path: pathSegments.concat([k]),
 				}))
@@ -539,6 +539,8 @@ angular.module('angular-ui-query-builder',[])
 				return input;
 			} else if (_.isObject(input) && _.size(input) == 1) { // Unwrap object value from object
 				return _(input).values().first();
+			} else if (_.isObject(input) && input.$regexp) { // RegExps - we can savely ignore the options object and guess at the expression
+				return '/' + _.trim(input.$regexp, '/') + '/' + input.options;
 			} else { // No idea how to convert - just return an empty string
 				console.warn('Given up trying to flatten input value', input);
 				return input;
