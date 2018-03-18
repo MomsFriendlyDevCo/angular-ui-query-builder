@@ -7,60 +7,62 @@ angular.module('angular-ui-query-builder',[])
 		spec: '<',
 	},
 	template: `
-		<div class="ui-query-builder">
-			<ui-query-builder-branch
-				branch="$ctrl.query"
-				spec="$ctrl.spec"
-			></ui-query-builder-branch>
-
-			<!-- Meta field: sort {{{ -->
+		<div class="ui-query-builder clearfix">
 			<div class="query-container">
-				<!-- Path component {{{ -->
-				<div class="query-block">
-					<div class="btn-group btn-block">
-						<a class="btn btn-1 btn-block">
-							Sort by
-						</a>
+				<!-- Meta field: sort {{{ -->
+				<div class="query-row">
+					<!-- Path component {{{ -->
+					<div class="query-block">
+						<div class="btn-group btn-block">
+							<a class="btn btn-1 btn-block">
+								Sort by
+							</a>
+						</div>
 					</div>
+					<!-- }}} -->
+					<!-- Query operand component {{{ -->
+					<div class="query-block btn-group">
+						<div class="btn btn-block btn-2">
+							<input ng-model="$ctrl.query.sort" type="text" class="form-control"/>
+						</div>
+					</div>
+					<!-- }}} -->
 				</div>
 				<!-- }}} -->
-				<!-- Query operand component {{{ -->
-				<div class="query-block btn-group">
-					<div class="btn btn-block btn-2">
-						<input ng-model="$ctrl.query.sort" type="text" class="form-control"/>
+				<!-- Meta field: limit {{{ -->
+				<div class="query-row">
+					<!-- Path component {{{ -->
+					<div class="query-block">
+						<div class="btn-group btn-block">
+							<a class="btn btn-1 btn-block">
+								Limited to
+							</a>
+						</div>
 					</div>
+					<!-- }}} -->
+					<!-- Query operand component {{{ -->
+					<div class="query-block btn-group">
+						<div class="btn btn-block btn-2">
+							<input ng-model="$ctrl.query.limit" type="number" class="form-control"/>
+						</div>
+					</div>
+					<div class="query-block btn-group">
+						<div class="btn btn-block btn-1">
+							Skipping
+						</div>
+					</div>
+					<div class="query-block btn-group">
+						<div class="btn btn-block btn-2">
+							<input ng-model="$ctrl.query.skip" type="number" class="form-control"/>
+						</div>
+					</div>
+					<!-- }}} -->
 				</div>
 				<!-- }}} -->
-			</div>
-			<!-- }}} -->
-			<!-- Meta field: limit {{{ -->
-			<div class="query-container">
-				<!-- Path component {{{ -->
-				<div class="query-block">
-					<div class="btn-group btn-block">
-						<a class="btn btn-1 btn-block">
-							Limited to
-						</a>
-					</div>
-				</div>
-				<!-- }}} -->
-				<!-- Query operand component {{{ -->
-				<div class="query-block btn-group">
-					<div class="btn btn-block btn-2">
-						<input ng-model="$ctrl.query.limit" type="number" class="form-control"/>
-					</div>
-				</div>
-				<div class="query-block btn-group">
-					<div class="btn btn-block btn-1">
-						Skipping
-					</div>
-				</div>
-				<div class="query-block btn-group">
-					<div class="btn btn-block btn-2">
-						<input ng-model="$ctrl.query.skip" type="number" class="form-control"/>
-					</div>
-				</div>
-				<!-- }}} -->
+				<ui-query-builder-branch
+					branch="$ctrl.query"
+					spec="$ctrl.spec"
+				></ui-query-builder-branch>
 			</div>
 			<!-- }}} -->
 
@@ -205,13 +207,10 @@ angular.module('angular-ui-query-builder',[])
 			</div>
 			<!-- }}} -->
 		</div>
-		<!-- }}} -->
 		<!-- Add button {{{ -->
-		<div class="query-container">
+		<div class="query-row">
 			<div class="query-block btn-group">
-				<a ng-click="$ctrl.add()" class="btn btn-add btn-default">
-					<i class="fa fa-fw fa-plus"></i>
-				</a>
+				<a ng-click="$ctrl.add()" class="btn btn-add"></a>
 			</div>
 		</div>
 		<!-- }}} -->

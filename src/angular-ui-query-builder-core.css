@@ -1,77 +1,189 @@
-.ui-query-builder {
-}
-
-.ui-query-builder a {
-	cursor: pointer;
-}
-
-ui-query-builder-branch {
-	/* ADAM - This is my pretty crappy attempt to display where the indentation of nested branches occurs - please correct this with a nicer layout */
-	border-left: 20px solid #f00;
-	display: block;
-}
-
-/* Query blocks {{{ */
+/* Container {{{ */
 .ui-query-builder .query-container {
-	align-items: center;
-	display: flex;
-	min-height: 30px;
-	margin-bottom: 5px;
+	display: block;
+	/* offset extra margin by last row in the container */
+	margin-bottom: -10px;
 }
+/* }}} */
 
+/* Rows {{{ */
+.ui-query-builder .query-row {
+	align-items: flex-start;
+	clear: left;
+	display: inline-flex;
+	float: left;
+	margin-bottom: 10px;
+	min-height: 35px;
+	position: relative;
+}
+/* }}} */
+
+/* Blocks {{{ */
 .ui-query-builder .query-block {
+	background: white;
+	min-height: 35px;
 	min-width: 200px;
-	max-width: 400px;
 	margin-left: 30px;
+	max-width: 400px;
 	position: relative;
 	vertical-align: middle;
 }
-.ui-query-builder .query-container > .query-block:first-child {
-	margin-left: 17px;
+
+.ui-query-builder .query-row > .query-block:first-of-type {
+	margin-left: 15px;
+}
+
+.ui-query-builder .query-row .query-row > .query-block:first-of-type {
+	margin-left: 30px;
 }
 /* }}} */
-/* Query block stems (connecting lines between blocks) {{{ */
-.ui-query-builder .query-block:first-child::after,
-.ui-query-builder .query-block::before {
+
+/* Connectors {{{ */
+.ui-query-builder .query-block::before,
+.ui-query-builder .query-row::before {
 	background-color: #ccc;
 	content: '';
 	display: block;
 	position: absolute;
 	z-index: -1;
 }
-/* Connector lines {{{ */
+
 .ui-query-builder .query-block::before {
 	height: 4px;
 	left: -30px;
 	top: calc(50% - 2px);
 	width: 30px;
 }
-/* }}} */
-/* Root line {{{ */
-.ui-query-builder .query-block:first-child::after {
-	left: -17px;
+
+.ui-query-builder .query-row::before {
 	width: 4px;
 }
-.ui-query-builder .query-block:first-child::before {
+
+/* Root generic styles */
+.ui-query-builder .query-block:first-of-type::before {
 	left: -17px;
 }
+
+/* Nested generic styles */
+.ui-query-builder .query-container > .query-row:first-child > .query-block:first-of-type::before {
+  left: -30px;
+}
+
+.ui-query-builder .query-container > .query-row::before {
+	left: 15px;
+}
+
 /* Middle piece */
-.ui-query-builder .query-block:first-child::after {
+.ui-query-builder .query-row::before {
 	height: 150%;
 	top: -25%;
 }
+
+.ui-query-builder .query-row:first-child:last-child::before {
+	/* Only row currently in branch - no need to show any vertical connector */
+	display: none;
+}
+
+.ui-query-builder .query-container > .query-row:first-child > .query-add::before {
+	left: 0;
+}
+
 /* Top piece */
-.ui-query-builder .query-container:first-of-type .query-block:first-child::after {
+.ui-query-builder .query-row:first-child::before {
 	height: 100%;
 	top: 50%;
 }
+
 /* Bottom piece */
-.ui-query-builder .query-container:last-child .query-block:first-child::after {
+.ui-query-builder .query-row:last-child::before {
 	bottom: 50%;
 	height: 100%;
 	top: initial;
 }
 /* }}} */
+
+/* Buttons {{{ */
+.ui-query-builder .btn.btn-1,
+.ui-query-builder .btn.btn-2,
+.ui-query-builder .btn.btn-3,
+.ui-query-builder .btn.btn-4 {
+	color: #FFF;
+	min-height: 33px;
+}
+
+.btn-fill {
+	/* Stretch an inner button to the maximum extent */
+	margin: -8px -12px;
+	min-height: 33px;
+	padding: 8px;
+	white-space: normal;
+}
+
+.ui-query-builder .btn.btn-1 { background: #104E8B }
+.ui-query-builder .btn.btn-2 { background: #1874CD }
+.ui-query-builder .btn.btn-3 { background: #1C86EE }
+.ui-query-builder .btn.btn-4 { background: #62a8ec }
+
+.ui-query-builder .btn > input.form-control {
+	background: transparent;
+	box-shadow: none;
+	padding: 0;
+	color: #FFF;
+	height: auto;
+	cursor: pointer;
+	border: 0;
+}
+
+/* Trash button {{{ */
+.ui-query-builder .btn-trash {
+	background-color: red;
+	border: 0;
+	border-radius: 50%;
+	height: 25px;
+	left: 20px;
+	opacity: 0;
+	pointer-events: none;
+	position: absolute;
+	top: 5px;
+	width: 25px;
+	z-index: 1;
+}
+
+.ui-query-builder .btn-trash::before {
+	color: white;
+	content: '✕';
+	font-family: sans-serif;
+	font-size: 15px;
+	font-weight: bold;
+}
+
+.ui-query-builder .query-row:hover > .btn-trash {
+	opacity: 1;
+	pointer-events: all;
+}
+
+.ui-query-builder .query-container .btn-trash {
+	left: 35px;
+}
+/* }}} */
+
+/* Add button */
+.ui-query-builder .btn-add {
+	background: green;
+	border: 0;
+	border-radius: 50%;
+	height: 35px;
+	width: 35px;
+}
+.ui-query-builder .btn-add::before {
+	top: -2px;
+	position: relative;
+	color: white;
+	content: '+';
+	font-family: sans-serif;
+	font-size: 20px;
+	font-weight: bold;
+}
 /* }}} */
 
 /* Pills {{{ */
@@ -90,65 +202,10 @@ ui-query-builder-branch {
 }
 /* }}} */
 
-/* Buttons {{{ */
-.ui-query-builder .btn.btn-1,
-.ui-query-builder .btn.btn-2,
-.ui-query-builder .btn.btn-3,
-.ui-query-builder .btn.btn-4
-{
-	color: #FFF;
-	min-height: 33px;
-}
-
-.btn-fill { /* Stretch an inner button to the maximum extent */
-	margin: -8px -12px;
-	min-height: 33px;
-	padding: 8px;
-	white-space: normal;
-}
-
-.ui-query-builder .btn.btn-add {
-	z-index: 1;
-	padding: 6px 3px;
-}
-
-.ui-query-builder .btn.btn-1 {background: #104E8B}
-.ui-query-builder .btn.btn-2 {background: #1874CD}
-.ui-query-builder .btn.btn-3 {background: #1C86EE}
-.ui-query-builder .btn.btn-4 {background: #62a8ec}
-
-.ui-query-builder .btn > input.form-control {
-	background: transparent;
-	box-shadow: none;
-	padding: 0;
-	color: #FFF;
-	height: auto;
-	cursor: pointer;
-	border: 0;
-}
-
-/* Trash buttons {{{ */
-.ui-query-builder .btn > .btn.btn-trash {
-	display: none;
-	padding: 8px 11px;
-	margin: 0px -36px -15px 0;
-	position: relative;
-	left: -13px;
-	top: -7px;
-	height: 33px;
-	font-size: 1.5rem;
-}
-
-.ui-query-builder .btn:hover > .btn.btn-trash {
-	display: block;
-}
-/* }}} */
-
 /* BUGFIX: Disable silly box-shadow when opening a dropdown {{{ */
 .btn-group.open .dropdown-toggle {
 	box-shadow: none;
 }
-/* }}} */
 /* }}} */
 
 /* Mouse hovering {{{ */
