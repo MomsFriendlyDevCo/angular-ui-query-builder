@@ -189,11 +189,7 @@ angular.module('angular-ui-query-builder',[])
 			<!-- }}} -->
 		</div>
 		<!-- Add button {{{ -->
-		<div class="query-row">
-			<div class="query-block btn-group">
-				<a ng-click="$ctrl.add()" class="btn btn-add btn-success"></a>
-			</div>
-		</div>
+		<button ng-click="$ctrl.add()" class="btn btn-add btn-success" type="button"></button>
 		<!-- }}} -->
 	`,
 	controller: function($element, $scope) {

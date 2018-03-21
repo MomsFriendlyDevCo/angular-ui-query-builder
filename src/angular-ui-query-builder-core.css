@@ -5,6 +5,7 @@
 	display: block;
 	/* offset extra margin by last row in the container */
 	margin-bottom: -10px;
+	position: relative;
 }
 
 /* Clearfix */
@@ -74,7 +75,7 @@
 }
 
 /* Nested generic styles */
-.ui-query-builder .query-row .query-row:first-child > .query-block:first-of-type::before {
+.ui-query-builder .query-row .query-row:first-of-type > .query-block:first-of-type::before {
 	left: -30px;
 }
 
@@ -84,8 +85,8 @@
 
 /* Middle piece */
 .ui-query-builder .query-row::before {
-	height: 150%;
-	top: -25%;
+	height: calc(100% + 10px);
+	bottom: 19px;
 }
 
 .ui-query-builder .query-row:first-child:last-child::before {
@@ -93,20 +94,17 @@
 	display: none;
 }
 
-.ui-query-builder .query-container > .query-row:first-child > .query-add::before {
-	left: 0;
-}
-
 /* Top piece */
-.ui-query-builder .query-row:first-child::before {
+.ui-query-builder .query-row:first-of-type::before {
 	height: 100%;
 	top: 50%;
 }
 
 /* Bottom piece */
 .ui-query-builder .query-row:last-child::before {
-	top: 0;
-	height: 19px; /* 38 / 2 */
+	bottom: calc(100% - 19px);
+	/* height of query block plus row height */
+	height: 48px;
 }
 /* }}} */
 
@@ -162,7 +160,7 @@
 	z-index: 3;/* To beat bootstrap's button-group value of 2 */
 }
 
-.ui-query-builder .btn-trash::before {
+.ui-query-builder .btn-trash::after {
 	color: white;
 	content: '×';
 	font-family: sans-serif;
@@ -180,24 +178,65 @@
 }
 /* }}} */
 
-/* Add button */
+/* Add button {{{ */
 .ui-query-builder .btn-add {
 	border: 0;
 	border-radius: 50%;
-	height: 38px;
-	line-height: 38px;
+	bottom: 10px;
+	clear: left;
+	display: flex;
+	float: left;
+	height: 0;
+	left: 0;
+	line-height: 26px;
+	margin-bottom: 5px;
+	margin-left: 34px;
+	opacity: 0;
 	padding: 0;
-	width: 38px;
+	pointer-events: none;
+	width: 26px;
+	z-index: 3;
 }
-.ui-query-builder .btn-add::before {
+
+.ui-query-builder .btn-add::after {
 	top: -2px;
 	position: relative;
 	color: white;
 	content: '+';
 	font-family: sans-serif;
-	font-size: 24px;
+	font-size: 18px;
 	font-weight: bold;
+	text-align: center;
+	width: 100%;
 }
+
+.ui-query-builder .btn-add::before {
+	background-image:
+		linear-gradient(90deg,#ccc 4px,transparent 0),
+		linear-gradient(0deg,#ccc 4px,transparent 0);
+	bottom: 15px;
+	content: '';
+	display: block;
+	height: 44px;
+	left: 13px;
+	position: absolute;
+	width: 30px;
+	z-index: -1;
+}
+
+/* Events */
+.ui-query-builder .btn-add:active,
+.ui-query-builder .btn-add:focus {
+	outline: 0;
+}
+
+/* On query container hover */
+.ui-query-builder:hover .btn-add {
+	height: 26px;
+	opacity: 1;
+	pointer-events: all;
+}
+/* }}} */
 /* }}} */
 
 /* Pills {{{ */
