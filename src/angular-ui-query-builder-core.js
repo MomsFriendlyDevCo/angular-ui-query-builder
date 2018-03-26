@@ -199,7 +199,7 @@ angular.module('angular-ui-query-builder',[])
 		spec: '<',
 	},
 	template: `
-		<div class="ui-query-builder clearfix">
+		<div class="ui-query-builder">
 			<div class="query-container">
 				<ui-query-builder-group
 					qb-group="$ctrl.qbQuery"
@@ -561,10 +561,16 @@ angular.module('angular-ui-query-builder',[])
 					<!-- }}} -->
 				</div>
 				<!-- }}} -->
-				<ui-query-builder-branch
-					branch="$ctrl.query"
-					spec="$ctrl.spec"
-				></ui-query-builder-branch>
+				<div class="query-row">
+					<div class="query-block">
+						<!-- FIXME: Need branch title -->
+					</div>
+					<ui-query-builder-branch
+						class="query-container"
+						branch="$ctrl.query"
+						spec="$ctrl.spec"
+					></ui-query-builder-branch>
+				</div>
 			</div>
 		</div>
 	`,
@@ -624,12 +630,10 @@ angular.module('angular-ui-query-builder',[])
 		<!-- Main fields {{{ -->
 		<div ng-repeat="leaf in $ctrl.properties | filter:{isMeta:false} track by leaf.id" ng-switch="leaf.spec.type" ng-repeat-emit="uiQueryQueryRepaint" class="query-row">
 			<!-- Path component {{{ -->
+			<button ng-click="$ctrl.remove(leaf.id); $event.stopPropagation()" class="btn btn-trash btn-danger" type="button"></button>
 			<div class="query-block">
 				<div class="btn-group btn-block" ng-class="{new: !leaf.id}">
 					<a class="btn btn-1 btn-block dropdown-toggle" data-toggle="dropdown">
-						<div ng-click="$ctrl.remove(leaf.id); $event.stopPropagation()" class="btn btn-trash btn-danger btn-xs pull-left">
-							<i class="fa fa-times"></i>
-						</div>
 						{{$ctrl.spec[leaf.id].title || 'Select...'}}
 						<i class="fa fa-caret-down"></i>
 					</a>
@@ -695,7 +699,7 @@ angular.module('angular-ui-query-builder',[])
 					</ul>
 				</div>
 				<div ng-switch-when="boolean" class="btn btn-block btn-3" ng-click="$ctrl.setValue(leaf, !leaf.valueEdit)">
-					<i class="fa" ng-class="leaf.valueEdit ? 'fa-check-square-o' : 'fa-square-o'"></i>
+					<i class="fa fa-fw" ng-class="leaf.valueEdit ? 'fa-check-square-o' : 'fa-square-o'"></i>
 					{{leaf.valueEdit ? operandConfig.textTrue : operandConfig.textFalse}}
 				</div>
 				<div ng-switch-when="date" class="btn btn-block btn-3">
@@ -708,11 +712,7 @@ angular.module('angular-ui-query-builder',[])
 			<!-- }}} -->
 		</div>
 		<!-- Add button {{{ -->
-		<div class="query-row">
-			<div class="query-block btn-group">
-				<a ng-click="$ctrl.add()" class="btn btn-add"></a>
-			</div>
-		</div>
+		<button ng-click="$ctrl.add()" class="btn btn-add btn-success" type="button"></button>
 		<!-- }}} -->
 	`,
 	controller: function($element, $scope) {
