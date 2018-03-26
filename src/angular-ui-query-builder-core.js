@@ -1,7 +1,509 @@
 angular.module('angular-ui-query-builder',[])
 
-// Main widget {{{
+.service('QueryBuilder', function() {
+	var QueryBuilder = this;
+
+	/**
+	* Apply various tidy functions to a raw spec before we process it
+	* @param {Object} spec The raw spec to clean
+	* @returns {Object} The output spec post cleaning
+	*/
+	QueryBuilder.cleanSpec = spec => {
+		return _(spec)
+			.mapValues((v, k) => ({
+				type: v.type,
+				enum: _(v.enum)
+					.map(e => _.isString(e) ? {id: e, title: _.startCase(e)} :e)
+					.sortBy('title')
+					.value(),
+			}))
+			.value();
+	};
+
+	/**
+	* Returns a queryList collection from a query object
+	* @param {Object} query The raw MongoDB / Sift object to transform from an object into a collection
+	* @returns {array} An array where each parameter is represented as a object for easier handling
+	*/
+	QueryBuilder.queryToArray = (query, spec) => {
+		// Actions applicable to all fields {{{
+		var actions = [
+			{id: '$eq', title: 'Equals'},
+			{id: '$neq', title: 'Doesnt equal'},
+			{id: '$lt', title: 'Is less than'},
+			{id: '$lte', title: 'Is equal to or less than'},
+			{id: '$gt', title: 'Is greater than'},
+			{id: '$gte', title: 'Is equal or greater than'},
+			{id: '$in', title: 'Is one of'},
+			{id: '$nin', title: 'Is not one of'},
+			{id: '$exists', title: 'Has a value'},
+			{id: '$nexists', title: 'Does not have a value'},
+		];
+		// }}}
+
+		return _(query)
+			.pickBy((v, k) => {
+				var maps = spec[k] // Maps onto a spec path
+					|| k == '$and'
+					|| k == '$or';
+				if (!maps) console.warn('query-builder', 'Incomming query path', k, 'Does not map to anyhting in spec', spec);
+				return !!maps;
+			})
+			.map((v, k) => {
+				var s = spec[k];
+				var firstKey = _.isObject(v) && _(v).keys().first();
+				var firstValue = _.isObject(v) ? _(v).values().first() : v;
+
+				if ( // Looks like a meta 'search' entry?
+					k == '$or'
+					&& v.every(i => _.isObject(i) && _.keys(i).length == 1)
+					&& v.map(i => _.chain(i).first().values().first().keys().find(i => i == '$regexp').value()).length == v.length // Every key has a $regexp search
+				) {
+					return {
+						path: k,
+						type: 'search',
+						title: 'Search',
+						value: // Horrible expression to find the first regexp value
+							_(v).map(i =>
+								_.chain(i)
+									.first()
+									.values()
+									.first()
+									.pickBy((v, k) => k == '$regexp')
+									.values()
+									.get(0)
+									.value()
+								)
+								.get(0),
+						fields:
+							_(v)
+								.map(i => i.map(x => _.keys(x)))
+								.flattenDeep(2)
+								.value(),
+						actions,
+					};
+				} else if (k == '$and' || k == '$or') { // Meta combinational types
+					if (!_.isArray(v)) {
+						console.warn('query-builder', 'Query path', k, 'is a meta key', v, 'but is not an array!', 'Given', typeof v);
+						v = [];
+					}
+
+					return {
+						path: k,
+						type: 'binaryGroup',
+						title:
+							k == '$and' ? 'AND'
+							: k == '$or' ? 'OR'
+							: 'UNKNOWN',
+						condition: k.replace(/\$/, ''),
+						children: v.map(i => QueryBuilder.queryToArray(i, spec)),
+						actions,
+					};
+				} else if (firstKey == '$exists') {
+					return {
+						path: k,
+						title: v.title || _.startCase(k), // Create a title from the key if its omitted
+						value: !!v,
+						type: 'exists',
+						actions,
+					};
+				} else if (s.type == 'string' && _.isArray(s.enum)) {
+					return {
+						path: k,
+						title: v.title || _.startCase(k),
+						type: 'enum',
+						action:
+							v.$in ? '$in'
+							: v.$nin ? '$nin'
+							: '$in',
+						enum: s.enum,
+						value: v.$in || v.$nin || [v],
+						actions,
+					};
+				} else { // General fields
+					return {
+						path: k,
+						title: v.title || _.startCase(k), // Create a title from the key if its omitted
+						type:
+							s.type == 'string' ? 'string'
+							: s.type == 'number' ? 'number'
+							: s.type == 'date' ? 'date'
+							: 'string',
+						action: firstKey,
+						value:
+							s.type == 'date' ? moment(firstValue).format('YYYY-MM-DD') // Convert date objects back to strings
+							: firstValue,
+						actions,
+					}
+				}
+			})
+			.value();
+	};
+
+
+	/**
+	* Reverse of `queryToArray()`
+	* @param {array} queryList the internal array composed by queryToArray
+	* @returns {Object} A Mongo / Sift compatible object
+	*/
+	QueryBuilder.arrayToQuery = queryList => {
+		var composer = ql =>
+			_(ql)
+				.mapKeys(ql => ql.path)
+				.mapValues(ql => {
+					switch (ql.type) {
+						case 'string':
+						case 'number':
+						case 'date':
+							if (ql.action == '$eq') {
+								return ql.value;
+							} else {
+								return {[ql.action]: ql.value};
+							}
+						case 'enum':
+							return {[ql.action]: ql.value};
+						case 'exists':
+							return {$exists: !!ql.value};
+						case 'search':
+							return {
+								$or:
+									ql.fields.map(f =>
+										[{
+											[f]: {
+												$regexp: ql.value,
+												options: 'i',
+											},
+										}]
+									),
+							};
+						default:
+							console.warn('Unknown type to convert:', ql.type);
+					}
+				})
+				.value()
+
+		return composer(queryList);
+	};
+})
+
+
+/**
+* Master query builder component
+* This is the top-most query element
+* @param {Object} query Raw Mongo / Sift query (will be converted internally to something usable). This will be updated if any data changes
+* @param {Object} spec The spec of the data structure
+*/
 .component('uiQueryBuilder', {
+	bindings: {
+		query: '=',
+		spec: '<',
+	},
+	template: `
+		<div class="ui-query-builder clearfix">
+			<div class="query-container">
+				<ui-query-builder-group
+					qb-group="$ctrl.qbQuery"
+				></ui-query-builder-group>
+			</div>
+		</div>
+	`,
+	controller: function($scope, $timeout, QueryBuilder) {
+		var $ctrl = this;
+
+		$ctrl.qbSpec;
+		$ctrl.qbQuery;
+		$ctrl.$onInit = ()=> {
+			$ctrl.qbSpec = QueryBuilder.cleanSpec($ctrl.spec);
+			$ctrl.qbQuery = QueryBuilder.queryToArray($ctrl.query, $ctrl.qbSpec);
+		};
+
+		$scope.$on('queryBuilder.change', ()=> $timeout(()=> { // Timeout to wait for Angular to catch up with its low level populates
+			// Export the query back to the source object
+			$ctrl.query = QueryBuilder.arrayToQuery($ctrl.qbQuery);
+		}));
+	},
+})
+
+
+/**
+* Query builder element that holds a collection of queries - an array
+* @param {array} qbGroup Collection of fields to render
+*/
+.component('uiQueryBuilderGroup', {
+	bindings: {
+		qbGroup: '=',
+	},
+	template: `
+		<div ng-repeat="row in $ctrl.qbGroup">
+			<ui-query-builder-row
+				qb-item="row"
+				spec="$ctrl.spec"
+			></ui-query-builder-row>
+		</div>
+	`,
+	controller: function($scope, QueryBuilder) {
+		var $ctrl = this;
+	},
+})
+
+
+/**
+* Individual line-item for a query row
+* @param {Object} qbItem Individual line item to render
+*/
+.component('uiQueryBuilderRow', {
+	bindings: {
+		qbItem: '=',
+	},
+	controller: function($scope, QueryBuilder) {
+		var $ctrl = this;
+
+		$ctrl.setChanged = ()=> $scope.$emit('queryBuilder.change');
+	},
+	template: `
+		<div ng-switch="$ctrl.qbItem.type">
+			<!-- $and / $or condition {{{ -->
+			<div ng-switch-when="binaryGroup" class="query-row">
+				<div class="query-block">
+					<div class="btn btn-1 btn-block">
+						{{$ctrl.qbItem.title}}
+					</div>
+				</div>
+				<div ng-repeat="conditional in $ctrl.qbItem.children" class="query-container clearfix">
+					<ui-query-builder-group
+						qb-group="conditional"
+						qb-spec="$ctrl.spec"
+					></ui-query-builder-group>
+				</div>
+			</div>
+			<!-- }}} -->
+			<!-- String {{{ -->
+			<div ng-switch-when="string" class="query-row">
+				<div class="query-block">
+					<div class="btn btn-1 btn-block">
+						{{$ctrl.qbItem.title}}
+					</div>
+				</div>
+				<ui-query-builder-block-menu
+					class="query-block"
+					level="2"
+					selected="$ctrl.qbItem.action"
+					options="$ctrl.qbItem.actions"
+				></ui-query-builder-block-menu>
+				<div class="query-block">
+					<div class="btn btn-3 btn-block">
+						<input ng-value="$ctrl.qbItem.value" type="text" class="form-control"/>
+					</div>
+				</div>
+			</div>
+			<!-- }}} -->
+			<!-- Enum {{{ -->
+			<div ng-switch-when="enum" class="query-row">
+				<div class="query-block">
+					<div class="btn btn-1 btn-block">
+						{{$ctrl.qbItem.title}}
+					</div>
+				</div>
+				<ui-query-builder-block-menu
+					class="query-block"
+					level="2"
+					selected="$ctrl.qbItem.action"
+					options="$ctrl.qbItem.actions"
+				></ui-query-builder-block-menu>
+				<ui-query-builder-block-menu-multiple
+					class="query-block"
+					level="3"
+					selected="$ctrl.qbItem.value"
+					options="$ctrl.qbItem.enum"
+				></ui-query-builder-block-menu-multiple>
+			</div>
+			<!-- }}} -->
+			<!-- Date {{{ -->
+			<div ng-switch-when="date" class="query-row">
+				<div class="query-block">
+					<div class="btn btn-1 btn-block">
+						{{$ctrl.qbItem.title}}
+					</div>
+				</div>
+				<ui-query-builder-block-menu
+					class="query-block"
+					level="2"
+					selected="$ctrl.qbItem.action"
+					options="$ctrl.qbItem.actions"
+				></ui-query-builder-block-menu>
+				<div class="query-block">
+					<div class="btn btn-3 btn-block">
+						<input ng-value="$ctrl.qbItem.value" type="date" class="form-control"/>
+					</div>
+				</div>
+			</div>
+			<!-- }}} -->
+			<!-- Number {{{ -->
+			<div ng-switch-when="number" class="query-row">
+				<div class="query-block">
+					<div class="btn btn-1 btn-block">
+						{{$ctrl.qbItem.title}}
+					</div>
+				</div>
+				<ui-query-builder-block-menu
+					class="query-block"
+					level="2"
+					selected="$ctrl.qbItem.action"
+					options="$ctrl.qbItem.actions"
+				></ui-query-builder-block-menu>
+				<div class="query-block">
+					<div class="btn btn-3 btn-block">
+						<input ng-value="$ctrl.qbItem.value" type="number" class="form-control"/>
+					</div>
+				</div>
+			</div>
+			<!-- }}} -->
+			<!-- Exists {{{ -->
+			<div ng-switch-when="exists" class="query-row">
+				<div class="query-block">
+					<div class="btn btn-1 btn-block">
+						{{$ctrl.qbItem.title}}
+					</div>
+				</div>
+				<ui-query-builder-block-menu
+					class="query-block"
+					level="2"
+					selected="$ctrl.qbItem.action"
+					options="$ctrl.qbItem.actions"
+				></ui-query-builder-block-menu>
+			</div>
+			<!-- }}} -->
+			<!-- Search {{{ -->
+			<div ng-switch-when="search" class="query-row">
+				<div class="query-block">
+					<div class="btn btn-1 btn-block">
+						{{$ctrl.qbItem.title}}
+					</div>
+				</div>
+				<div class="query-block">
+					<div class="btn btn-2 btn-block">
+						<input ng-value="$ctrl.qbItem.value" ng-keyup="$ctrl.setChanged()" type="text" class="form-control"/>
+					</div>
+				</div>
+			</div>
+			<!-- }}} -->
+			<!-- Unknown {{{ -->
+			<div ng-switch-default class="query-row">
+				<div class="query-block">
+					<div class="btn btn-warning btn-block">
+						{{$ctrl.qbItem.title}}
+					</div>
+				</div>
+				<div class="query-block">
+					<div class="btn btn-warning btn-block">
+						Unknown handler: {{$ctrl.qbItem.type}}
+					</div>
+				</div>
+			</div>
+			<!-- }}} -->
+			<!-- Add button {{{
+			<div class="query-row">
+				<div class="query-block btn-group">
+					<a ng-click="$ctrl.add()" class="btn btn-add"></a>
+				</div>
+			</div>
+			}}} -->
+		</div>
+	`,
+})
+
+
+/**
+* Component for drawing a Block as a dropdown list of options
+* @param {number} level The level of button we are drawing
+* @param {array} options A collection of options to display. Each should be of the form {id, title}
+* @param {*} selected The currently selected ID
+*/
+.component('uiQueryBuilderBlockMenu', {
+	bindings: {
+		level: '<',
+		options: '<',
+		selected: '=',
+	},
+	controller: function($scope) {
+		var $ctrl = this;
+
+		$ctrl.setSelected = option => {
+			$ctrl.selected = option.id;
+			$scope.$emit('queryBuilder.change');
+		};
+
+		$ctrl.selectedOption;
+		$scope.$watchGroup(['$ctrl.options', '$ctrl.selected'], ()=> {
+			$ctrl.selectedOption = $ctrl.options.find(i => i.id == $ctrl.selected);
+		});
+	},
+	template: `
+		<a class="btn btn-block btn-{{$ctrl.level}} dropdown-toggle" data-toggle="dropdown"> {{$ctrl.selectedOption.title}} <i class="fa fa-caret-down"></i></a>
+		<ul class="dropdown-menu pull-right">
+			<li ng-repeat="option in $ctrl.options track by option.id"><a ng-click="$ctrl.setSelected(option)">{{option.title}}</a></li>
+		</ul>
+	`,
+})
+
+
+/**
+* Component for drawing a Block as a dropdown list of multiple-select options
+* @param {number} level The level of button we are drawing
+* @param {array} options A collection of options to display. Each should be of the form {id, title}
+* @param {*} selected The currently selected ID
+*/
+.component('uiQueryBuilderBlockMenuMultiple', {
+	bindings: {
+		level: '<',
+		options: '<',
+		selected: '=',
+	},
+	controller: function($scope) {
+		var $ctrl = this;
+
+		$ctrl.toggle = option => {
+			if (!$ctrl.selected) $ctrl.selected = [];
+
+			if ($ctrl.selected.includes(option.id)) {
+				$ctrl.selected = $ctrl.selected.filter(i => i != option.id);
+			} else {
+				$ctrl.selected.push(option.id);
+			}
+			$scope.$emit('queryBuilder.change');
+		};
+
+		$ctrl.selectedOptions;
+		$scope.$watch('$ctrl.selected', ()=> {
+			$ctrl.selectedOptions = $ctrl.options
+				.filter(i => ($ctrl.selected || []).includes(i.id))
+
+			$ctrl.options.forEach(o => o.selected = $ctrl.selectedOptions.some(s => s.id == o.id));
+		}, true);
+	},
+	template: `
+		<a class="btn btn-block btn-{{$ctrl.level}} dropdown-toggle" data-toggle="dropdown">
+			<span ng-repeat="item in $ctrl.selectedOptions track by item.id" class="pill">
+				{{item.title}}
+			</span>
+			<i class="fa fa-caret-down"></i></a>
+		</a>
+		<ul class="dropdown-menu pull-right">
+			<li ng-repeat="option in $ctrl.options track by option.id">
+				<a ng-click="$ctrl.toggle(option)">
+					<i class="fa fa-fw" ng-class="option.selected ? 'fa-check-square-o' : 'fa-square-o'"></i>
+					{{option.title}}
+				</a>
+			</li>
+		</ul>
+	`,
+})
+
+
+
+
+// Main widget {{{
+.component('uiQueryBuilderOLD', {
 	bindings: {
 		query: '=',
 		spec: '<',
@@ -64,8 +566,6 @@ angular.module('angular-ui-query-builder',[])
 					spec="$ctrl.spec"
 				></ui-query-builder-branch>
 			</div>
-			<!-- }}} -->
-
 		</div>
 	`,
 	controller: function($scope) {
@@ -102,7 +602,7 @@ angular.module('angular-ui-query-builder',[])
 	},
 	template: `
 		<!-- AND blocks {{{ -->
-		<div ng-repeat="leaf in $ctrl.properties | filter:{isMeta:true,id:'$and'} track by leaf.id" ng-switch="leaf.spec.type" ng-repeat-emit="uiQueryQueryRepaint" class="query-container">
+		<div ng-repeat="leaf in $ctrl.properties | filter:{isMeta:true,id:'$and'} track by leaf.id" ng-switch="leaf.spec.type" ng-repeat-emit="uiQueryQueryRepaint" class="query-row">
 			<div ng-repeat="choiceLeaf in leaf.value">
 				<ui-query-builder-branch
 					branch="choiceLeaf"
@@ -112,7 +612,7 @@ angular.module('angular-ui-query-builder',[])
 		</div>
 		<!-- }}} -->
 		<!-- OR blocks {{{ -->
-		<div ng-repeat="leaf in $ctrl.properties | filter:{isMeta:true,id:'$or'} track by leaf.id" ng-switch="leaf.spec.type" ng-repeat-emit="uiQueryQueryRepaint" class="query-container">
+		<div ng-repeat="leaf in $ctrl.properties | filter:{isMeta:true,id:'$or'} track by leaf.id" ng-switch="leaf.spec.type" ng-repeat-emit="uiQueryQueryRepaint" class="query-row">
 			<div ng-repeat="choiceLeaf in leaf.value">
 				<ui-query-builder-branch
 					branch="choiceLeaf"
@@ -122,7 +622,7 @@ angular.module('angular-ui-query-builder',[])
 		</div>
 		<!-- }}} -->
 		<!-- Main fields {{{ -->
-		<div ng-repeat="leaf in $ctrl.properties | filter:{isMeta:false} track by leaf.id" ng-switch="leaf.spec.type" ng-repeat-emit="uiQueryQueryRepaint" class="query-container">
+		<div ng-repeat="leaf in $ctrl.properties | filter:{isMeta:false} track by leaf.id" ng-switch="leaf.spec.type" ng-repeat-emit="uiQueryQueryRepaint" class="query-row">
 			<!-- Path component {{{ -->
 			<div class="query-block">
 				<div class="btn-group btn-block" ng-class="{new: !leaf.id}">
