@@ -47,108 +47,29 @@ app.controller('queryBuilderExampleCtrl', function($http, $scope) {
 
 	// FIXME: Pre-populated search for 'xxx' - this will be removed before deploy {{{
 	$scope.query = {
-		"$and": [
-			{
-				"email": {
-					"$exists": true
-				},
-				"role": "user",
-				"status": {
-					"$in": [
-						"pending",
-						"active"
-					]
-				},
-				"lastLogin": {
-					"$lt": "2018-02-26T05:02:10.498Z"
-				},
-				"sort": "username",
-				"limit": 10
-			},
-			{
-				"$comment": "search",
-				"$or": {
-					"name": [
-						{
-							"$regexp": "/xxx/",
-							"options": "i"
-						}
-					],
-					"username": [
-						{
-							"$regexp": "/xxx/",
-							"options": "i"
-						}
-					],
-					"email": [
-						{
-							"$regexp": "/xxx/",
-							"options": "i"
-						}
-					],
-					"address.street": [
-						{
-							"$regexp": "/xxx/",
-							"options": "i"
-						}
-					],
-					"address.city": [
-						{
-							"$regexp": "/xxx/",
-							"options": "i"
-						}
-					],
-					"address.zip": [
-						{
-							"$regexp": "/xxx/",
-							"options": "i"
-						}
-					],
-					"address.state": [
-						{
-							"$regexp": "/xxx/",
-							"options": "i"
-						}
-					],
-					"address.country": [
-						{
-							"$regexp": "/xxx/",
-							"options": "i"
-						}
-					],
-					"phone": [
-						{
-							"$regexp": "/xxx/",
-							"options": "i"
-						}
-					],
-					"website": [
-						{
-							"$regexp": "/xxx/",
-							"options": "i"
-						}
-					],
-					"company.name": [
-						{
-							"$regexp": "/xxx/",
-							"options": "i"
-						}
-					],
-					"role": [
-						{
-							"$regexp": "/xxx/",
-							"options": "i"
-						}
-					],
-					"status": [
-						{
-							"$regexp": "/xxx/",
-							"options": "i"
-						}
-					]
-				}
-			}
-		]
+		"email": {
+			"$exists": true,
+		},
+		"role": "user",
+		"status": {"$in": ["pending","active"]},
+		"lastLogin": {"$lt": "2018-02-26T05:02:10.498Z"},
+		"sort": "username",
+		"limit": 10,
+		"$or": [ // This should be detected as a generic search
+			[{"name":{"$regexp": "/xxx/","options": "i"}}],
+			[{"username": {"$regexp": "/xxx/","options": "i"}}],
+			[{"email": {"$regexp": "/xxx/","options": "i"}}],
+			[{"address.street":{"$regexp": "/xxx/","options": "i"}}],
+			[{"address.city":{"$regexp": "/xxx/","options": "i"}}],
+			[{"address.zip": {"$regexp": "/xxx/","options": "i"}}],
+			[{"address.state": {"$regexp": "/xxx/","options": "i"}}],
+			[{"address.country": {"$regexp": "/xxx/","options": "i"}}],
+			[{"phone": {"$regexp": "/xxx/","options": "i"}}],
+			[{"website": {"$regexp": "/xxx/","options": "i"}}],
+			[{"company.name": {"$regexp": "/xxx/","options": "i"}}],
+			[{"role": {"$regexp": "/xxx/","options": "i"}}],
+			[{"status": {"$regexp": "/xxx/","options": "i"}}],
+		],
 	};
 	// }}}
 
