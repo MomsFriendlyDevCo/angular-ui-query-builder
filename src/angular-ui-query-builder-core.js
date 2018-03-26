@@ -105,6 +105,7 @@ angular.module('angular-ui-query-builder',[])
 						title: v.title || _.startCase(k), // Create a title from the key if its omitted
 						value: !!v,
 						type: 'exists',
+						action: '$exists',
 						actions,
 					};
 				} else if (s.type == 'string' && _.isArray(s.enum)) {
@@ -163,7 +164,7 @@ angular.module('angular-ui-query-builder',[])
 						case 'enum':
 							return {[ql.action]: ql.value};
 						case 'exists':
-							return {$exists: !!ql.value};
+							return {$exists: ql.action == '$exists'};
 						case 'search':
 							return {
 								$or:
