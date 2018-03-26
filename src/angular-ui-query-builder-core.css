@@ -1,8 +1,18 @@
+@charset "utf-8";
+
 /* Container {{{ */
 .ui-query-builder .query-container {
 	display: block;
 	/* offset extra margin by last row in the container */
 	margin-bottom: -10px;
+	position: relative;
+}
+
+/* Clearfix */
+.ui-query-builder::after {
+    clear: both;
+    content: '';
+    display: table;
 }
 /* }}} */
 
@@ -13,7 +23,7 @@
 	display: inline-flex;
 	float: left;
 	margin-bottom: 10px;
-	min-height: 35px;
+	min-height: 38px;
 	position: relative;
 }
 /* }}} */
@@ -21,7 +31,7 @@
 /* Blocks {{{ */
 .ui-query-builder .query-block {
 	background: white;
-	min-height: 35px;
+	height: 35px;
 	min-width: 200px;
 	margin-left: 30px;
 	max-width: 400px;
@@ -30,7 +40,7 @@
 }
 
 .ui-query-builder .query-row > .query-block:first-of-type {
-	margin-left: 15px;
+	margin-left: 17px;
 }
 
 .ui-query-builder .query-row .query-row > .query-block:first-of-type {
@@ -65,18 +75,18 @@
 }
 
 /* Nested generic styles */
-.ui-query-builder .query-container > .query-row:first-child > .query-block:first-of-type::before {
-  left: -30px;
+.ui-query-builder .query-row .query-row:first-of-type > .query-block:first-of-type::before {
+	left: -30px;
 }
 
-.ui-query-builder .query-container > .query-row::before {
-	left: 15px;
+.ui-query-builder .query-row .query-row::before {
+	left: 13px;
 }
 
 /* Middle piece */
 .ui-query-builder .query-row::before {
-	height: 150%;
-	top: -25%;
+	height: calc(100% + 10px);
+	bottom: 19px;
 }
 
 .ui-query-builder .query-row:first-child:last-child::before {
@@ -84,21 +94,17 @@
 	display: none;
 }
 
-.ui-query-builder .query-container > .query-row:first-child > .query-add::before {
-	left: 0;
-}
-
 /* Top piece */
-.ui-query-builder .query-row:first-child::before {
+.ui-query-builder .query-row:first-of-type::before {
 	height: 100%;
 	top: 50%;
 }
 
 /* Bottom piece */
 .ui-query-builder .query-row:last-child::before {
-	bottom: 50%;
-	height: 100%;
-	top: initial;
+	bottom: calc(100% - 19px);
+	/* height of query block plus row height */
+	height: 48px;
 }
 /* }}} */
 
@@ -107,8 +113,11 @@
 .ui-query-builder .btn.btn-2,
 .ui-query-builder .btn.btn-3,
 .ui-query-builder .btn.btn-4 {
+	border-radius: 3px;
 	color: #FFF;
-	min-height: 33px;
+	height: 38px;
+	line-height: 28px;
+	padding: 5px 15px;
 }
 
 .btn-fill {
@@ -126,34 +135,36 @@
 
 .ui-query-builder .btn > input.form-control {
 	background: transparent;
-	box-shadow: none;
-	padding: 0;
-	color: #FFF;
-	height: auto;
-	cursor: pointer;
 	border: 0;
+	box-shadow: none;
+	color: #FFF;
+	cursor: pointer;
+	height: 100%;
+	padding: 0;
 }
 
 /* Trash button {{{ */
 .ui-query-builder .btn-trash {
-	background-color: red;
 	border: 0;
 	border-radius: 50%;
-	height: 25px;
+	height: 24px;
 	left: 20px;
+	line-height: 24px;
 	opacity: 0;
+	padding: 0;
 	pointer-events: none;
 	position: absolute;
-	top: 5px;
-	width: 25px;
-	z-index: 1;
+	text-align: center;
+	top: 7px;
+	width: 24px;
+	z-index: 3;/* To beat bootstrap's button-group value of 2 */
 }
 
-.ui-query-builder .btn-trash::before {
+.ui-query-builder .btn-trash::after {
 	color: white;
-	content: '✕';
+	content: '×';
 	font-family: sans-serif;
-	font-size: 15px;
+	font-size: 16px;
 	font-weight: bold;
 }
 
@@ -167,38 +178,82 @@
 }
 /* }}} */
 
-/* Add button */
+/* Add button {{{ */
 .ui-query-builder .btn-add {
-	background: green;
 	border: 0;
 	border-radius: 50%;
-	height: 35px;
-	width: 35px;
+	bottom: 10px;
+	clear: left;
+	display: flex;
+	float: left;
+	height: 0;
+	left: 0;
+	line-height: 26px;
+	margin-bottom: 5px;
+	margin-left: 34px;
+	opacity: 0;
+	padding: 0;
+	pointer-events: none;
+	width: 26px;
+	z-index: 3;
 }
-.ui-query-builder .btn-add::before {
+
+.ui-query-builder .btn-add::after {
 	top: -2px;
 	position: relative;
 	color: white;
 	content: '+';
 	font-family: sans-serif;
-	font-size: 20px;
+	font-size: 18px;
 	font-weight: bold;
+	text-align: center;
+	width: 100%;
 }
+
+.ui-query-builder .btn-add::before {
+	background-image:
+		linear-gradient(90deg,#ccc 4px,transparent 0),
+		linear-gradient(0deg,#ccc 4px,transparent 0);
+	bottom: 15px;
+	content: '';
+	display: block;
+	height: 44px;
+	left: 13px;
+	position: absolute;
+	width: 30px;
+	z-index: -1;
+}
+
+/* Events */
+.ui-query-builder .btn-add:active,
+.ui-query-builder .btn-add:focus {
+	outline: 0;
+}
+
+/* On query container hover */
+.ui-query-builder:hover .btn-add {
+	height: 26px;
+	opacity: 1;
+	pointer-events: all;
+}
+/* }}} */
 /* }}} */
 
 /* Pills {{{ */
 .ui-query-builder .pill {
-	display: inline-block;
 	background-color: #5bc0de;
-	margin: 2px;
-	padding: 4px 10px;
-	min-width: 10px;
-	font-size: 12px;
-	color: #fff;
-	text-align: center;
-	white-space: nowrap;
-	vertical-align: middle;
 	border-radius: 10px;
+	color: #fff;
+	display: inline-block;
+	font-size: 12px;
+	line-height: 1rem;
+	margin-top: 3px;
+	margin-right: 5px;
+	min-width: 10px;
+	padding: 5px 10px;
+	text-align: center;
+	vertical-align: middle;
+	white-space: nowrap;
 }
 /* }}} */
 
@@ -211,7 +266,7 @@
 /* Mouse hovering {{{ */
 .ui-query-builder .btn i.fa-caret-down {
 	float: right;
-	margin-top: 2px;
+	line-height: 28px;
 	visibility: hidden;
 }
 
@@ -225,5 +280,19 @@
 }
 .ui-query-builder .btn:hover > input.form-control {
 	border-bottom: 1px solid #AAA;
+}
+/* }}} */
+
+/* Hide native date picker input controls {{{ */
+/* Chrome's increment/decrement buttons */
+input[type='date']::-webkit-inner-spin-button,
+input[type='date']::-webkit-outer-spin-button {
+	-webkit-appearance: none;
+	margin: 0;
+}
+
+/* Chrome's clear input button */
+input[type='date']::-webkit-clear-button {
+    display: none;
 }
 /* }}} */
