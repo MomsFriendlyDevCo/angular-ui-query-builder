@@ -558,7 +558,7 @@ angular.module('angular-ui-query-builder')
 	},
 	restrict: 'AE',
 	transclude: true,
-	controller: function($scope, qbTableUtilities) {
+	controller: function($scope, $rootScope, qbTableUtilities) {
 		var $ctrl = this;
 
 		$scope.search = '';
@@ -570,7 +570,7 @@ angular.module('angular-ui-query-builder')
 				$comment: 'search',
 				$or: _($scope.spec)
 					.pickBy(v => v.type == 'string')
-					.mapValues((v, k) => [{$regexp: '/' + qbTableUtilities.escapeRegExp($scope.search) + '/', options: 'i'}])
+					.mapValues((v, k) => [{$regexp: qbTableUtilities.escapeRegExp($scope.search), options: 'i'}])
 					.value()
 			};
 
@@ -582,11 +582,19 @@ angular.module('angular-ui-query-builder')
 				_.set($scope.query, existingQuery, searchQuery);
 			} else if (_.isEqual(_.keys($scope.query), ['$and'])) { // Non-existing - Query is of form {$and: QUERY} --
 				$scope.query.$and.push(searchQuery);
-			} else if (_.isObject($scope.query)) { // Non-existing - Wrap entire query in {$and}
-				$scope.query = {$and: [$scope.query, searchQuery]};
+			} else if (_.isObject($scope.query)) { // Non-existing - Append as a single key $or
+				$scope.query.$or = _($scope.spec)
+					.pickBy(v => v.type == 'string')
+					.map((v, k) => ({
+						[k]: {$regexp: qbTableUtilities.escapeRegExp($scope.search), options: 'i'},
+					}))
+					.value()
 			} else { // Give up
 				console.warn('Unable to place search query', searchQuery, 'within complex query', $scope.query);
 			}
+
+			// Inform the main query builder that we've changed something
+			$rootScope.$broadcast('queryBuilder.change', $scope.query);
 		};
 
 		$scope.clear = ()=> {
@@ -614,7 +622,7 @@ angular.module('angular-ui-query-builder')
 				.value()
 
 			if (searchExpression)
-				$scope.search = qbTableUtilities.unescapeRegExp(_.trim(searchExpression, '/'));
+				$scope.search = qbTableUtilities.unescapeRegExp(searchExpression);
 		};
 
 		$ctrl.$onInit = ()=> $scope.check();

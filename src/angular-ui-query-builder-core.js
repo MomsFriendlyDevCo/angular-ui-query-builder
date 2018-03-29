@@ -64,21 +64,16 @@ angular.module('angular-ui-query-builder',[])
 						type: 'search',
 						title: 'Search',
 						value: // Horrible expression to find the first regexp value
-							_(v).map(i =>
-								_.chain(i)
-									.first()
-									.values()
-									.first()
-									.pickBy((v, k) => k == '$regexp')
-									.values()
-									.get(0)
-									.value()
-								)
-								.get(0),
+							_.chain(v)
+								.first()
+								.values()
+								.first()
+								.get('$regexp')
+								.value(),
 						fields:
 							_(v)
-								.map(i => i.map(x => _.keys(x)))
-								.flattenDeep(2)
+								.map(i => _.keys(i))
+								.flatten()
 								.value(),
 						actions,
 					};
@@ -166,17 +161,12 @@ angular.module('angular-ui-query-builder',[])
 						case 'exists':
 							return {$exists: ql.action == '$exists'};
 						case 'search':
-							return {
-								$or:
-									ql.fields.map(f =>
-										[{
-											[f]: {
-												$regexp: ql.value,
-												options: 'i',
-											},
-										}]
-									),
-							};
+							return ql.fields.map(f => ({
+								[f]: {
+									$regexp: ql.value,
+									options: 'i',
+								},
+							}));
 						default:
 							console.warn('Unknown type to convert:', ql.type);
 					}
@@ -218,8 +208,17 @@ angular.module('angular-ui-query-builder',[])
 			$ctrl.qbQuery = QueryBuilder.queryToArray($ctrl.query, $ctrl.qbSpec);
 		};
 
-		$scope.$on('queryBuilder.change', ()=> $timeout(()=> { // Timeout to wait for Angular to catch up with its low level populates
-			// Export the query back to the source object
+
+		/**
+		* Emitted by lower elements to inform the main builder that something has changed
+		* This will recompute the output query
+		*/
+		$scope.$on('queryBuilder.change', (e, replaceQuery) => $timeout(()=> { // Timeout to wait for Angular to catch up with its low level populates
+			if (replaceQuery) { // If we're given an entire query to overwrite - recompute it
+				$ctrl.query = replaceQuery;
+				$ctrl.qbQuery = QueryBuilder.queryToArray($ctrl.query, $ctrl.qbSpec);
+			}
+
 			$ctrl.query = QueryBuilder.arrayToQuery($ctrl.qbQuery);
 		}));
 	},
