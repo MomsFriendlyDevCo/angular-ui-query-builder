@@ -610,19 +610,23 @@ angular.module('angular-ui-query-builder')
 			}
 		};
 
-		// Try and populate initial query
+		/**
+		* Try and populate initial query
+		* NOTE: This is currently only compatible with query.$or.0.*.$regexp level queries
+		*/
 		$scope.check = ()=> {
-			var existingQuery = qbTableUtilities.find($scope.query, {$comment: 'search'});
-			if (!existingQuery) return;
-
-			var searchExpression = _.chain($scope.query)
-				.get(existingQuery.concat(['$or', 0])) // Look at found path + $or.0 (first element within $or expression)
-				.values() // Flatten into an array
-				.get([0, '$regexp']) // Find the first $regexp matcher
-				.value()
-
-			if (searchExpression)
-				$scope.search = qbTableUtilities.unescapeRegExp(searchExpression);
+			try {
+				$scope.search = _.chain($scope.query)
+					.get('$or')
+					.first()
+					.values()
+					.first()
+					.get('$regexp')
+					.thru(v => qbTableUtilities.unescapeRegExp(v || ''))
+					.value();
+			} catch (e) {
+				$scope.search = '';
+			}
 		};
 
 		$ctrl.$onInit = ()=> $scope.check();
