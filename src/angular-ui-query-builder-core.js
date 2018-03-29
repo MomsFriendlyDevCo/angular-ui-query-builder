@@ -111,9 +111,14 @@ angular.module('angular-ui-query-builder',[])
 						action:
 							v.$in ? '$in'
 							: v.$nin ? '$nin'
-							: '$in',
+							: s.enum.length ? '$in'
+							: '$eq',
 						enum: s.enum,
-						value: v.$in || v.$nin || [v],
+						value:
+							v.$in ? v.$in
+							: v.$nin ? v.$nin
+							: s.enum.length && !_.isArray(v) ? [v]
+							: v,
 						actions,
 					};
 				} else { // General fields
@@ -194,6 +199,7 @@ angular.module('angular-ui-query-builder',[])
 			<div class="query-container">
 				<ui-query-builder-group
 					qb-group="$ctrl.qbQuery"
+					qb-spec="$ctrl.qbSpec"
 				></ui-query-builder-group>
 			</div>
 		</div>
@@ -221,6 +227,48 @@ angular.module('angular-ui-query-builder',[])
 
 			$ctrl.query = QueryBuilder.arrayToQuery($ctrl.qbQuery);
 		}));
+
+
+		/**
+		* Remove an item from the query by path
+		* @param {Object} event
+		* @param {string} path The path to remove
+		*/
+		$scope.$on('queryBuilder.pathAction.drop', (e, path) => {
+			$ctrl.qbQuery = $ctrl.qbQuery.filter(p => p.path != path);
+			$ctrl.query = QueryBuilder.arrayToQuery($ctrl.qbQuery);
+		});
+
+
+		/**
+		* Swap an item from within query by path
+		* @param {Object} event
+		* @param {string} path The path to swap
+		* @param {string} newPath The new path to use
+		*/
+		$scope.$on('queryBuilder.pathAction.swap', (e, path, newPath) => {
+			// Drop existing path
+			$ctrl.qbQuery = $ctrl.qbQuery.filter(p => p.path != path);
+			$ctrl.query = QueryBuilder.arrayToQuery($ctrl.qbQuery);
+
+			// Add new path query (also performs a recompute)
+			$scope.$emit('queryBuilder.pathAction.add', newPath);
+		});
+
+
+		/**
+		* Add a new item by path
+		* @param {Object} event
+		* @param {string} path The new path to add
+		*/
+		$scope.$on('queryBuilder.pathAction.add', (e, path) => {
+			// Append new path and set to blank
+			$ctrl.query[path] = '';
+			$ctrl.qbQuery = QueryBuilder.queryToArray($ctrl.query, $ctrl.qbSpec);
+
+			// Recompute
+			$ctrl.query = QueryBuilder.arrayToQuery($ctrl.qbQuery);
+		});
 	},
 })
 
@@ -228,16 +276,18 @@ angular.module('angular-ui-query-builder',[])
 /**
 * Query builder element that holds a collection of queries - an array
 * @param {array} qbGroup Collection of fields to render
+* @param {Object} qbSpec Processed queryBuilder spec to pass to sub-controls
 */
 .component('uiQueryBuilderGroup', {
 	bindings: {
 		qbGroup: '=',
+		qbSpec: '<',
 	},
 	template: `
 		<div ng-repeat="row in $ctrl.qbGroup">
 			<ui-query-builder-row
 				qb-item="row"
-				spec="$ctrl.spec"
+				qb-spec="$ctrl.qbSpec"
 			></ui-query-builder-row>
 		</div>
 	`,
@@ -254,10 +304,12 @@ angular.module('angular-ui-query-builder',[])
 .component('uiQueryBuilderRow', {
 	bindings: {
 		qbItem: '=',
+		qbSpec: '<',
 	},
 	controller: function($scope, QueryBuilder) {
 		var $ctrl = this;
 
+		$ctrl.delete = path => $scope.$emit('queryBuilder.pathAction.drop', path);
 		$ctrl.setChanged = ()=> $scope.$emit('queryBuilder.change');
 	},
 	template: `
@@ -320,11 +372,13 @@ angular.module('angular-ui-query-builder',[])
 			<!-- }}} -->
 			<!-- Date {{{ -->
 			<div ng-switch-when="date" class="query-row">
-				<div class="query-block">
-					<div class="btn btn-1 btn-block">
-						{{$ctrl.qbItem.title}}
-					</div>
-				</div>
+				<a ng-click="$ctrl.delete($ctrl.qbItem.path)" class="btn-trash"></a>
+				<ui-query-builder-path
+					class="query-block"
+					level="1"
+					selected="$ctrl.qbItem.path"
+					qb-spec="$ctrl.qbSpec"
+				></ui-query-builder-path>
 				<ui-query-builder-block-menu
 					class="query-block"
 					level="2"
@@ -414,6 +468,46 @@ angular.module('angular-ui-query-builder',[])
 
 
 /**
+* Component for drawing a path selection component
+* This is usually made up of segmented dropdown lists to choose a path in dotted notation
+* @param {number} level The level of button we are drawing
+* @param {string} selected The currently selected path in dotted notation
+* @param {Object} qbSpec Processed queryBuilder spec of the query to allow choices from
+*/
+.component('uiQueryBuilderPath', {
+	bindings: {
+		level: '<',
+		selected: '<',
+		qbSpec: '<',
+	},
+	controller: function($scope) {
+		var $ctrl = this;
+
+		$ctrl.setSelected = option => $scope.$emit('queryBuilder.pathAction.swap', $ctrl.selected, option);
+
+		$ctrl.options;
+		$ctrl.$onInit = ()=> {
+			$ctrl.options = _.map($ctrl.qbSpec, (info, path) => Object.assign({}, {
+				path,
+				title: _.startCase(path),
+			}, info));
+
+			$ctrl.selectedOption = $ctrl.options.find(p => p.path == $ctrl.selected);
+		};
+	},
+	template: `
+		<a class="btn btn-block btn-{{$ctrl.level}} dropdown-toggle" data-toggle="dropdown">
+			{{$ctrl.selectedOption.title}}
+			<i class="fa fa-caret-down"></i>
+		</a>
+		<ul class="dropdown-menu pull-right">
+			<li ng-repeat="path in $ctrl.options track by path.path"><a ng-click="$ctrl.setSelected(path.path)">{{path.title}}</a></li>
+		</ul>
+	`,
+})
+
+
+/**
 * Component for drawing a Block as a dropdown list of options
 * @param {number} level The level of button we are drawing
 * @param {array} options A collection of options to display. Each should be of the form {id, title}
@@ -498,7 +592,6 @@ angular.module('angular-ui-query-builder',[])
 		</ul>
 	`,
 })
-
 
 
 
