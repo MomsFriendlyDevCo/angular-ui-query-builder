@@ -1,5 +1,7 @@
 'use strict';
 
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
 angular.module('angular-ui-query-builder')
 
 // qbTableSettings (provider) {{{
@@ -41,6 +43,11 @@ angular.module('angular-ui-query-builder')
 // qbTableUtilities (service) {{{
 .service('qbTableUtilities', function () {
 	return {
+		/**
+  * Return a human readable synopsis of a query
+  * @param {object} query The query to summerise
+  * @return {string} A short string summerising the query
+  */
 		getSynopsis: function getSynopsis(query) {
 			var filters = _.keys(query).filter(function (i) {
 				return !['sort', 'skip', 'limit', 'select'].includes(i);
@@ -49,7 +56,53 @@ angular.module('angular-ui-query-builder')
 			return [filters.length ? filters.length + ' filters' : 'All records', query.sort ? query.sort.startsWith('-') ? 'sorted by ' + query.sort.substr(1) + ' (reverse order)' : 'sorted by ' + query.sort : null, query.limit ? 'limited to ' + query.limit + ' rows' : null, query.offset ? 'starting at record ' + query.skip : null, query.select ? 'selecting only ' + query.select.length + ' columns' : null].filter(function (i) {
 				return i;
 			}).join(', ');
+		},
+
+		/**
+  * Find the dotted path to a specific query element by a predicate
+  * @param {object} query The query to search
+  * @returns {string|false} Either the found path of the item or false
+  */
+		find: function find(query, predicate) {
+			var searchExpr = _.isFunction(predicate) ? predicate : _.matches(predicate);
+			var foundPath;
+			var deepSearcher = function deepSearcher(node, path) {
+				if (searchExpr(node, path.slice(path.length - 1))) {
+					foundPath = path;
+					return true;
+				} else if (_.isArray(node)) {
+					return node.some(function (v, k) {
+						return deepSearcher(v, path.concat(k));
+					});
+				} else if (_.isObject(node)) {
+					return _.some(node, function (v, k) {
+						return deepSearcher(v, path.concat(k));
+					});
+				}
+			};
+
+			var res = deepSearcher(query, []);
+			return res ? foundPath : false;
+		},
+
+		/**
+  * Utlility function to return an escaped expression within a RegExp
+  * @param {string} text The text to escape
+  * @returns {string} The escaped expression
+  */
+		escapeRegExp: function escapeRegExp(text) {
+			return String(text).replace(/(\W)/g, '\\$1');
+		},
+
+		/**
+  * Utility to reverse quoting a RegExp
+  * @param {string} text The escaped regular expression to reverse
+  * @returns {string} The unescaped expression
+  */
+		unescapeRegExp: function unescapeRegExp(text) {
+			return String(text).replace(/\\(\W)/g, '$1');
 		}
+
 	};
 })
 // }}}
@@ -456,6 +509,106 @@ angular.module('angular-ui-query-builder')
 			// }}}
 		}],
 		template: '\n\t\t<div class="modal fade">\n\t\t\t<div class="modal-dialog modal-lg">\n\t\t\t\t<div ng-if="isShowing" class="modal-content">\n\t\t\t\t\t<div class="modal-header">\n\t\t\t\t\t\t<a class="close" data-dismiss="modal"><i class="fa fa-times"></i></a>\n\t\t\t\t\t\t<h4 class="modal-title">Export</h4>\n\t\t\t\t\t</div>\n\t\t\t\t\t<div class="modal-body form-horizontal">\n\t\t\t\t\t\t<div class="form-group">\n\t\t\t\t\t\t\t<label class="col-sm-3 control-label">Output format</label>\n\t\t\t\t\t\t\t<div class="col-sm-9">\n\t\t\t\t\t\t\t\t<select ng-model="settings.format" class="form-control">\n\t\t\t\t\t\t\t\t\t<option ng-repeat="format in qbTableSettings.export.formats track by format.id" value="{{format.id}}">{{format.title}}</option>\n\t\t\t\t\t\t\t\t</select>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t\t<div class="form-group">\n\t\t\t\t\t\t\t<label class="col-sm-3 control-label">Criteria</label>\n\t\t\t\t\t\t\t<div class="col-sm-9">\n\t\t\t\t\t\t\t\t<div class="panel-group" id="qb-export-criteria-{{$id}}">\n\t\t\t\t\t\t\t\t\t<div class="panel panel-default">\n\t\t\t\t\t\t\t\t\t\t<div class="panel-heading">\n\t\t\t\t\t\t\t\t\t\t\t<h4 class="panel-title">\n\t\t\t\t\t\t\t\t\t\t\t\t<a data-toggle="collapse" data-target="#qb-export-criteria-{{$id}}-query" data-parent="#qb-export-criteria-{{$id}}" class="btn-block collapsed">\n\t\t\t\t\t\t\t\t\t\t\t\t\t{{querySynopsis}}\n\t\t\t\t\t\t\t\t\t\t\t\t\t<i class="fa fa-caret-right pull-right"></i>\n\t\t\t\t\t\t\t\t\t\t\t\t</a>\n\t\t\t\t\t\t\t\t\t\t\t</h4>\n\t\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t\t\t<div id="qb-export-criteria-{{$id}}-query" class="panel-collapse collapse container">\n\t\t\t\t\t\t\t\t\t\t\t<ui-query-builder\n\t\t\t\t\t\t\t\t\t\t\t\tquery="settings.query"\n\t\t\t\t\t\t\t\t\t\t\t\tspec="spec"\n\t\t\t\t\t\t\t\t\t\t\t></ui-query-builder>\n\t\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t\t<div class="form-group">\n\t\t\t\t\t\t\t<label class="col-sm-3 control-label">Columns</label>\n\t\t\t\t\t\t\t<div class="col-sm-9">\n\t\t\t\t\t\t\t\t<div class="panel-group" id="qb-export-columns-{{$id}}">\n\t\t\t\t\t\t\t\t\t<div class="panel panel-default">\n\t\t\t\t\t\t\t\t\t\t<div class="panel-heading">\n\t\t\t\t\t\t\t\t\t\t\t<h4 class="panel-title">\n\t\t\t\t\t\t\t\t\t\t\t\t<a data-toggle="collapse" data-target="#qb-export-columns-{{$id}}-columns" data-parent="#qb-export-columns-{{$id}}" class="btn-block collapsed">\n\t\t\t\t\t\t\t\t\t\t\t\t\t{{columnSynopsis}}\n\t\t\t\t\t\t\t\t\t\t\t\t\t<i class="fa fa-caret-right pull-right"></i>\n\t\t\t\t\t\t\t\t\t\t\t\t</a>\n\t\t\t\t\t\t\t\t\t\t\t</h4>\n\t\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t\t\t<div id="qb-export-columns-{{$id}}-columns" class="panel-collapse collapse row">\n\t\t\t\t\t\t\t\t\t\t\t<div class="col-xs-12">\n\t\t\t\t\t\t\t\t\t\t\t\t<table qb-table class="table table-hover">\n\t\t\t\t\t\t\t\t\t\t\t\t\t<thead>\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t<tr>\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t<th qb-cell selector></th>\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t<th>Column</th>\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t</tr>\n\t\t\t\t\t\t\t\t\t\t\t\t\t</thead>\n\t\t\t\t\t\t\t\t\t\t\t\t\t<tbody>\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t<tr ng-repeat="col in settings.columns track by col.id">\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t<td qb-cell selector="col.selected"></td>\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t<td>{{col.title}}</td>\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t</tr>\n\t\t\t\t\t\t\t\t\t\t\t\t\t</tbody>\n\t\t\t\t\t\t\t\t\t\t\t\t</table>\n\t\t\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t\t<div ng-repeat="question in qbTableSettings.export.questions track by question.id" class="form-group">\n\t\t\t\t\t\t\t<label class="col-sm-3 control-label">{{question.title}}</label>\n\t\t\t\t\t\t\t<div ng-switch="question.type" class="col-sm-9">\n\t\t\t\t\t\t\t\t<div ng-switch-when="text">\n\t\t\t\t\t\t\t\t\t<input type="text" ng-model="settings.questions[question.id]" class="form-control"/>\n\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t<div ng-switch-default>\n\t\t\t\t\t\t\t\t\t<div class="alert alert-danger">\n\t\t\t\t\t\t\t\t\t\tUnknown question type: "{{question.type}}"\n\t\t\t\t\t\t\t\t\t\t<pre>{{question | json}}</pre>\n\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t<div ng-if="question.help" class="help-block">{{question.help}}</div>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t</div>\n\t\t\t\t\t<div class="modal-footer">\n\t\t\t\t\t\t<div class="pull-left">\n\t\t\t\t\t\t\t<a class="btn btn-danger" data-dismiss="modal">Cancel</a>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t\t<div class="pull-right">\n\t\t\t\t\t\t\t<a ng-click="exportExecute()" class="btn btn-primary" data-dismiss="modal">Export</a>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t</div>\n\t\t<ng-transclude>\n\t\t\t<a ng-click="exportPrompt()" class="btn btn-default">Export...</a>\n\t\t</ng-transclude>\n\t'
+	};
+})
+// }}}
+
+// qbSearch {{{
+/**
+* Directive to automatically populate a generic search into a query via a single textbox
+* NOTE: Any transcluded content will replace the basic `<input/>` template. Bind to `search` to set the search criteria and fire `submit()` to submit the change, 'clear()' to clear the search
+* @param {Object} query The query object to populate
+* @param {Object} spec The specification object of the collection
+*/
+.directive('qbSearch', function () {
+	return {
+		scope: {
+			query: '=',
+			spec: '<'
+		},
+		restrict: 'AE',
+		transclude: true,
+		controller: ['$scope', '$rootScope', 'qbTableUtilities', function controller($scope, $rootScope, qbTableUtilities) {
+			var $ctrl = this;
+
+			$scope.search = '';
+
+			$scope.submit = function () {
+				if (!$scope.search) return $scope.clear();
+
+				var searchQuery = {
+					$comment: 'search',
+					$or: _($scope.spec).pickBy(function (v) {
+						return v.type == 'string';
+					}).mapValues(function (v, k) {
+						return [{ $regexp: qbTableUtilities.escapeRegExp($scope.search), options: 'i' }];
+					}).value()
+				};
+
+				var existingQuery = qbTableUtilities.find($scope.query, { $comment: 'search' });
+				if (existingQuery && _.isEqual(existingQuery, ['$comment'])) {
+					// Existing - found at root level
+					$scope.query = searchQuery;
+				} else if (existingQuery && existingQuery[0] == '$and') {
+					// Existing - Found within $and wrapper
+					_.set($scope.query, existingQuery, searchQuery);
+				} else if (_.isEqual(_.keys($scope.query), ['$and'])) {
+					// Non-existing - Query is of form {$and: QUERY} --
+					$scope.query.$and.push(searchQuery);
+				} else if (_.isObject($scope.query)) {
+					// Non-existing - Append as a single key $or
+					$scope.query.$or = _($scope.spec).pickBy(function (v) {
+						return v.type == 'string';
+					}).map(function (v, k) {
+						return _defineProperty({}, k, { $regexp: qbTableUtilities.escapeRegExp($scope.search), options: 'i' });
+					}).value();
+				} else {
+					// Give up
+					console.warn('Unable to place search query', searchQuery, 'within complex query', $scope.query);
+				}
+
+				// Inform the main query builder that we've changed something
+				$rootScope.$broadcast('queryBuilder.change', $scope.query);
+			};
+
+			$scope.clear = function () {
+				var existingQuery = qbTableUtilities.find($scope.query, { $comment: 'search' });
+				if (existingQuery && _.isEqual(existingQuery, ['$comment'])) {
+					// Existing - found at root level
+					$scope.query = {};
+				} else if (existingQuery && existingQuery[0] == '$and') {
+					// Existing - Found within $and wrapper, unwrap and return to simple key/val format
+					$scope.query = $scope.query.$and.find(function (v, k) {
+						return v.$comment != 'search';
+					});
+				} else if (existingQuery) {
+					// Existing - Delete by path
+					_.unset($scope.query, existingQuery);
+				} else {
+					// Give up
+					console.warn('Unable to clear search query within complex query', $scope.query);
+				}
+			};
+
+			/**
+   * Try and populate initial query
+   * NOTE: This is currently only compatible with query.$or.0.*.$regexp level queries
+   */
+			$scope.check = function () {
+				try {
+					$scope.search = _.chain($scope.query).get('$or').first().values().first().get('$regexp').thru(function (v) {
+						return qbTableUtilities.unescapeRegExp(v || '');
+					}).value();
+				} catch (e) {
+					$scope.search = '';
+				}
+			};
+
+			$ctrl.$onInit = function () {
+				return $scope.check();
+			};
+		}],
+		template: '\n\t\t<ng-transclude>\n\t\t\t<form ng-submit="submit()" class="form-inline">\n\t\t\t\t<div class="form-group">\n\t\t\t\t\t<div class="input-group">\n\t\t\t\t\t\t<input type="text" ng-model="search" class="form-control"/>\n\t\t\t\t\t\t<a ng-click="submit()" class="btn btn-default input-group-addon">\n\t\t\t\t\t\t\t<i class="fa fa-search"/>\n\t\t\t\t\t\t</a>\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t</ng-transclude>\n\t'
 	};
 });
 // }}}

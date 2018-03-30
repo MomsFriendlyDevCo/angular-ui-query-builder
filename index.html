@@ -44,12 +44,20 @@
 			<pre>{{query | json}}</pre>
 
 
-			<div class="pull-right">
-				<qb-export
-					query="query"
-					spec="spec"
-					url="/data.json/export"
-				></qb-export>
+			<div class="pull-right form-inline">
+				<div class="form-group">
+					<qb-search
+						query="query"
+						spec="spec"
+					></qb-search>
+				</div>
+				<div class="form-group">
+					<qb-export
+						query="query"
+						spec="spec"
+						url="/data.json/export"
+					></qb-export>
+				</div>
 			</div>
 			<legend>Query builder + table</legend>
 
