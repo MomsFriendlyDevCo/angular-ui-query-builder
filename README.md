@@ -262,9 +262,9 @@ ui-query-builder
 * [ ] Compound queries - `$or` / `$and`
 * [x] Automatically moving from a static string (`$eq` condition) to a multiple choice enum (`$in`) when a comma is used in a string
 * [ ] Convert string ENUMs to a `$in` type automatically
-* [ ] Number filtering - above, below, between
+* [x] Number filtering - above, below, between
 * [x] Date support - date selector, before, after
-* [ ] Nicer syntax support for `$regexp`
+* [x] Nicer syntax support for `$regexp`
 * [ ] Support for `$length`
 * [ ] Nicer multi level path support
 
@@ -275,10 +275,11 @@ qb-tables
 * [x] Sticky headers on scroll
 * [x] Query-Builder integration
 * [x] Sorting per-column
-* [ ] Export to excel functionality
-* [ ] Row selection
-* [ ] Simple searching
+* [x] Export to excel functionality
+* [x] Row selection
+* [x] Simple searching
 * [ ] Freezing columns (low priority)
 * [ ] Responsive layout compatible for mobiles (low priority)
 * [ ] Animated on load or transitions (low priority)
 * [ ] Column reorder capability (low priority)
+* [ ] Sort profiles (e.g. 'show recent', 'only my items')
