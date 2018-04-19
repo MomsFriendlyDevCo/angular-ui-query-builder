@@ -168,11 +168,16 @@
 	z-index: 3;/* To beat bootstrap's button-group value of 2 */
 }
 
+.ui-query-builder .btn-trash:hover {
+	background-color: #e9635f;
+	text-decoration: none;
+}
+
 .ui-query-builder .btn-trash::after {
 	color: white;
 	content: '×';
 	font-family: sans-serif;
-	font-size: 16px;
+	font-size: 23px;
 	font-weight: bold;
 }
 
@@ -304,6 +309,7 @@ input[type='date']::-webkit-clear-button {
 	display: none;
 }
 /* }}} */
+
 .qb-table {
 }
 
@@ -407,6 +413,12 @@ input[type='date']::-webkit-clear-button {
 /* }}} */
 /* }}} */
 
+/* qb-modal {{{ */
+.modal.qb-modal .modal-body {
+	overflow: auto;
+}
+/* }}} */
+
 /* qb-export {{{ */
 qb-export .panel-group {
 	margin-bottom: 0px;
@@ -425,4 +437,10 @@ qb-export a:not(.collapsed) i.fa.fa-caret-right {
 	animation: qb-export-caret-open 0.4s ease 1 forwards;
 }
 /* }}} */
+/* }}} */
+
+/* qb-search {{{ */
+qb-search form {
+	margin-bottom: 0px;
+}
 /* }}} */

@@ -101,6 +101,12 @@
 /* }}} */
 /* }}} */
 
+/* qb-modal {{{ */
+.modal.qb-modal .modal-body {
+	overflow: auto;
+}
+/* }}} */
+
 /* qb-export {{{ */
 qb-export .panel-group {
 	margin-bottom: 0px;
@@ -119,4 +125,10 @@ qb-export a:not(.collapsed) i.fa.fa-caret-right {
 	animation: qb-export-caret-open 0.4s ease 1 forwards;
 }
 /* }}} */
+/* }}} */
+
+/* qb-search {{{ */
+qb-search form {
+	margin-bottom: 0px;
+}
 /* }}} */
