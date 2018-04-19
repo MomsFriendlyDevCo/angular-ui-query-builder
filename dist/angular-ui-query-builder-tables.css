@@ -101,6 +101,12 @@
 /* }}} */
 /* }}} */
 
+/* qb-modal {{{ */
+.modal.qb-modal .modal-body {
+	overflow: auto;
+}
+/* }}} */
+
 /* qb-export {{{ */
 qb-export .panel-group {
 	margin-bottom: 0px;

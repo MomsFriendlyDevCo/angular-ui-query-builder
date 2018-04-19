@@ -513,6 +513,61 @@ angular.module('angular-ui-query-builder')
 })
 // }}}
 
+// qbModal {{{
+/**
+* Button binding that shows a modal allowing the user to edit a query
+* @param {Object} query The query Object to use when exporting
+* @param {Object} spec The specification object of the collection
+* @param {function} [onRefresh] Function to call when the user confirms the query editing. Called as `({query, spec})`
+* @param {string} [binding='complete'] How to bind the given query to the one in progress. ENUM: 'none' - do nothing (only call onRefresh), 'live' - update the query as the user edits, 'complete' - only update when the user finishes
+* @param {string} [title="Edit Filter"] The title of the modal
+*
+* @example
+* <a qb-modal query="myQuery" spec="mySpec" class="btn btn-success">Edit query</a>
+*/
+.directive('qbModal', function () {
+	return {
+		scope: {
+			query: '=',
+			spec: '<',
+			title: '@?',
+			onRefresh: '&?',
+			binding: '@?'
+		},
+		transclude: true,
+		restrict: 'A',
+		controller: ['$element', '$scope', function controller($element, $scope) {
+			var $ctrl = this;
+
+			$ctrl.isShown = false;
+			$ctrl.rebind = function () {
+				$element.one('click', function () {
+					$element.find('.qb-modal').one('hide.bs.modal', function () {
+						$ctrl.isShown = false;
+					}).one('hidden.bs.modal', function () {
+						$ctrl.rebind();
+					}).modal('show');
+				});
+			};
+
+			$scope.submit = function () {
+				if (angular.isFunction($ctrl.onRefresh)) $ctrl.onRefresh({ query: $scope.queryCopy, spec: $scope.spec });
+				if (!$scope.binding || $scope.binding == 'complete') $scope.query = $scope.queryCopy;
+
+				$element.find('.qb-modal').modal('hide');
+			};
+
+			$ctrl.$onInit = function () {
+				$scope.queryCopy = $scope.binding == 'live' ? $scope.query : angular.copy($scope.query);
+			};
+
+			$ctrl.rebind();
+		}],
+		template: '\n\t\t<ng-transclude></ng-transclude>\n\t\t<div class="qb-modal modal fade">\n\t\t\t<div class="modal-dialog modal-lg">\n\t\t\t\t<div class="modal-content">\n\t\t\t\t\t<div class="modal-header">\n\t\t\t\t\t\t<a class="close" data-dismiss="modal"><i class="fa fa-times"></i></a>\n\t\t\t\t\t\t<h4 class="modal-title">{{title || \'Edit Filter\'}}</h4>\n\t\t\t\t\t</div>\n\t\t\t\t\t<div class="modal-body">\n\t\t\t\t\t\t<ui-query-builder\n\t\t\t\t\t\t\tquery="queryCopy"\n\t\t\t\t\t\t\tspec="spec"\n\t\t\t\t\t\t></ui-query-builder>\n\t\t\t\t\t</div>\n\t\t\t\t\t<div class="modal-footer">\n\t\t\t\t\t\t<div class="pull-left">\n\t\t\t\t\t\t\t<a class="btn btn-danger" data-dismiss="modal">Cancel</a>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t\t<div class="pull-right">\n\t\t\t\t\t\t\t<a ng-click="submit()" class="btn btn-success">Refresh</a>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t</div>\n\t'
+	};
+})
+// }}}
+
 // qbSearch {{{
 /**
 * Directive to automatically populate a generic search into a query via a single textbox
