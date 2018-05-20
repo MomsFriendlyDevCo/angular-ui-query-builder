@@ -207,12 +207,15 @@ angular.module('angular-ui-query-builder',[])
 	controller: function($scope, $timeout, QueryBuilder) {
 		var $ctrl = this;
 
+		// Main loader {{{
 		$ctrl.qbSpec;
 		$ctrl.qbQuery;
-		$ctrl.$onInit = ()=> {
+		$scope.$watchGroup(['$ctrl.query', '$ctrl.spec'], ()=> {
+			if (!$ctrl.spec || !$ctrl.query) return; // Not yet got everything we need
 			$ctrl.qbSpec = QueryBuilder.cleanSpec($ctrl.spec);
 			$ctrl.qbQuery = QueryBuilder.queryToArray($ctrl.query, $ctrl.qbSpec);
-		};
+		});
+		// }}}
 
 
 		/**
