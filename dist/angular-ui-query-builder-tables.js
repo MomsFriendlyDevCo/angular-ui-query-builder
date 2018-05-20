@@ -572,17 +572,20 @@ angular.module('angular-ui-query-builder')
 /**
 * Directive to automatically populate a generic search into a query via a single textbox
 * NOTE: Any transcluded content will replace the basic `<input/>` template. Bind to `search` to set the search criteria and fire `submit()` to submit the change, 'clear()' to clear the search
+* NOTE: The logic on what fields to search is that the field is a string AND if at least one field has 'index:true' to check for that. If no fields claim an index all string fields are searched (this may cause issues with your backend database). See the useIndexes property for further details
 * @param {Object} query The query object to populate
 * @param {Object} spec The specification object of the collection
 * @param {function} [onRefresh] Function to call as ({query}) when the user changes the search string and a new query is generated
 * @param {string} [binding='complete'] How to bind the given query to the one in progress. ENUM: 'none' - do nothing (only call onRefresh), 'complete' - only update when the user finishes and presses enter or blurs the input
+* @param {string} [useIndexes='auto'] How to determine what fields to search. ENUM: 'all' - All fields', 'string' - Only string fields', 'stringIndexed' - only indexed string fields, 'auto' - 'stringIndexed' if at least one field has {index:true} else 'string'
 */
 .directive('qbSearch', function () {
 	return {
 		scope: {
 			query: '=',
 			spec: '<',
-			onRefresh: '&?'
+			onRefresh: '&?',
+			useIndexes: '@?'
 		},
 		restrict: 'AE',
 		transclude: true,
@@ -616,8 +619,25 @@ angular.module('angular-ui-query-builder')
 					newQuery.$and.push(searchQuery);
 				} else if (_.isObject(newQuery)) {
 					// Non-existing - Append as a single key $or
-					newQuery.$or = _($scope.spec).pickBy(function (v) {
-						return v.type == 'string';
+					var indexMethod = $ctrl.useIndexes || 'auto';
+					if (indexMethod == 'auto') {
+						// Determine what indexing method to use before we begin
+						indexMethod = _.keys($scope.spec).some(function (k) {
+							return k != '_id' && $scope.spec[k].index;
+						}) ? 'stringIndexed' : 'string';
+					}
+					newQuery.$or = _($scope.spec).pickBy(function (v, k) {
+						if (k == '_id') return false; // Never search by ID
+						switch (indexMethod) {
+							case 'all':
+								return true;
+							case 'string':
+								return v.type == 'string';
+							case 'stringIndexed':
+								return v.type == 'string' && v.index;
+							default:
+								throw new Error('Unknown field selection method: "' + indexMethod + '"');
+						}
 					}).map(function (v, k) {
 						return _defineProperty({}, k, { $regexp: qbTableUtilities.escapeRegExp($scope.search), options: 'i' });
 					}).value();
