@@ -574,16 +574,19 @@ angular.module('angular-ui-query-builder')
 * NOTE: Any transcluded content will replace the basic `<input/>` template. Bind to `search` to set the search criteria and fire `submit()` to submit the change, 'clear()' to clear the search
 * @param {Object} query The query object to populate
 * @param {Object} spec The specification object of the collection
+* @param {function} [onRefresh] Function to call as ({query}) when the user changes the search string and a new query is generated
+* @param {string} [binding='complete'] How to bind the given query to the one in progress. ENUM: 'none' - do nothing (only call onRefresh), 'complete' - only update when the user finishes and presses enter or blurs the input
 */
 .directive('qbSearch', function () {
 	return {
 		scope: {
 			query: '=',
-			spec: '<'
+			spec: '<',
+			onRefresh: '&?'
 		},
 		restrict: 'AE',
 		transclude: true,
-		controller: ['$scope', '$rootScope', 'qbTableUtilities', function controller($scope, $rootScope, qbTableUtilities) {
+		controller: ['$scope', '$rootScope', '$timeout', 'qbTableUtilities', function controller($scope, $rootScope, $timeout, qbTableUtilities) {
 			var $ctrl = this;
 
 			$scope.search = '';
@@ -601,29 +604,34 @@ angular.module('angular-ui-query-builder')
 				};
 
 				var existingQuery = qbTableUtilities.find($scope.query, { $comment: 'search' });
+				var newQuery = angular.copy($scope.query);
 				if (existingQuery && _.isEqual(existingQuery, ['$comment'])) {
 					// Existing - found at root level
-					$scope.query = searchQuery;
+					newQuery = searchQuery;
 				} else if (existingQuery && existingQuery[0] == '$and') {
 					// Existing - Found within $and wrapper
-					_.set($scope.query, existingQuery, searchQuery);
-				} else if (_.isEqual(_.keys($scope.query), ['$and'])) {
+					_.set(newQuery, existingQuery, searchQuery);
+				} else if (_.isEqual(_.keys(newQuery), ['$and'])) {
 					// Non-existing - Query is of form {$and: QUERY} --
-					$scope.query.$and.push(searchQuery);
-				} else if (_.isObject($scope.query)) {
+					newQuery.$and.push(searchQuery);
+				} else if (_.isObject(newQuery)) {
 					// Non-existing - Append as a single key $or
-					$scope.query.$or = _($scope.spec).pickBy(function (v) {
+					newQuery.$or = _($scope.spec).pickBy(function (v) {
 						return v.type == 'string';
 					}).map(function (v, k) {
 						return _defineProperty({}, k, { $regexp: qbTableUtilities.escapeRegExp($scope.search), options: 'i' });
 					}).value();
 				} else {
 					// Give up
-					console.warn('Unable to place search query', searchQuery, 'within complex query', $scope.query);
+					console.warn('Unable to place search query', searchQuery, 'within complex query', newQuery);
 				}
 
 				// Inform the main query builder that we've changed something
-				$rootScope.$broadcast('queryBuilder.change', $scope.query);
+				$rootScope.$broadcast('queryBuilder.change', newQuery);
+				if (angular.isFunction($ctrl.onRefresh)) $ctrl.onRefresh({ query: newQuery });
+				if ($ctrl.binding == 'complete' || angular.isUndefined($ctrl.binding)) {
+					$scope.query = newQuery;
+				}
 			};
 
 			$scope.clear = function () {
@@ -663,7 +671,7 @@ angular.module('angular-ui-query-builder')
 				return $scope.check();
 			};
 		}],
-		template: '\n\t\t<ng-transclude>\n\t\t\t<form ng-submit="submit()" class="form-inline">\n\t\t\t\t<div class="form-group">\n\t\t\t\t\t<div class="input-group">\n\t\t\t\t\t\t<input type="text" ng-model="search" class="form-control"/>\n\t\t\t\t\t\t<a ng-click="submit()" class="btn btn-default input-group-addon">\n\t\t\t\t\t\t\t<i class="fa fa-search"/>\n\t\t\t\t\t\t</a>\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t</ng-transclude>\n\t'
+		template: '\n\t\t<ng-transclude>\n\t\t\t<form ng-submit="submit()" class="form-inline">\n\t\t\t\t<div class="form-group">\n\t\t\t\t\t<div class="input-group">\n\t\t\t\t\t\t<input ng-blur="submit()" type="text" ng-model="search" class="form-control"/>\n\t\t\t\t\t\t<a ng-click="submit()" class="btn btn-default input-group-addon">\n\t\t\t\t\t\t\t<i class="fa fa-search"/>\n\t\t\t\t\t\t</a>\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t</ng-transclude>\n\t'
 	};
 });
 // }}}

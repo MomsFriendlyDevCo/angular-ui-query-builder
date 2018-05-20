@@ -36,7 +36,7 @@ angular.module('angular-ui-query-builder', []).service('QueryBuilder', function 
 		return _(query).pickBy(function (v, k) {
 			var maps = spec[k] // Maps onto a spec path
 			|| k == '$and' || k == '$or';
-			if (!maps) console.warn('query-builder', 'Incomming query path', k, 'Does not map to anyhting in spec', spec);
+			if (!maps) console.warn('query-builder', 'Incomming query path', k, 'Does not map to anything in spec', spec);
 			return !!maps;
 		}).map(function (v, k) {
 			var s = spec[k];
@@ -169,12 +169,16 @@ angular.module('angular-ui-query-builder', []).service('QueryBuilder', function 
 	controller: ['$scope', '$timeout', 'QueryBuilder', function controller($scope, $timeout, QueryBuilder) {
 		var $ctrl = this;
 
+		// Main loader {{{
 		$ctrl.qbSpec;
 		$ctrl.qbQuery;
-		$ctrl.$onInit = function () {
+		$scope.$watchGroup(['$ctrl.query', '$ctrl.spec'], function () {
+			if (!$ctrl.spec || !$ctrl.query) return; // Not yet got everything we need
 			$ctrl.qbSpec = QueryBuilder.cleanSpec($ctrl.spec);
 			$ctrl.qbQuery = QueryBuilder.queryToArray($ctrl.query, $ctrl.qbSpec);
-		};
+		});
+		// }}}
+
 
 		/**
   * Emitted by lower elements to inform the main builder that something has changed
