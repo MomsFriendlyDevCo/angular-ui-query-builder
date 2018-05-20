@@ -46,7 +46,7 @@ angular.module('angular-ui-query-builder',[])
 				var maps = spec[k] // Maps onto a spec path
 					|| k == '$and'
 					|| k == '$or';
-				if (!maps) console.warn('query-builder', 'Incomming query path', k, 'Does not map to anyhting in spec', spec);
+				if (!maps) console.warn('query-builder', 'Incomming query path', k, 'Does not map to anything in spec', spec);
 				return !!maps;
 			})
 			.map((v, k) => {
