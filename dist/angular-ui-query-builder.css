@@ -6,6 +6,8 @@
 	/* offset extra margin by last row in the container */
 	margin-bottom: -10px;
 	position: relative;
+	text-align: left;
+	z-index: 0;
 }
 
 /* Clearfix */
