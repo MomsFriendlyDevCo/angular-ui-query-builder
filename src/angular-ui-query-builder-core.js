@@ -320,6 +320,7 @@ angular.module('angular-ui-query-builder',[])
 		<div ng-switch="$ctrl.qbItem.type">
 			<!-- $and / $or condition {{{ -->
 			<div ng-switch-when="binaryGroup" class="query-row">
+				<a ng-click="$ctrl.delete($ctrl.qbItem.path)" class="btn-trash"></a>
 				<div class="query-block">
 					<div class="btn btn-1 btn-block">
 						{{$ctrl.qbItem.title}}
@@ -335,6 +336,7 @@ angular.module('angular-ui-query-builder',[])
 			<!-- }}} -->
 			<!-- String {{{ -->
 			<div ng-switch-when="string" class="query-row">
+				<a ng-click="$ctrl.delete($ctrl.qbItem.path)" class="btn-trash"></a>
 				<div class="query-block">
 					<div class="btn btn-1 btn-block">
 						{{$ctrl.qbItem.title}}
@@ -355,6 +357,7 @@ angular.module('angular-ui-query-builder',[])
 			<!-- }}} -->
 			<!-- Enum {{{ -->
 			<div ng-switch-when="enum" class="query-row">
+				<a ng-click="$ctrl.delete($ctrl.qbItem.path)" class="btn-trash"></a>
 				<div class="query-block">
 					<div class="btn btn-1 btn-block">
 						{{$ctrl.qbItem.title}}
@@ -398,6 +401,7 @@ angular.module('angular-ui-query-builder',[])
 			<!-- }}} -->
 			<!-- Number {{{ -->
 			<div ng-switch-when="number" class="query-row">
+				<a ng-click="$ctrl.delete($ctrl.qbItem.path)" class="btn-trash"></a>
 				<div class="query-block">
 					<div class="btn btn-1 btn-block">
 						{{$ctrl.qbItem.title}}
@@ -418,6 +422,7 @@ angular.module('angular-ui-query-builder',[])
 			<!-- }}} -->
 			<!-- Exists {{{ -->
 			<div ng-switch-when="exists" class="query-row">
+				<a ng-click="$ctrl.delete($ctrl.qbItem.path)" class="btn-trash"></a>
 				<div class="query-block">
 					<div class="btn btn-1 btn-block">
 						{{$ctrl.qbItem.title}}
@@ -433,6 +438,7 @@ angular.module('angular-ui-query-builder',[])
 			<!-- }}} -->
 			<!-- Search {{{ -->
 			<div ng-switch-when="search" class="query-row">
+				<a ng-click="$ctrl.delete($ctrl.qbItem.path)" class="btn-trash"></a>
 				<div class="query-block">
 					<div class="btn btn-1 btn-block">
 						{{$ctrl.qbItem.title}}
@@ -447,6 +453,7 @@ angular.module('angular-ui-query-builder',[])
 			<!-- }}} -->
 			<!-- Unknown {{{ -->
 			<div ng-switch-default class="query-row">
+				<a ng-click="$ctrl.delete($ctrl.qbItem.path)" class="btn-trash"></a>
 				<div class="query-block">
 					<div class="btn btn-warning btn-block">
 						{{$ctrl.qbItem.title}}
