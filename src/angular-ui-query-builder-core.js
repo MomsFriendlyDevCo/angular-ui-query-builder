@@ -348,11 +348,12 @@ angular.module('angular-ui-query-builder',[])
 			<!-- String {{{ -->
 			<div ng-switch-when="string" class="query-row">
 				<a ng-click="$ctrl.delete($ctrl.qbItem.path)" class="btn-trash"></a>
-				<div class="query-block">
-					<div class="btn btn-1 btn-block">
-						{{$ctrl.qbItem.title}}
-					</div>
-				</div>
+				<ui-query-builder-path
+					class="query-block"
+					level="1"
+					selected="$ctrl.qbItem.path"
+					qb-spec="$ctrl.qbSpec"
+				></ui-query-builder-path>
 				<ui-query-builder-block-menu
 					class="query-block"
 					level="2"
@@ -369,11 +370,12 @@ angular.module('angular-ui-query-builder',[])
 			<!-- Enum {{{ -->
 			<div ng-switch-when="enum" class="query-row">
 				<a ng-click="$ctrl.delete($ctrl.qbItem.path)" class="btn-trash"></a>
-				<div class="query-block">
-					<div class="btn btn-1 btn-block">
-						{{$ctrl.qbItem.title}}
-					</div>
-				</div>
+				<ui-query-builder-path
+					class="query-block"
+					level="1"
+					selected="$ctrl.qbItem.path"
+					qb-spec="$ctrl.qbSpec"
+				></ui-query-builder-path>
 				<ui-query-builder-block-menu
 					class="query-block"
 					level="2"
@@ -413,11 +415,12 @@ angular.module('angular-ui-query-builder',[])
 			<!-- Number {{{ -->
 			<div ng-switch-when="number" class="query-row">
 				<a ng-click="$ctrl.delete($ctrl.qbItem.path)" class="btn-trash"></a>
-				<div class="query-block">
-					<div class="btn btn-1 btn-block">
-						{{$ctrl.qbItem.title}}
-					</div>
-				</div>
+				<ui-query-builder-path
+					class="query-block"
+					level="1"
+					selected="$ctrl.qbItem.path"
+					qb-spec="$ctrl.qbSpec"
+				></ui-query-builder-path>
 				<ui-query-builder-block-menu
 					class="query-block"
 					level="2"
@@ -434,11 +437,12 @@ angular.module('angular-ui-query-builder',[])
 			<!-- Exists {{{ -->
 			<div ng-switch-when="exists" class="query-row">
 				<a ng-click="$ctrl.delete($ctrl.qbItem.path)" class="btn-trash"></a>
-				<div class="query-block">
-					<div class="btn btn-1 btn-block">
-						{{$ctrl.qbItem.title}}
-					</div>
-				</div>
+				<ui-query-builder-path
+					class="query-block"
+					level="1"
+					selected="$ctrl.qbItem.path"
+					qb-spec="$ctrl.qbSpec"
+				></ui-query-builder-path>
 				<ui-query-builder-block-menu
 					class="query-block"
 					level="2"
@@ -450,11 +454,12 @@ angular.module('angular-ui-query-builder',[])
 			<!-- Search {{{ -->
 			<div ng-switch-when="search" class="query-row">
 				<a ng-click="$ctrl.delete($ctrl.qbItem.path)" class="btn-trash"></a>
-				<div class="query-block">
-					<div class="btn btn-1 btn-block">
-						{{$ctrl.qbItem.title}}
-					</div>
-				</div>
+				<ui-query-builder-path
+					class="query-block"
+					level="1"
+					selected="$ctrl.qbItem.path"
+					qb-spec="$ctrl.qbSpec"
+				></ui-query-builder-path>
 				<div class="query-block">
 					<div class="btn btn-2 btn-block">
 						<input ng-value="$ctrl.qbItem.value" ng-keyup="$ctrl.setChanged()" type="text" class="form-control"/>
@@ -465,11 +470,12 @@ angular.module('angular-ui-query-builder',[])
 			<!-- Unknown {{{ -->
 			<div ng-switch-default class="query-row">
 				<a ng-click="$ctrl.delete($ctrl.qbItem.path)" class="btn-trash"></a>
-				<div class="query-block">
-					<div class="btn btn-warning btn-block">
-						{{$ctrl.qbItem.title}}
-					</div>
-				</div>
+				<ui-query-builder-path
+					class="query-block"
+					level="1"
+					selected="$ctrl.qbItem.path"
+					qb-spec="$ctrl.qbSpec"
+				></ui-query-builder-path>
 				<div class="query-block">
 					<div class="btn btn-warning btn-block">
 						Unknown handler: {{$ctrl.qbItem.type}}
