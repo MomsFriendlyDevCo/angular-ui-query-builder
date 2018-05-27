@@ -210,13 +210,14 @@ angular.module('angular-ui-query-builder',[])
 		// Main loader {{{
 		$ctrl.qbSpec;
 		$ctrl.qbQuery;
-		$scope.$watchGroup(['$ctrl.query', '$ctrl.spec'], ()=> {
+
+		var initUnwatch = $scope.$watchGroup(['$ctrl.query', '$ctrl.spec'], ()=> {
 			if (!$ctrl.spec || !$ctrl.query) return; // Not yet got everything we need
 			$ctrl.qbSpec = QueryBuilder.cleanSpec($ctrl.spec);
 			$ctrl.qbQuery = QueryBuilder.queryToArray($ctrl.query, $ctrl.qbSpec);
+			initUnwatch(); // Release the watcher so we don't get stuck in a loop
 		});
 		// }}}
-
 
 		/**
 		* Emitted by lower elements to inform the main builder that something has changed
