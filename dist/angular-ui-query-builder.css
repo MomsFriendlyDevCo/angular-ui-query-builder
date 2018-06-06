@@ -6,6 +6,8 @@
 	/* offset extra margin by last row in the container */
 	margin-bottom: -10px;
 	position: relative;
+	text-align: left;
+	z-index: 0;
 }
 
 /* Clearfix */
@@ -193,6 +195,7 @@
 
 /* Add button {{{ */
 .ui-query-builder .btn-add {
+	background: #008000;
 	border: 0;
 	border-radius: 50%;
 	bottom: 10px;
