@@ -60,13 +60,22 @@ angular.module('angular-ui-query-builder')
 		stickyTfoot: '<?',
 	},
 	restrict: 'AC',
-	controller: function($attrs, $element, $scope, qbTableSettings) {
+	controller: function($attrs, $element, $rootScope, $scope, qbTableSettings) {
 		var $ctrl = this;
 		$ctrl.query = $scope.qbTable; // Copy into $ctrl so children can access it / $watch it
 
 		$ctrl.$broadcast = (msg, ...args) => $scope.$broadcast(msg, ...args); // Rebind broadcast so its accessible from children
 		$ctrl.$on = (event, cb) => $scope.$on(event, cb);
+		$ctrl.setDirty = ()=> $rootScope.$broadcast('queryBuilder.change');
 
+		/**
+		* Set the value of a query element to another value
+		* NOTE: This function does not call $ctrl.setDirty() by default but you can chain this
+		* @param {string} field The field name to change
+		* @param {*} value The value to change to, if omitted the field is removed entirely
+		* @example set the sort criteria and then refresh
+		* qbTable.setField('sort', 'email').setDirty()
+		*/
 		$ctrl.setField = (field, value) => {
 			if (value == undefined) { // Remove from query
 				delete $ctrl.query[field];
@@ -86,6 +95,8 @@ angular.module('angular-ui-query-builder')
 				default:
 					$scope.qbTable[field] = value;
 			}
+
+			return $ctrl;
 		};
 
 		$element.addClass('qb-table');
@@ -325,9 +336,13 @@ angular.module('angular-ui-query-builder')
 
 		$scope.navPageRelative = pageRelative => {
 			if (pageRelative == -1) {
-				$scope.qbTable.setField('skip', Math.min(($scope.qbTable.query.skip || 0) - ($scope.qbTable.query.limit || 10), 0));
+				$scope.qbTable
+					.setField('skip', Math.min(($scope.qbTable.query.skip || 0) - ($scope.qbTable.query.limit || 10), 0))
+					.setDirty();
 			} else if (pageRelative == 1) {
-				$scope.qbTable.setField('skip', ($scope.qbTable.query.skip || 0) + ($scope.qbTable.query.limit || 10), 0);
+				$scope.qbTable
+					.setField('skip', ($scope.qbTable.query.skip || 0) + ($scope.qbTable.query.limit || 10), 0)
+					.setDirty();
 			} else {
 				throw new Error('Unsupported page move: ' + pageRelative);
 			}
