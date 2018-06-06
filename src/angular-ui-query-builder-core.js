@@ -409,7 +409,12 @@ angular.module('angular-ui-query-builder',[])
 				></ui-query-builder-block-menu>
 				<div class="query-block">
 					<div class="btn btn-3 btn-block">
-						<input ng-value="$ctrl.qbItem.value" type="text" class="form-control"/>
+						<input
+							ng-model="$ctrl.qbItem.value"
+							ng-change="$ctrl.setChanged()"
+							type="text"
+							class="form-control"
+						/>
 					</div>
 				</div>
 			</div>
@@ -454,7 +459,12 @@ angular.module('angular-ui-query-builder',[])
 				></ui-query-builder-block-menu>
 				<div class="query-block">
 					<div class="btn btn-3 btn-block">
-						<input ng-value="$ctrl.qbItem.value" type="date" class="form-control"/>
+						<input
+							ng-model="$ctrl.qbItem.value"
+							ng-change="$ctrl.setChanged()"
+							type="date"
+							class="form-control"
+						/>
 					</div>
 				</div>
 			</div>
@@ -476,7 +486,12 @@ angular.module('angular-ui-query-builder',[])
 				></ui-query-builder-block-menu>
 				<div class="query-block">
 					<div class="btn btn-3 btn-block">
-						<input ng-value="$ctrl.qbItem.value" type="number" class="form-control"/>
+						<input
+							ng-value="$ctrl.qbItem.value"
+							ng-changed="$ctrl.setChanged()"
+							type="number"
+							class="form-control"
+						/>
 					</div>
 				</div>
 			</div>
@@ -509,7 +524,12 @@ angular.module('angular-ui-query-builder',[])
 				></ui-query-builder-path>
 				<div class="query-block">
 					<div class="btn btn-2 btn-block">
-						<input ng-value="$ctrl.qbItem.value" ng-keyup="$ctrl.setChanged()" type="text" class="form-control"/>
+						<input
+							ng-model="$ctrl.qbItem.value"
+							ng-change="$ctrl.setChanged()"
+							type="text"
+							class="form-control"
+						/>
 					</div>
 				</div>
 			</div>
@@ -524,7 +544,12 @@ angular.module('angular-ui-query-builder',[])
 				></ui-query-builder-block>
 				<div class="query-block">
 					<div class="btn btn-2 btn-block">
-						<input ng-value="$ctrl.qbItem.value" type="text" class="form-control"/>
+						<input
+							ng-model="$ctrl.qbItem.value"
+							ng-change="$ctrl.setChanged()"
+							type="text"
+							class="form-control"
+						/>
 					</div>
 				</div>
 			</div>
