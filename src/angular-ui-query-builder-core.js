@@ -175,7 +175,7 @@ angular.module('angular-ui-query-builder',[])
 							: 'string',
 						action: '$eq',
 						value:
-							s.type == 'date' ? moment(firstValue).format('YYYY-MM-DD') // Convert date objects back to strings
+							s.type == 'date' ? moment(firstValue).toDate() // Convert date string weirdness into real dates
 							: firstValue,
 						actions,
 					}
