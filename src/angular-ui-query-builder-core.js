@@ -215,6 +215,9 @@ angular.module('angular-ui-query-builder',[])
 									options: 'i',
 								},
 							}));
+						case 'keyVal':
+						case 'hidden':
+							return ql.value;
 						default:
 							console.warn('Unknown type to convert:', ql.type);
 					}
