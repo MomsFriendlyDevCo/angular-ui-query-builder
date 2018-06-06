@@ -21,6 +21,36 @@ angular.module('angular-ui-query-builder',[])
 			.value();
 	};
 
+
+	/**
+	* List of additional properties that we support but need special treatment
+	* @var {Object} Each key is the property name with additional details in the Object value
+	* @param {string} [type='hidden'] How to handle each property within the UI
+	* @param {boolean} [canDelete=true] Disable deletion on the field
+	* @param {*} [...] Other inherited properties (see QueryBuilder.queryToArray) for examples
+	*/
+	QueryBuilder.metaProperties = {
+		limit: {
+			type: 'keyVal',
+			actions: [{id: '$eq', title: 'Equals'}],
+			action: '$eq',
+			canDelete: true,
+		},
+		populate: {type: 'hidden'},
+		skip: {
+			type: 'keyVal',
+			actions: [{id: '$eq', title: 'Equals'}],
+			action: '$eq',
+			canDelete: true,
+		},
+		sort: {
+			type: 'keyVal',
+			actions: [{id: '$eq', title: 'Equals'}],
+			action: '$eq',
+			canDelete: false,
+		},
+	};
+
 	/**
 	* Returns a queryList collection from a query object
 	* @param {Object} query The raw MongoDB / Sift object to transform from an object into a collection
@@ -44,9 +74,12 @@ angular.module('angular-ui-query-builder',[])
 
 		return _(query)
 			.pickBy((v, k) => {
-				var maps = spec[k] // Maps onto a spec path
+				var maps =
+					spec[k] // Maps onto a spec path
 					|| k == '$and'
-					|| k == '$or';
+					|| k == '$or'
+					|| QueryBuilder.metaProperties[k] // is a meta directive
+
 				if (!maps) console.warn('query-builder', 'Incomming query path', k, 'Does not map to anything in spec', spec);
 				return !!maps;
 			})
@@ -95,6 +128,15 @@ angular.module('angular-ui-query-builder',[])
 						children: v.map(i => QueryBuilder.queryToArray(i, spec)),
 						actions,
 					};
+				} else if (QueryBuilder.metaProperties[k]) { // Is a meta property
+					return Object.assign({
+						path: k,
+						title: _.startCase(k),
+						value: v,
+						type: 'hidden',
+						action: '$hidden',
+						actions,
+					}, QueryBuilder.metaProperties[k]);
 				} else if (firstKey == '$exists') {
 					return {
 						path: k,
@@ -291,7 +333,7 @@ angular.module('angular-ui-query-builder',[])
 		qbSpec: '<',
 	},
 	template: `
-		<div ng-repeat="row in $ctrl.qbGroup">
+		<div ng-repeat="row in $ctrl.qbGroup | filter:$ctrl.qbGroupFilter" meta-key="{{row.path}}">
 			<ui-query-builder-row
 				qb-item="row"
 				qb-spec="$ctrl.qbSpec"
@@ -307,6 +349,8 @@ angular.module('angular-ui-query-builder',[])
 	`,
 	controller: function($scope, QueryBuilder) {
 		var $ctrl = this;
+
+		$ctrl.qbGroupFilter = item => item.type != 'hidden';
 	},
 })
 // }}}
@@ -467,6 +511,21 @@ angular.module('angular-ui-query-builder',[])
 				</div>
 			</div>
 			<!-- }}} -->
+			<!-- keyVal (Only title + value) {{{ -->
+			<div ng-switch-when="keyVal" class="query-row">
+				<a ng-if="$ctrl.qbItem.canDelete === undefined || $ctrl.qbItem.canDelete" ng-click="$ctrl.delete($ctrl.qbItem.path)" class="btn-trash"></a>
+				<ui-query-builder-block
+					class="query-block"
+					level="1"
+					title="$ctrl.qbItem.title"
+				></ui-query-builder-block>
+				<div class="query-block">
+					<div class="btn btn-2 btn-block">
+						<input ng-value="$ctrl.qbItem.value" type="text" class="form-control"/>
+					</div>
+				</div>
+			</div>
+			<!-- }}} -->
 			<!-- Unknown {{{ -->
 			<div ng-switch-default class="query-row">
 				<a ng-click="$ctrl.delete($ctrl.qbItem.path)" class="btn-trash"></a>
@@ -529,6 +588,28 @@ angular.module('angular-ui-query-builder',[])
 })
 // }}}
 
+// Component: uiQueryBuilderBlock {{{
+/**
+* Component for drawing a Block with no-interactivity
+* @param {number} level The level of button we are drawing
+* @param {string} title The title of the block to display
+*/
+.component('uiQueryBuilderBlock', {
+	bindings: {
+		level: '<',
+		title: '<',
+	},
+	controller: function($scope) {
+		var $ctrl = this;
+	},
+	template: `
+		<a class="btn btn-block btn-{{$ctrl.level}}">
+			{{$ctrl.title}}
+		</a>
+	`,
+})
+// }}}
+
 // Component: uiQueryBuilderBlockMenu {{{
 /**
 * Component for drawing a Block as a dropdown list of options
@@ -556,7 +637,10 @@ angular.module('angular-ui-query-builder',[])
 		});
 	},
 	template: `
-		<a class="btn btn-block btn-{{$ctrl.level}} dropdown-toggle" data-toggle="dropdown"> {{$ctrl.selectedOption.title}} <i class="fa fa-caret-down"></i></a>
+		<a class="btn btn-block btn-{{$ctrl.level}} dropdown-toggle" data-toggle="dropdown">
+			{{$ctrl.selectedOption.title}}
+			<i class="fa fa-caret-down"></i>
+		</a>
 		<ul class="dropdown-menu pull-right">
 			<li ng-repeat="option in $ctrl.options track by option.id"><a ng-click="$ctrl.setSelected(option)">{{option.title}}</a></li>
 		</ul>
