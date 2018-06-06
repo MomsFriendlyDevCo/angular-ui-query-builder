@@ -146,7 +146,7 @@ angular.module('angular-ui-query-builder',[])
 						action: '$exists',
 						actions,
 					};
-				} else if (s.type == 'string' && _.isArray(s.enum)) {
+				} else if (s.type == 'string' && _.isArray(s.enum) && s.enum.length) {
 					return {
 						path: k,
 						title: v.title || _.startCase(k),
@@ -173,7 +173,7 @@ angular.module('angular-ui-query-builder',[])
 							: s.type == 'number' ? 'number'
 							: s.type == 'date' ? 'date'
 							: 'string',
-						action: firstKey,
+						action: '$eq',
 						value:
 							s.type == 'date' ? moment(firstValue).format('YYYY-MM-DD') // Convert date objects back to strings
 							: firstValue,
