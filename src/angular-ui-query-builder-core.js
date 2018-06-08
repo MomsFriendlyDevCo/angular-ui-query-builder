@@ -307,6 +307,11 @@ angular.module('angular-ui-query-builder',[])
 		});
 
 
+		$scope.$on('queryBuilder.pathAction.swapAction', (e, path, newAction) => {
+			console.log('SWAPACTION', path, newAction);
+		});
+
+
 		/**
 		* Add a new item by path
 		* @param {Object} event
@@ -373,6 +378,7 @@ angular.module('angular-ui-query-builder',[])
 
 		$ctrl.delete = path => $scope.$emit('queryBuilder.pathAction.drop', path);
 		$ctrl.setChanged = ()=> $scope.$emit('queryBuilder.change');
+		$ctrl.setAction = action => $scope.$emit('queryBuilder.pathAction.swapAction', $ctrl.qbItem, action);
 	},
 	template: `
 		<div ng-switch="$ctrl.qbItem.type">
@@ -406,6 +412,7 @@ angular.module('angular-ui-query-builder',[])
 					level="2"
 					selected="$ctrl.qbItem.action"
 					options="$ctrl.qbItem.actions"
+					on-change="$ctrl.setAction(selected)"
 				></ui-query-builder-block-menu>
 				<div class="query-block">
 					<div class="btn btn-3 btn-block">
@@ -433,6 +440,7 @@ angular.module('angular-ui-query-builder',[])
 					level="2"
 					selected="$ctrl.qbItem.action"
 					options="$ctrl.qbItem.actions"
+					on-change="$ctrl.setAction(selected)"
 				></ui-query-builder-block-menu>
 				<ui-query-builder-block-menu-multiple
 					class="query-block"
@@ -456,6 +464,7 @@ angular.module('angular-ui-query-builder',[])
 					level="2"
 					selected="$ctrl.qbItem.action"
 					options="$ctrl.qbItem.actions"
+					on-change="$ctrl.setAction(selected)"
 				></ui-query-builder-block-menu>
 				<div class="query-block">
 					<div class="btn btn-3 btn-block">
@@ -483,6 +492,7 @@ angular.module('angular-ui-query-builder',[])
 					level="2"
 					selected="$ctrl.qbItem.action"
 					options="$ctrl.qbItem.actions"
+					on-change="$ctrl.setAction(selected)"
 				></ui-query-builder-block-menu>
 				<div class="query-block">
 					<div class="btn btn-3 btn-block">
@@ -510,6 +520,7 @@ angular.module('angular-ui-query-builder',[])
 					level="2"
 					selected="$ctrl.qbItem.action"
 					options="$ctrl.qbItem.actions"
+					on-change="$ctrl.setAction(selected)"
 				></ui-query-builder-block-menu>
 			</div>
 			<!-- }}} -->
@@ -521,6 +532,7 @@ angular.module('angular-ui-query-builder',[])
 					level="1"
 					selected="$ctrl.qbItem.path"
 					qb-spec="$ctrl.qbSpec"
+					on-change="$ctrl.setAction(selected)"
 				></ui-query-builder-path>
 				<div class="query-block">
 					<div class="btn btn-2 btn-block">
@@ -643,6 +655,7 @@ angular.module('angular-ui-query-builder',[])
 * Component for drawing a Block as a dropdown list of options
 * @param {number} level The level of button we are drawing
 * @param {array} options A collection of options to display. Each should be of the form {id, title}
+* @param {function} onChange Funciton to call as ({selected}) when the selection changes
 * @param {*} selected The currently selected ID
 */
 .component('uiQueryBuilderBlockMenu', {
@@ -650,13 +663,14 @@ angular.module('angular-ui-query-builder',[])
 		level: '<',
 		options: '<',
 		selected: '=',
+		onChange: '&?',
 	},
 	controller: function($scope) {
 		var $ctrl = this;
 
 		$ctrl.setSelected = option => {
 			$ctrl.selected = option.id;
-			$scope.$emit('queryBuilder.change');
+			if (angular.isFunction($ctrl.onChange)) $ctrl.onChange({selected: $ctrl.selected});
 		};
 
 		$ctrl.selectedOption;
