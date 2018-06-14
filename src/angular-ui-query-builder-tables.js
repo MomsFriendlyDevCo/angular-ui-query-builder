@@ -72,7 +72,7 @@ angular.module('angular-ui-query-builder')
 
 		$ctrl.$broadcast = (msg, ...args) => $scope.$broadcast(msg, ...args); // Rebind broadcast so its accessible from children
 		$ctrl.$on = (event, cb) => $scope.$on(event, cb);
-		$ctrl.setDirty = ()=> $rootScope.$broadcast('queryBuilder.change');
+		$ctrl.setDirty = ()=> $rootScope.$broadcast('queryBuilder.change', $scope.qbTable);
 
 		/**
 		* Set the value of a query element to another value

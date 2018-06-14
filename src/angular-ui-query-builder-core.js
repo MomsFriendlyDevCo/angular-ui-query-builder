@@ -274,9 +274,9 @@ angular.module('angular-ui-query-builder',[])
 			if (replaceQuery) { // If we're given an entire query to overwrite - recompute it
 				$ctrl.query = replaceQuery;
 				$ctrl.qbQuery = QueryBuilder.queryToArray($ctrl.query, $ctrl.qbSpec);
+			} else {
+				$ctrl.query = QueryBuilder.arrayToQuery($ctrl.qbQuery);
 			}
-
-			$ctrl.query = QueryBuilder.arrayToQuery($ctrl.qbQuery);
 		}));
 
 
