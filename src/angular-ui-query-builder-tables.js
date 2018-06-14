@@ -350,7 +350,7 @@ angular.module('angular-ui-query-builder')
 		$scope.navPageRelative = pageRelative => {
 			if (pageRelative == -1) {
 				$scope.qbTable
-					.setField('skip', Math.min(($scope.qbTable.query.skip || 0) - ($scope.qbTable.query.limit || 10), 0))
+					.setField('skip', Math.max(($scope.qbTable.query.skip || 0) - ($scope.qbTable.query.limit || 10), 0))
 					.setDirty();
 			} else if (pageRelative == 1) {
 				$scope.qbTable
