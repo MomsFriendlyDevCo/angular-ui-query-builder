@@ -49,6 +49,7 @@ angular.module('angular-ui-query-builder')
 /**
 * Directive applied to a table element to indicate that we should manage that table via angular-ui-query
 * @param {Object} qbTable The query object to modify
+* @param {number} count Optional maximum number of results currently matching this query (used by pagination to generate page offsets)
 * @param {boolean} stickyThead Anything within the `thead` section of the table should remain on the screen while scrolling
 * @param {boolean} stickyTfoot Anything within the `tfoot` section of the table should remain on the screen while scrolling
 * @emits qbTableQueryChange Emitted to child elements as (e, query) when the query object changes
@@ -56,13 +57,18 @@ angular.module('angular-ui-query-builder')
 .directive('qbTable', function() { return {
 	scope: {
 		qbTable: '=?',
+		count: '<?',
 		stickyThead: '<?',
 		stickyTfoot: '<?',
 	},
 	restrict: 'AC',
 	controller: function($attrs, $element, $rootScope, $scope, qbTableSettings) {
 		var $ctrl = this;
-		$ctrl.query = $scope.qbTable; // Copy into $ctrl so children can access it / $watch it
+
+		// Copy into $ctrl so children can access it / $watch it
+		$ctrl.query = $scope.qbTable;
+		$ctrl.count = $scope.count;
+		$scope.$watch('count', ()=> $ctrl.count = $scope.count); // If our binding changes, also update the qbTable.count reference - no idea why Angular doesn't do this anyway since its using a pointer
 
 		$ctrl.$broadcast = (msg, ...args) => $scope.$broadcast(msg, ...args); // Rebind broadcast so its accessible from children
 		$ctrl.$on = (event, cb) => $scope.$on(event, cb);
@@ -328,10 +334,17 @@ angular.module('angular-ui-query-builder')
 
 		$scope.canPrev = true;
 		$scope.canNext = true;
+		$scope.showRange = {};
 
-		$scope.$watchGroup(['qbTable.query.limit', 'qbTable.query.skip'], sorter => {
+		$scope.$watchGroup(['qbTable.query.limit', 'qbTable.query.skip', 'qbTable.count'], sorter => {
 			$scope.canPrev = $scope.qbTable.query.skip > 0;
 			$scope.canNext = !$scope.total || $scope.qbTable.query.skip + $scope.qbTable.query.limit < $scope.total;
+
+			$scope.showRange = {
+				start: ($scope.qbTable.query.skip || 0) + 1,
+				end: ($scope.qbTable.query.skip || 0) + $scope.qbTable.query.limit,
+				total: $scope.qbTable.count,
+			};
 		});
 
 		$scope.navPageRelative = pageRelative => {
@@ -355,7 +368,14 @@ angular.module('angular-ui-query-builder')
 		<nav>
 			<ul class="pager">
 				<li ng-class="canPrev ? '' : 'disabled'" class="previous"><a ng-click="navPageRelative(-1)"><i class="fa fa-arrow-left"></i></a></li>
-				<ng-transclude class="text-center"></ng-transclude>
+				<ng-transclude class="text-center">
+					<span ng-if="showRange.end">
+						Showing documents {{showRange.start | number}} - {{showRange.end | number}}
+						<span ng-if="showRange.total">
+							of {{showRange.total | number}}
+						</span>
+					</span>
+				</ng-transclude>
 				<li ng-class="canNext ? '' : 'disabled'" class="next"><a ng-click="navPageRelative(1)"><i class="fa fa-arrow-right"></i></a></li>
 			</ul>
 		</nav>

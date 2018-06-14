@@ -150,6 +150,8 @@ gulp.task('css:tables', ()=>
 gulp.task('gh-pages', ['build'], function() {
 	rimraf.sync('./gh-pages');
 
+	var data = require('./demo/testData.js');
+
 	return gulp.src([
 		'./LICENSE',
 		'./demo/_config.yml',
@@ -174,8 +176,10 @@ gulp.task('gh-pages', ['build'], function() {
 			}
 			return path;
 		}))
-		.pipe(file('data.json', JSON.stringify(require('./demo/testData.js'))))
+		.pipe(file('data.json', JSON.stringify(data)))
+		.pipe(file('count.json', JSON.stringify({count: data.length})))
 		.pipe(replace(/api\/data/, 'data.json', {skipBinary: true}))
+		.pipe(replace(/api\/count/, 'count.json', {skipBinary: true}))
 		.pipe(ghPages({
 			cacheDir: 'gh-pages',
 			push: true, // Change to false for dryrun (files dumped to cacheDir)

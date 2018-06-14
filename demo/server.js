@@ -69,6 +69,10 @@ app.get('/api/data', function(req, res) {
 	res.send(outData);
 });
 
+app.get('/api/count', function(req, res) {
+	res.send({count: data.length});
+});
+
 app.get('/api/data/export', function(req, res) {
 	res.send(`
 		<html>

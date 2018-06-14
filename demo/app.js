@@ -46,10 +46,14 @@ app.controller('queryBuilderExampleCtrl', function($http, $scope) {
 	};
 
 	$scope.data;
+	$scope.count;
 	$scope.$watch('query', ()=> {
 		// console.log('REFRESH', $scope.query);
 		$http.get('api/data', {params: $scope.query})
-			.then(res => $scope.data = res.data)
+			.then(res => $scope.data = res.data);
+
+		$http.get('api/count', {params: $scope.query})
+			.then(res => $scope.count = res.data.count);
 	}, true);
 
 	$scope.notifyChange = (id, value) => console.log('Value of', id, 'changed to', value);
