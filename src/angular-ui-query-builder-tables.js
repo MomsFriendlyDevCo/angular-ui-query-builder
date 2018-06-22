@@ -8,6 +8,17 @@ angular.module('angular-ui-query-builder')
 		sortNone: 'fa fa-fw fa-sort text-muted',
 		sortAsc: 'fa fa-fw fa-sort-alpha-asc text-primary',
 		sortDesc: 'fa fa-fw fa-sort-alpha-desc text-primary',
+		checkMetaChecked: 'fa fa-lg fa-fw fa-check-square-o text-primary',
+		checkMetaSome: 'fa fa-lg fa-fw fa-minus-square-o',
+		checkMetaUnchecked: 'fa fa-lg fa-fw fa-square-o',
+		checkMetaCaret: 'fa fa-caret-down',
+		checkItemChecked: 'fa fa-lg fa-fw fa-check-square-o',
+		checkItemUnchecked: 'fa fa-lg fa-fw fa-square-o',
+		paginationPrev: 'fa fa-arrow-left',
+		paginationNext: 'fa fa-arrow-right',
+		modalClose: 'fa fa-times',
+		modalCollapseClosed: 'fa fa-caret-right pull-right',
+		search: 'fa fa-search',
 	};
 
 	qbTableSettings.export = {
@@ -300,8 +311,8 @@ angular.module('angular-ui-query-builder')
 		<ng-transclude></ng-transclude>
 		<div ng-if="isSelector && isMeta" class="btn-group">
 			<a class="btn btn-default dropdown-toggle" data-toggle="dropdown">
-				<i class="fa fa-lg fa-fw" ng-class="metaStatus == 'all' ? 'fa-check-square-o text-primary' : metaStatus == 'some' ? 'fa-minus-square-o' : 'fa-square-o'"></i>
-				<i class="fa fa-caret-down"></i>
+				<i ng-class="metaStatus == 'all' ? qbTableSettings.icons.checkMetaChecked : metaStatus == 'some' ? qbTableSettings.icons.checkMetaUnchecked : qbTableSettings.icons.checkMetaUnchecked"></i>
+				<i ng-class="qbTableSettings.icons.checkMetaCaret"></i>
 			</a>
 			<ul class="dropdown-menu">
 				<li><a ng-click="metaSelect('all')">All</a></li>
@@ -310,7 +321,7 @@ angular.module('angular-ui-query-builder')
 			</ul>
 		</div>
 		<div ng-if="isSelector && !isMeta">
-			<i class="fa fa-lg fa-fw" ng-class="selector ? 'fa-check-square-o' : 'fa-square-o'"></i>
+			<i ng-class="selector ? qbTableSettings.icons.checkItemChecked : qbTableSettings.icons.checkItemUnchecked"></i>
 		</div>
 	`,
 }})
@@ -367,7 +378,7 @@ angular.module('angular-ui-query-builder')
 	template: `
 		<nav>
 			<ul class="pager">
-				<li ng-class="canPrev ? '' : 'disabled'" class="previous"><a ng-click="navPageRelative(-1)"><i class="fa fa-arrow-left"></i></a></li>
+				<li ng-class="canPrev ? '' : 'disabled'" class="previous"><a ng-click="navPageRelative(-1)"><i ng-class="qbTableSettings.icons.paginationPrev"></i></a></li>
 				<ng-transclude class="text-center">
 					<span ng-if="showRange.end">
 						Showing documents {{showRange.start | number}} - {{showRange.end | number}}
@@ -376,7 +387,7 @@ angular.module('angular-ui-query-builder')
 						</span>
 					</span>
 				</ng-transclude>
-				<li ng-class="canNext ? '' : 'disabled'" class="next"><a ng-click="navPageRelative(1)"><i class="fa fa-arrow-right"></i></a></li>
+				<li ng-class="canNext ? '' : 'disabled'" class="next"><a ng-click="navPageRelative(1)"><i ng-class="qbTableSettings.icons.paginationNext"></i></a></li>
 			</ul>
 		</nav>
 	`,
@@ -475,7 +486,7 @@ angular.module('angular-ui-query-builder')
 			<div class="modal-dialog modal-lg">
 				<div ng-if="isShowing" class="modal-content">
 					<div class="modal-header">
-						<a class="close" data-dismiss="modal"><i class="fa fa-times"></i></a>
+						<a class="close" data-dismiss="modal"><i ng-class="qbTableSettings.icons.modalClose"></i></a>
 						<h4 class="modal-title">Export</h4>
 					</div>
 					<div class="modal-body form-horizontal">
@@ -496,7 +507,7 @@ angular.module('angular-ui-query-builder')
 											<h4 class="panel-title">
 												<a data-toggle="collapse" data-target="#qb-export-criteria-{{$id}}-query" data-parent="#qb-export-criteria-{{$id}}" class="btn-block collapsed">
 													{{querySynopsis}}
-													<i class="fa fa-caret-right pull-right"></i>
+													<i ng-class="qbTableSettings.icons.modalCollapseClosed"></i>
 												</a>
 											</h4>
 										</div>
@@ -519,7 +530,7 @@ angular.module('angular-ui-query-builder')
 											<h4 class="panel-title">
 												<a data-toggle="collapse" data-target="#qb-export-columns-{{$id}}-columns" data-parent="#qb-export-columns-{{$id}}" class="btn-block collapsed">
 													{{columnSynopsis}}
-													<i class="fa fa-caret-right pull-right"></i>
+													<i ng-class="qbTableSettings.icons.modalCollapseClosed"></i>
 												</a>
 											</h4>
 										</div>
@@ -601,8 +612,10 @@ angular.module('angular-ui-query-builder')
 	},
 	transclude: true,
 	restrict: 'A',
-	controller: function($element, $scope) {
+	controller: function($element, $scope, qbTableSettings) {
 		var $ctrl = this;
+
+		$scope.qbTableSettings = qbTableSettings;
 
 		$ctrl.isShown = false;
 		$ctrl.rebind = ()=> {
@@ -633,7 +646,7 @@ angular.module('angular-ui-query-builder')
 			<div class="modal-dialog modal-lg">
 				<div class="modal-content">
 					<div class="modal-header">
-						<a class="close" data-dismiss="modal"><i class="fa fa-times"></i></a>
+						<a class="close" data-dismiss="modal"><i ng-class="qbTableSettings.icons.modalClose"></i></a>
 						<h4 class="modal-title">{{title || 'Edit Filter'}}</h4>
 					</div>
 					<div class="modal-body">
@@ -677,8 +690,10 @@ angular.module('angular-ui-query-builder')
 	},
 	restrict: 'AE',
 	transclude: true,
-	controller: function($scope, $rootScope, $timeout, qbTableUtilities) {
+	controller: function($scope, $rootScope, $timeout, qbTableSettings, qbTableUtilities) {
 		var $ctrl = this;
+
+		$scope.qbTableSettings = qbTableSettings;
 
 		$scope.search = '';
 
@@ -774,7 +789,7 @@ angular.module('angular-ui-query-builder')
 					<div class="input-group">
 						<input ng-blur="submit()" type="text" ng-model="search" class="form-control"/>
 						<a ng-click="submit()" class="btn btn-default input-group-addon">
-							<i class="fa fa-search"/>
+							<i ng-class="qbTableSettings.icons.search"/>
 						</a>
 					</div>
 				</div>
