@@ -704,7 +704,7 @@ angular.module('angular-ui-query-builder')
 				$comment: 'search',
 				$or: _($scope.spec)
 					.pickBy(v => v.type == 'string')
-					.mapValues((v, k) => [{$regexp: qbTableUtilities.escapeRegExp($scope.search), options: 'i'}])
+					.mapValues((v, k) => [{$regex: qbTableUtilities.escapeRegExp($scope.search), $options: 'i'}])
 					.value()
 			};
 
@@ -733,7 +733,7 @@ angular.module('angular-ui-query-builder')
 						}
 					})
 					.map((v, k) => ({
-						[k]: {$regexp: qbTableUtilities.escapeRegExp($scope.search), options: 'i'},
+						[k]: {$regex: qbTableUtilities.escapeRegExp($scope.search), $options: 'i'},
 					}))
 					.value()
 			} else { // Give up
@@ -763,7 +763,7 @@ angular.module('angular-ui-query-builder')
 
 		/**
 		* Try and populate initial query
-		* NOTE: This is currently only compatible with query.$or.0.*.$regexp level queries
+		* NOTE: This is currently only compatible with query.$or.0.*.$regex level queries
 		*/
 		$scope.check = ()=> {
 			try {
@@ -772,7 +772,7 @@ angular.module('angular-ui-query-builder')
 					.first()
 					.values()
 					.first()
-					.get('$regexp')
+					.get('$regex')
 					.thru(v => qbTableUtilities.unescapeRegExp(v || ''))
 					.value();
 			} catch (e) {
