@@ -127,6 +127,16 @@ qb-export a:not(.collapsed) i.fa.fa-caret-right {
 /* }}} */
 /* }}} */
 
+/* qb-pagination {{{ */
+qb-pagination .display-xofy {
+	color: #777;
+}
+
+qb-pagination .display-xofy + .display-pages {
+	margin-left: 10px;
+}
+/* }}} */
+
 /* qb-search {{{ */
 qb-search form {
 	margin-bottom: 0px;

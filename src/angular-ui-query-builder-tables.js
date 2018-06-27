@@ -21,6 +21,13 @@ angular.module('angular-ui-query-builder')
 		search: 'fa fa-search',
 	};
 
+	qbTableSettings.pagination = {
+		showXOfY: true,
+		showPages: true,
+		pageRangeBack: 5,
+		pageRangeFore: 5,
+	};
+
 	qbTableSettings.export = {
 		defaults: {
 			format: 'xlsx',
@@ -332,6 +339,7 @@ angular.module('angular-ui-query-builder')
 * Directive to add table pagination
 * NOTE: Any transcluded content will be inserted in the center of the pagination area
 * @param {Object} ^qbTable.qbTable The query Object to mutate
+* @param {Number} ^qbTable.count The matching number of documents (used to show the page numbers, 'X of Y' displays etc.
 */
 .directive('qbPagination', function() { return {
 	scope: {},
@@ -351,11 +359,36 @@ angular.module('angular-ui-query-builder')
 			$scope.canPrev = $scope.qbTable.query.skip > 0;
 			$scope.canNext = !$scope.total || $scope.qbTable.query.skip + $scope.qbTable.query.limit < $scope.total;
 
-			$scope.showRange = {
-				start: ($scope.qbTable.query.skip || 0) + 1,
-				end: ($scope.qbTable.query.skip || 0) + $scope.qbTable.query.limit,
-				total: $scope.qbTable.count,
-			};
+			// Page X of Y display {{{
+			if (qbTableSettings.pagination.showXOfY) {
+				$scope.showRange = {
+					start: ($scope.qbTable.query.skip || 0) + 1,
+					end: ($scope.qbTable.query.skip || 0) + $scope.qbTable.query.limit,
+					total: $scope.qbTable.count,
+				};
+			}
+			// }}}
+
+			// Page view calculation {{{
+			if (qbTableSettings.pagination.showPages) {
+				$scope.pages = {
+					current: $scope.qbTable.query.limit ? Math.floor(($scope.qbTable.query.skip || 0) / $scope.qbTable.query.limit) : false,
+				};
+
+				if ($scope.pages !== false) {
+					$scope.pages.min = Math.max($scope.pages.current - qbTableSettings.pagination.pageRangeBack, 0);
+					$scope.pages.max = $scope.pages.current + qbTableSettings.pagination.pageRangeFore;
+					$scope.pages.range = _.range($scope.pages.min, $scope.pages.max).map(i => ({
+						number: i,
+						mode:
+							i == $scope.pages.current ? 'current'
+							: i == $scope.pages.current -1 ? 'prev'
+							: i == $scope.pages.current +1 ? 'next'
+							: 'normal'
+					}));
+				}
+			}
+			// }}}
 		});
 
 		$scope.navPageRelative = pageRelative => {
@@ -380,11 +413,18 @@ angular.module('angular-ui-query-builder')
 			<ul class="pager">
 				<li ng-class="canPrev ? '' : 'disabled'" class="previous"><a ng-click="navPageRelative(-1)"><i ng-class="qbTableSettings.icons.paginationPrev"></i></a></li>
 				<ng-transclude class="text-center">
-					<span ng-if="showRange.end">
+					<span ng-if="qbTableSettings.pagination.showXOfY && showRange.end" class="display-xofy">
 						Showing documents {{showRange.start | number}} - {{showRange.end | number}}
 						<span ng-if="showRange.total">
 							of {{showRange.total | number}}
 						</span>
+					</span>
+					<span ng-if="qbTableSettings.pagination.showPages && showRange.end" class="display-pages">
+						<li ng-repeat="page in pages.range track by page.number" ng-class="page.mode == 'current' ? 'active' : ''">
+							<a ng-click="navPageNumber(page.number)">
+								{{page.number + 1 | number}}
+							</a>
+						</li>
 					</span>
 				</ng-transclude>
 				<li ng-class="canNext ? '' : 'disabled'" class="next"><a ng-click="navPageRelative(1)"><i ng-class="qbTableSettings.icons.paginationNext"></i></a></li>
