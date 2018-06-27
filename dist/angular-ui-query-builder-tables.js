@@ -25,6 +25,13 @@ angular.module('angular-ui-query-builder')
 		search: 'fa fa-search'
 	};
 
+	qbTableSettings.pagination = {
+		showXOfY: true,
+		showPages: true,
+		pageRangeBack: 5,
+		pageRangeFore: 5
+	};
+
 	qbTableSettings.export = {
 		defaults: {
 			format: 'xlsx'
@@ -405,6 +412,7 @@ angular.module('angular-ui-query-builder')
 * Directive to add table pagination
 * NOTE: Any transcluded content will be inserted in the center of the pagination area
 * @param {Object} ^qbTable.qbTable The query Object to mutate
+* @param {Number} ^qbTable.count The matching number of documents (used to show the page numbers, 'X of Y' displays etc.
 */
 .directive('qbPagination', function () {
 	return {
@@ -425,27 +433,54 @@ angular.module('angular-ui-query-builder')
 				$scope.canPrev = $scope.qbTable.query.skip > 0;
 				$scope.canNext = !$scope.total || $scope.qbTable.query.skip + $scope.qbTable.query.limit < $scope.total;
 
-				$scope.showRange = {
-					start: ($scope.qbTable.query.skip || 0) + 1,
-					end: ($scope.qbTable.query.skip || 0) + $scope.qbTable.query.limit,
-					total: $scope.qbTable.count
-				};
+				// Page X of Y display {{{
+				if (qbTableSettings.pagination.showXOfY) {
+					$scope.showRange = {
+						start: ($scope.qbTable.query.skip || 0) + 1,
+						end: ($scope.qbTable.query.skip || 0) + $scope.qbTable.query.limit,
+						total: $scope.qbTable.count
+					};
+				}
+				// }}}
+
+				// Page view calculation {{{
+				if (qbTableSettings.pagination.showPages) {
+					$scope.pages = {
+						current: $scope.qbTable.query.limit ? Math.floor(($scope.qbTable.query.skip || 0) / $scope.qbTable.query.limit) : false
+					};
+
+					if ($scope.pages !== false) {
+						$scope.pages.min = Math.max($scope.pages.current - qbTableSettings.pagination.pageRangeBack, 0);
+						$scope.pages.max = $scope.pages.current + qbTableSettings.pagination.pageRangeFore + 1;
+						$scope.pages.range = _.range($scope.pages.min, $scope.pages.max).map(function (i) {
+							return {
+								number: i,
+								mode: i == $scope.pages.current ? 'current' : i == $scope.pages.current - 1 ? 'prev' : i == $scope.pages.current + 1 ? 'next' : 'normal'
+							};
+						});
+					}
+				}
+				// }}}
 			});
 
 			$scope.navPageRelative = function (pageRelative) {
 				if (pageRelative == -1) {
 					$scope.qbTable.setField('skip', Math.max(($scope.qbTable.query.skip || 0) - ($scope.qbTable.query.limit || 10), 0)).setDirty();
 				} else if (pageRelative == 1) {
-					$scope.qbTable.setField('skip', ($scope.qbTable.query.skip || 0) + ($scope.qbTable.query.limit || 10), 0).setDirty();
+					$scope.qbTable.setField('skip', ($scope.qbTable.query.skip || 0) + ($scope.qbTable.query.limit || 10)).setDirty();
 				} else {
 					throw new Error('Unsupported page move: ' + pageRelative);
 				}
+			};
+
+			$scope.navPageNumber = function (number) {
+				return $scope.qbTable.setField('skip', (number || 0) * ($scope.qbTable.query.limit || 10)).setDirty();
 			};
 		}],
 		link: function link(scope, element, attrs, parentScope) {
 			scope.qbTable = parentScope;
 		},
-		template: '\n\t\t<nav>\n\t\t\t<ul class="pager">\n\t\t\t\t<li ng-class="canPrev ? \'\' : \'disabled\'" class="previous"><a ng-click="navPageRelative(-1)"><i ng-class="qbTableSettings.icons.paginationPrev"></i></a></li>\n\t\t\t\t<ng-transclude class="text-center">\n\t\t\t\t\t<span ng-if="showRange.end">\n\t\t\t\t\t\tShowing documents {{showRange.start | number}} - {{showRange.end | number}}\n\t\t\t\t\t\t<span ng-if="showRange.total">\n\t\t\t\t\t\t\tof {{showRange.total | number}}\n\t\t\t\t\t\t</span>\n\t\t\t\t\t</span>\n\t\t\t\t</ng-transclude>\n\t\t\t\t<li ng-class="canNext ? \'\' : \'disabled\'" class="next"><a ng-click="navPageRelative(1)"><i ng-class="qbTableSettings.icons.paginationNext"></i></a></li>\n\t\t\t</ul>\n\t\t</nav>\n\t'
+		template: '\n\t\t<nav>\n\t\t\t<ul class="pager">\n\t\t\t\t<li ng-class="canPrev ? \'\' : \'disabled\'" class="previous"><a ng-click="navPageRelative(-1)"><i ng-class="qbTableSettings.icons.paginationPrev"></i></a></li>\n\t\t\t\t<ng-transclude class="text-center">\n\t\t\t\t\t<span ng-if="qbTableSettings.pagination.showXOfY && showRange.end" class="display-xofy">\n\t\t\t\t\t\tShowing documents {{showRange.start | number}} - {{showRange.end | number}}\n\t\t\t\t\t\t<span ng-if="showRange.total">\n\t\t\t\t\t\t\tof {{showRange.total | number}}\n\t\t\t\t\t\t</span>\n\t\t\t\t\t</span>\n\t\t\t\t\t<ul ng-if="qbTableSettings.pagination.showPages && showRange.end" class="display-pages pagination">\n\t\t\t\t\t\t<li ng-repeat="page in pages.range track by page.number" ng-class="page.mode == \'current\' ? \'active\' : \'\'">\n\t\t\t\t\t\t\t<a ng-click="navPageNumber(page.number)">\n\t\t\t\t\t\t\t\t{{page.number + 1 | number}}\n\t\t\t\t\t\t\t</a>\n\t\t\t\t\t\t</li>\n\t\t\t\t\t</ul>\n\t\t\t\t</ng-transclude>\n\t\t\t\t<li ng-class="canNext ? \'\' : \'disabled\'" class="next"><a ng-click="navPageRelative(1)"><i ng-class="qbTableSettings.icons.paginationNext"></i></a></li>\n\t\t\t</ul>\n\t\t</nav>\n\t'
 	};
 })
 // }}}
