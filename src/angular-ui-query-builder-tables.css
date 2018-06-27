@@ -128,13 +128,37 @@ qb-export a:not(.collapsed) i.fa.fa-caret-right {
 /* }}} */
 
 /* qb-pagination {{{ */
+qb-pagination a {
+	height: 34px;
+}
+
+qb-pagination a > i {
+	margin-top: 2px;
+}
+
 qb-pagination .display-xofy {
 	color: #777;
+}
+
+qb-pagination .display-pages {
+	margin: 0;
+	vertical-align: middle;
+}
+
+qb-pagination .display-pages > li > a:first-child,
+qb-pagination .display-pages > li > a:last-child
+{
+	border-radius: 15px;
+}
+
+qb-pagination .display-pages > li + li > a {
+	margin-left: 5px;
 }
 
 qb-pagination .display-xofy + .display-pages {
 	margin-left: 10px;
 }
+
 /* }}} */
 
 /* qb-search {{{ */

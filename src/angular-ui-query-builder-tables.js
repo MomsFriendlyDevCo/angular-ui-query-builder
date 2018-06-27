@@ -377,7 +377,7 @@ angular.module('angular-ui-query-builder')
 
 				if ($scope.pages !== false) {
 					$scope.pages.min = Math.max($scope.pages.current - qbTableSettings.pagination.pageRangeBack, 0);
-					$scope.pages.max = $scope.pages.current + qbTableSettings.pagination.pageRangeFore;
+					$scope.pages.max = $scope.pages.current + qbTableSettings.pagination.pageRangeFore + 1;
 					$scope.pages.range = _.range($scope.pages.min, $scope.pages.max).map(i => ({
 						number: i,
 						mode:
@@ -398,12 +398,17 @@ angular.module('angular-ui-query-builder')
 					.setDirty();
 			} else if (pageRelative == 1) {
 				$scope.qbTable
-					.setField('skip', ($scope.qbTable.query.skip || 0) + ($scope.qbTable.query.limit || 10), 0)
+					.setField('skip', ($scope.qbTable.query.skip || 0) + ($scope.qbTable.query.limit || 10))
 					.setDirty();
 			} else {
 				throw new Error('Unsupported page move: ' + pageRelative);
 			}
 		};
+
+		$scope.navPageNumber = number =>
+			$scope.qbTable
+				.setField('skip', (number || 0) * ($scope.qbTable.query.limit || 10))
+				.setDirty();
 	},
 	link: function(scope, element, attrs, parentScope) {
 		scope.qbTable = parentScope;
@@ -419,13 +424,13 @@ angular.module('angular-ui-query-builder')
 							of {{showRange.total | number}}
 						</span>
 					</span>
-					<span ng-if="qbTableSettings.pagination.showPages && showRange.end" class="display-pages">
+					<ul ng-if="qbTableSettings.pagination.showPages && showRange.end" class="display-pages pagination">
 						<li ng-repeat="page in pages.range track by page.number" ng-class="page.mode == 'current' ? 'active' : ''">
 							<a ng-click="navPageNumber(page.number)">
 								{{page.number + 1 | number}}
 							</a>
 						</li>
-					</span>
+					</ul>
 				</ng-transclude>
 				<li ng-class="canNext ? '' : 'disabled'" class="next"><a ng-click="navPageRelative(1)"><i ng-class="qbTableSettings.icons.paginationNext"></i></a></li>
 			</ul>
