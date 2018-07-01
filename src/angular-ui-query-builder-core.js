@@ -347,13 +347,7 @@ angular.module('angular-ui-query-builder',[])
 				qb-spec="$ctrl.qbSpec"
 			></ui-query-builder-row>
 		</div>
-		<div class="query-row">
-			<div class="query-container">
-				<div class="query-block">
-					<button ng-click="$ctrl.add()" type="button" class="btn-add"></button>
-				</div>
-			</div>
-		</div>
+		<button ng-click="$ctrl.add()" type="button" class="btn-add"></button>
 	`,
 	controller: function($scope, QueryBuilder) {
 		var $ctrl = this;

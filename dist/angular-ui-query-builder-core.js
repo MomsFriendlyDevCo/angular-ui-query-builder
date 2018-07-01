@@ -307,7 +307,7 @@ angular.module('angular-ui-query-builder', [])
 		qbGroup: '=',
 		qbSpec: '<'
 	},
-	template: '\n\t\t<div ng-repeat="row in $ctrl.qbGroup | filter:$ctrl.qbGroupFilter" meta-key="{{row.path}}">\n\t\t\t<ui-query-builder-row\n\t\t\t\tqb-item="row"\n\t\t\t\tqb-spec="$ctrl.qbSpec"\n\t\t\t></ui-query-builder-row>\n\t\t</div>\n\t\t<div class="query-row">\n\t\t\t<div class="query-container">\n\t\t\t\t<div class="query-block">\n\t\t\t\t\t<button ng-click="$ctrl.add()" type="button" class="btn-add"></button>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t</div>\n\t',
+	template: '\n\t\t<div ng-repeat="row in $ctrl.qbGroup | filter:$ctrl.qbGroupFilter" meta-key="{{row.path}}">\n\t\t\t<ui-query-builder-row\n\t\t\t\tqb-item="row"\n\t\t\t\tqb-spec="$ctrl.qbSpec"\n\t\t\t></ui-query-builder-row>\n\t\t</div>\n\t\t<button ng-click="$ctrl.add()" type="button" class="btn-add"></button>\n\t',
 	controller: ['$scope', 'QueryBuilder', function controller($scope, QueryBuilder) {
 		var $ctrl = this;
 
