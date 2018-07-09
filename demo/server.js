@@ -70,7 +70,16 @@ app.get('/api/data', function(req, res) {
 });
 
 app.get('/api/count', function(req, res) {
-	res.send({count: data.length});
+	// Filtering {{{
+	var dataFilter = _(req.query)
+		.omit(['sort', 'skip', 'limit'])
+		.pickBy(v => _.isString(v) || _.isNumber(v)) // Ignore all complex queries - yes this is wrong but we can't aford to include a full Mongo stack here
+		.value()
+
+	outData = _.filter(data, dataFilter);
+	// }}}
+
+	res.send({count: outData.length});
 });
 
 app.get('/api/data/export', function(req, res) {

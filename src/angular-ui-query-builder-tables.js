@@ -374,19 +374,19 @@ angular.module('angular-ui-query-builder')
 				$scope.pages = {
 					current: $scope.qbTable.query.limit ? Math.floor(($scope.qbTable.query.skip || 0) / $scope.qbTable.query.limit) : false,
 				};
-
-				if ($scope.pages !== false) {
-					$scope.pages.min = Math.max($scope.pages.current - qbTableSettings.pagination.pageRangeBack, 0);
-					$scope.pages.max = $scope.pages.current + qbTableSettings.pagination.pageRangeFore + 1;
-					$scope.pages.range = _.range($scope.pages.min, $scope.pages.max).map(i => ({
-						number: i,
-						mode:
-							i == $scope.pages.current ? 'current'
-							: i == $scope.pages.current -1 ? 'prev'
-							: i == $scope.pages.current +1 ? 'next'
-							: 'normal'
-					}));
-				}
+				$scope.pages.min = Math.max($scope.pages.current - qbTableSettings.pagination.pageRangeBack, 0);
+				$scope.pages.total = $scope.qbTable.query.limit
+					? Math.ceil($scope.qbTable.count / $scope.qbTable.query.limit)
+					: 1; // No limit specified therefore there is only one page
+				$scope.pages.max = Math.min($scope.pages.total, $scope.pages.current + qbTableSettings.pagination.pageRangeFore + 1);
+				$scope.pages.range = _.range($scope.pages.min, $scope.pages.max).map(i => ({
+					number: i,
+					mode:
+						i == $scope.pages.current ? 'current'
+						: i == $scope.pages.current -1 ? 'prev'
+						: i == $scope.pages.current +1 ? 'next'
+						: 'normal'
+				}));
 			}
 			// }}}
 		});
