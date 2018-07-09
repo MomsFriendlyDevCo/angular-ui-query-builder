@@ -363,7 +363,7 @@ angular.module('angular-ui-query-builder')
 			if (qbTableSettings.pagination.showXOfY) {
 				$scope.showRange = {
 					start: ($scope.qbTable.query.skip || 0) + 1,
-					end: ($scope.qbTable.query.skip || 0) + $scope.qbTable.query.limit,
+					end: Math.min(($scope.qbTable.query.skip || 0) + $scope.qbTable.query.limit, $scope.qbTable.count),
 					total: $scope.qbTable.count,
 				};
 			}
