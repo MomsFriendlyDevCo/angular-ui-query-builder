@@ -223,7 +223,6 @@
 	}
 
 .ui-query-builder .btn-add::after {
-	top: -2px;
 	position: relative;
 	color: white;
 	content: '+';
@@ -232,6 +231,7 @@
 	font-weight: bold;
 	text-align: center;
 	width: 100%;
+	padding-left: 1px;
 }
 
 .ui-query-builder .btn-add::before {
