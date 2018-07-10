@@ -19,6 +19,7 @@ angular.module('angular-ui-query-builder')
 		modalClose: 'fa fa-times',
 		modalCollapseClosed: 'fa fa-caret-right pull-right',
 		search: 'fa fa-search',
+		searchClear: 'fa fa-times',
 	};
 
 	qbTableSettings.pagination = {
@@ -735,12 +736,13 @@ angular.module('angular-ui-query-builder')
 	},
 	restrict: 'AE',
 	transclude: true,
-	controller: function($scope, $rootScope, $timeout, qbTableSettings, qbTableUtilities) {
+	controller: function($element, $scope, $rootScope, $timeout, qbTableSettings, qbTableUtilities) {
 		var $ctrl = this;
 
 		$scope.qbTableSettings = qbTableSettings;
 
 		$scope.search = '';
+		$scope.isSearching = false;
 
 		$scope.submit = ()=> {
 			if (!$scope.search) return $scope.clear();
@@ -785,6 +787,7 @@ angular.module('angular-ui-query-builder')
 				console.warn('Unable to place search query', searchQuery, 'within complex query', newQuery);
 			}
 
+			$scope.isSearching = true;
 			// Inform the main query builder that we've changed something
 			$rootScope.$broadcast('queryBuilder.change', newQuery);
 			if (angular.isFunction($ctrl.onRefresh)) $ctrl.onRefresh({query: newQuery});
@@ -795,6 +798,10 @@ angular.module('angular-ui-query-builder')
 
 		$scope.clear = ()=> {
 			var existingQuery = qbTableUtilities.find($scope.query, {$comment: 'search'});
+			$scope.isSearching = false;
+			$scope.search = '';
+			angular.element($element).find('input').focus();
+
 			if (existingQuery && _.isEqual(existingQuery, ['$comment'])) { // Existing - found at root level
 				$scope.query = {};
 			} else if (existingQuery && existingQuery[0] == '$and') { // Existing - Found within $and wrapper, unwrap and return to simple key/val format
@@ -833,8 +840,8 @@ angular.module('angular-ui-query-builder')
 				<div class="form-group">
 					<div class="input-group">
 						<input ng-blur="submit()" type="text" ng-model="search" class="form-control"/>
-						<a ng-click="submit()" class="btn btn-default input-group-addon">
-							<i ng-class="qbTableSettings.icons.search"/>
+						<a ng-click="isSearching ? clear() : submit()" class="btn btn-default input-group-addon">
+							<i ng-class="isSearching ? qbTableSettings.icons.searchClear : qbTableSettings.icons.search"/>
 						</a>
 					</div>
 				</div>
