@@ -725,6 +725,7 @@ angular.module('angular-ui-query-builder')
 				}
 
 				$scope.isSearching = true;
+
 				// Inform the main query builder that we've changed something
 				$rootScope.$broadcast('queryBuilder.change', newQuery);
 				if (angular.isFunction($ctrl.onRefresh)) $ctrl.onRefresh({ query: newQuery });
@@ -739,20 +740,37 @@ angular.module('angular-ui-query-builder')
 				$scope.search = '';
 				angular.element($element).find('input').focus();
 
+				var newQuery;
 				if (existingQuery && _.isEqual(existingQuery, ['$comment'])) {
 					// Existing - found at root level
-					$scope.query = {};
+					newQuery = {};
 				} else if (existingQuery && existingQuery[0] == '$and') {
 					// Existing - Found within $and wrapper, unwrap and return to simple key/val format
-					$scope.query = $scope.query.$and.find(function (v, k) {
+					newQuery = angular.copy($scope.query);
+					newQuery.$and.find(function (v, k) {
 						return v.$comment != 'search';
 					});
 				} else if (existingQuery) {
 					// Existing - Delete by path
-					_.unset($scope.query, existingQuery);
+					newQuery = angular.copy($scope.query);
+					_.unset(newQuery, existingQuery);
+				} else if ($scope.query.$or && $scope.query.$or.every(function (field) {
+					return _.size(field) == 1 && _.chain(field).first().keys().find(function (k) {
+						return k == '$regEx';
+					});
+				})) {
+					newQuery = angular.copy($scope.query);
+					delete newQuery.$or;
 				} else {
 					// Give up
 					console.warn('Unable to clear search query within complex query', $scope.query);
+				}
+
+				// Inform the main query builder that we've changed something
+				$rootScope.$broadcast('queryBuilder.change', newQuery);
+				if (angular.isFunction($ctrl.onRefresh)) $ctrl.onRefresh({ query: newQuery });
+				if ($ctrl.binding == 'complete' || angular.isUndefined($ctrl.binding)) {
+					$scope.query = newQuery;
 				}
 			};
 
