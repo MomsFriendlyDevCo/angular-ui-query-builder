@@ -502,7 +502,8 @@ angular.module('angular-ui-query-builder')
 		paginationNext: 'fa fa-arrow-right',
 		modalClose: 'fa fa-times',
 		modalCollapseClosed: 'fa fa-caret-right pull-right',
-		search: 'fa fa-search'
+		search: 'fa fa-search',
+		searchClear: 'fa fa-times'
 	};
 
 	qbTableSettings.pagination = {
@@ -1143,12 +1144,13 @@ angular.module('angular-ui-query-builder')
 		},
 		restrict: 'AE',
 		transclude: true,
-		controller: ['$scope', '$rootScope', '$timeout', 'qbTableSettings', 'qbTableUtilities', function controller($scope, $rootScope, $timeout, qbTableSettings, qbTableUtilities) {
+		controller: ['$element', '$scope', '$rootScope', '$timeout', 'qbTableSettings', 'qbTableUtilities', function controller($element, $scope, $rootScope, $timeout, qbTableSettings, qbTableUtilities) {
 			var $ctrl = this;
 
 			$scope.qbTableSettings = qbTableSettings;
 
 			$scope.search = '';
+			$scope.isSearching = false;
 
 			$scope.submit = function () {
 				if (!$scope.search) return $scope.clear();
@@ -1202,6 +1204,7 @@ angular.module('angular-ui-query-builder')
 					console.warn('Unable to place search query', searchQuery, 'within complex query', newQuery);
 				}
 
+				$scope.isSearching = true;
 				// Inform the main query builder that we've changed something
 				$rootScope.$broadcast('queryBuilder.change', newQuery);
 				if (angular.isFunction($ctrl.onRefresh)) $ctrl.onRefresh({ query: newQuery });
@@ -1212,6 +1215,10 @@ angular.module('angular-ui-query-builder')
 
 			$scope.clear = function () {
 				var existingQuery = qbTableUtilities.find($scope.query, { $comment: 'search' });
+				$scope.isSearching = false;
+				$scope.search = '';
+				angular.element($element).find('input').focus();
+
 				if (existingQuery && _.isEqual(existingQuery, ['$comment'])) {
 					// Existing - found at root level
 					$scope.query = {};
@@ -1247,7 +1254,7 @@ angular.module('angular-ui-query-builder')
 				return $scope.check();
 			};
 		}],
-		template: '\n\t\t<ng-transclude>\n\t\t\t<form ng-submit="submit()" class="form-inline">\n\t\t\t\t<div class="form-group">\n\t\t\t\t\t<div class="input-group">\n\t\t\t\t\t\t<input ng-blur="submit()" type="text" ng-model="search" class="form-control"/>\n\t\t\t\t\t\t<a ng-click="submit()" class="btn btn-default input-group-addon">\n\t\t\t\t\t\t\t<i ng-class="qbTableSettings.icons.search"/>\n\t\t\t\t\t\t</a>\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t</ng-transclude>\n\t'
+		template: '\n\t\t<ng-transclude>\n\t\t\t<form ng-submit="submit()" class="form-inline">\n\t\t\t\t<div class="form-group">\n\t\t\t\t\t<div class="input-group">\n\t\t\t\t\t\t<input ng-blur="submit()" type="text" ng-model="search" class="form-control"/>\n\t\t\t\t\t\t<a ng-click="isSearching ? clear() : submit()" class="btn btn-default input-group-addon">\n\t\t\t\t\t\t\t<i ng-class="isSearching ? qbTableSettings.icons.searchClear : qbTableSettings.icons.search"/>\n\t\t\t\t\t\t</a>\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t</ng-transclude>\n\t'
 	};
 });
 // }}}
