@@ -1155,12 +1155,13 @@ angular.module('angular-ui-query-builder')
 			$scope.submit = function () {
 				if (!$scope.search) return $scope.clear();
 
+				var safeRegEx = qbTableUtilities.escapeRegExp(_.trim($scope.search));
 				var searchQuery = {
 					$comment: 'search',
 					$or: _($scope.spec).pickBy(function (v) {
 						return v.type == 'string';
 					}).mapValues(function (v, k) {
-						return [{ $regex: qbTableUtilities.escapeRegExp($scope.search), $options: 'i' }];
+						return [{ $regex: safeRegEx, $options: 'i' }];
 					}).value()
 				};
 
