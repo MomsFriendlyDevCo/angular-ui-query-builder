@@ -645,7 +645,8 @@ angular.module('angular-ui-query-builder')
 				return $scope.$on(event, cb);
 			};
 			$ctrl.setDirty = function () {
-				return $rootScope.$broadcast('queryBuilder.change', $scope.qbTable);
+				console.log('DECLARE DIRTY', $scope.qbTable);
+				$rootScope.$broadcast('queryBuilder.change', $scope.qbTable);
 			};
 
 			/**
@@ -718,7 +719,7 @@ angular.module('angular-ui-query-builder')
 		require: '^qbTable',
 		restrict: 'A',
 		transclude: true,
-		controller: ['$attrs', '$element', '$scope', 'qbTableSettings', function controller($attrs, $element, $scope, qbTableSettings) {
+		controller: ['$attrs', '$element', '$scope', '$timeout', 'qbTableSettings', function controller($attrs, $element, $scope, $timeout, qbTableSettings) {
 			var $ctrl = this;
 
 			$scope.qbTableSettings = qbTableSettings;
@@ -737,6 +738,13 @@ angular.module('angular-ui-query-builder')
 			$ctrl.$onInit = function () {
 				$scope.canSort = $scope.sortable || $attrs.sortable === '';
 				$element.toggleClass('sortable', $scope.canSort);
+
+				if ($scope.canSort) {
+					// If sortable mode is on - enable clicking anywhere as a sort method
+					$element.on('click', function () {
+						return $timeout($scope.toggleSort);
+					});
+				}
 			};
 
 			$scope.$watch('qbTable.query.sort', function (sorter) {
@@ -760,10 +768,10 @@ angular.module('angular-ui-query-builder')
 			$scope.toggleSort = function () {
 				if ($scope.sortable) {
 					// Sort by a specific field
-					$scope.qbTable.setField('sort', $scope.sortable);
+					$scope.qbTable.setField('sort', $scope.sortable).setDirty();
 				} else if ($scope.qbCol && $attrs.sortable === '') {
 					// Has attribute but no value - assume main key if we have one
-					$scope.qbTable.setField('sort', $scope.qbCol);
+					$scope.qbTable.setField('sort', $scope.qbCol).setDirty();
 				}
 			};
 			// }}}
