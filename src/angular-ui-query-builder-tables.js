@@ -440,7 +440,7 @@ angular.module('angular-ui-query-builder')
 							of {{showRange.total | number}}
 						</span>
 					</span>
-					<ul ng-if="qbTableSettings.pagination.showPages && showRange.end" class="display-pages pagination">
+					<ul ng-if="qbTableSettings.pagination.showPages && showRange.end && pages.max > 1" class="display-pages pagination">
 						<li ng-repeat="page in pages.range track by page.number" ng-class="page.mode == 'current' ? 'active' : ''">
 							<a ng-click="navPageNumber(page.number)">
 								{{page.number + 1 | number}}
