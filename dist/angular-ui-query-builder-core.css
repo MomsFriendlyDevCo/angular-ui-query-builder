@@ -194,6 +194,7 @@
 /* }}} */
 
 /* Add button {{{ */
+/* Note: acts as both a row and block */
 .ui-query-builder .btn-add {
 	background: #008000;
 	border: 0;
@@ -210,12 +211,18 @@
 	opacity: 0;
 	padding: 0;
 	pointer-events: none;
+	position: relative;
 	width: 26px;
 	z-index: 3;
 }
+	ui-query-builder-group > div + .btn-add {
+		margin-top: 10px;
+	}
+	.ui-query-builder ui-query-builder-group > .btn-add {
+		margin-left: 21px;
+	}
 
 .ui-query-builder .btn-add::after {
-	top: -2px;
 	position: relative;
 	color: white;
 	content: '+';
@@ -224,21 +231,26 @@
 	font-weight: bold;
 	text-align: center;
 	width: 100%;
+	padding-left: 1px;
 }
 
 .ui-query-builder .btn-add::before {
 	background-image:
 		linear-gradient(90deg,#ccc 4px,transparent 0),
 		linear-gradient(0deg,#ccc 4px,transparent 0);
-	bottom: 15px;
+	bottom: 12px;
 	content: '';
 	display: block;
 	height: 44px;
-	left: 13px;
+	left: 0;
 	position: absolute;
 	width: 30px;
 	z-index: -1;
 }
+	.ui-query-builder ui-query-builder-group > .btn-add::before {
+		left: -21px;
+		width: 21px;
+	}
 
 /* Events */
 .ui-query-builder .btn-add:active,

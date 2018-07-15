@@ -8,10 +8,32 @@ angular.module('angular-ui-query-builder')
 .provider('qbTableSettings', function () {
 	var qbTableSettings = this;
 
+	qbTableSettings.debug = false;
+	qbTableSettings.debugPrefix = '[angular-ui-query-builder]';
+
 	qbTableSettings.icons = {
 		sortNone: 'fa fa-fw fa-sort text-muted',
 		sortAsc: 'fa fa-fw fa-sort-alpha-asc text-primary',
-		sortDesc: 'fa fa-fw fa-sort-alpha-desc text-primary'
+		sortDesc: 'fa fa-fw fa-sort-alpha-desc text-primary',
+		checkMetaChecked: 'fa fa-lg fa-fw fa-check-square-o text-primary',
+		checkMetaSome: 'fa fa-lg fa-fw fa-minus-square-o',
+		checkMetaUnchecked: 'fa fa-lg fa-fw fa-square-o',
+		checkMetaCaret: 'fa fa-caret-down',
+		checkItemChecked: 'fa fa-lg fa-fw fa-check-square-o',
+		checkItemUnchecked: 'fa fa-lg fa-fw fa-square-o',
+		paginationPrev: 'fa fa-arrow-left',
+		paginationNext: 'fa fa-arrow-right',
+		modalClose: 'fa fa-times',
+		modalCollapseClosed: 'fa fa-caret-right pull-right',
+		search: 'fa fa-search',
+		searchClear: 'fa fa-times'
+	};
+
+	qbTableSettings.pagination = {
+		showXOfY: true,
+		showPages: true,
+		pageRangeBack: 5,
+		pageRangeFore: 5
 	};
 
 	qbTableSettings.export = {
@@ -111,6 +133,7 @@ angular.module('angular-ui-query-builder')
 /**
 * Directive applied to a table element to indicate that we should manage that table via angular-ui-query
 * @param {Object} qbTable The query object to modify
+* @param {number} count Optional maximum number of results currently matching this query (used by pagination to generate page offsets)
 * @param {boolean} stickyThead Anything within the `thead` section of the table should remain on the screen while scrolling
 * @param {boolean} stickyTfoot Anything within the `tfoot` section of the table should remain on the screen while scrolling
 * @emits qbTableQueryChange Emitted to child elements as (e, query) when the query object changes
@@ -119,13 +142,20 @@ angular.module('angular-ui-query-builder')
 	return {
 		scope: {
 			qbTable: '=?',
+			count: '<?',
 			stickyThead: '<?',
 			stickyTfoot: '<?'
 		},
 		restrict: 'AC',
-		controller: ['$attrs', '$element', '$scope', 'qbTableSettings', function controller($attrs, $element, $scope, qbTableSettings) {
+		controller: ['$attrs', '$element', '$rootScope', '$scope', 'qbTableSettings', function controller($attrs, $element, $rootScope, $scope, qbTableSettings) {
 			var $ctrl = this;
-			$ctrl.query = $scope.qbTable; // Copy into $ctrl so children can access it / $watch it
+
+			// Copy into $ctrl so children can access it / $watch it
+			$ctrl.query = $scope.qbTable;
+			$ctrl.count = $scope.count;
+			$scope.$watch('count', function () {
+				return $ctrl.count = $scope.count;
+			}); // If our binding changes, also update the qbTable.count reference - no idea why Angular doesn't do this anyway since its using a pointer
 
 			$ctrl.$broadcast = function (msg) {
 				for (var _len = arguments.length, args = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
@@ -137,7 +167,19 @@ angular.module('angular-ui-query-builder')
 			$ctrl.$on = function (event, cb) {
 				return $scope.$on(event, cb);
 			};
+			$ctrl.setDirty = function () {
+				if (qbTableSettings.debug) console.log(qbTableSettings.debugPrefix, 'Declare query dirty', $scope.qbTable);
+				$rootScope.$broadcast('queryBuilder.change', $scope.qbTable);
+			};
 
+			/**
+   * Set the value of a query element to another value
+   * NOTE: This function does not call $ctrl.setDirty() by default but you can chain this
+   * @param {string} field The field name to change
+   * @param {*} value The value to change to, if omitted the field is removed entirely
+   * @example set the sort criteria and then refresh
+   * qbTable.setField('sort', 'email').setDirty()
+   */
 			$ctrl.setField = function (field, value) {
 				if (value == undefined) {
 					// Remove from query
@@ -161,6 +203,8 @@ angular.module('angular-ui-query-builder')
 					default:
 						$scope.qbTable[field] = value;
 				}
+
+				return $ctrl;
 			};
 
 			$element.addClass('qb-table');
@@ -198,14 +242,14 @@ angular.module('angular-ui-query-builder')
 		require: '^qbTable',
 		restrict: 'A',
 		transclude: true,
-		controller: ['$attrs', '$element', '$scope', 'qbTableSettings', function controller($attrs, $element, $scope, qbTableSettings) {
+		controller: ['$attrs', '$element', '$scope', '$timeout', 'qbTableSettings', function controller($attrs, $element, $scope, $timeout, qbTableSettings) {
 			var $ctrl = this;
 
 			$scope.qbTableSettings = qbTableSettings;
 
 			// Sanity checks {{{
 			var unSanityChecks = $scope.$watchGroup(['qbTable', 'sortable'], function () {
-				if ($attrs.sortable === '' && !$scope.qbTable) console.warn('Added qb-col + sortable onto element', $element, 'but no qb-table query has been assigned on the table element!');
+				if ($attrs.sortable === '' && !$scope.qbTable && qbTableSettings.debug) console.warn(qbTableSettings.debugPrefix, 'Added qb-col + sortable onto element', $element, 'but no qb-table query has been assigned on the table element!');
 				unSanityChecks();
 			});
 			// }}}
@@ -217,6 +261,13 @@ angular.module('angular-ui-query-builder')
 			$ctrl.$onInit = function () {
 				$scope.canSort = $scope.sortable || $attrs.sortable === '';
 				$element.toggleClass('sortable', $scope.canSort);
+
+				if ($scope.canSort) {
+					// If sortable mode is on - enable clicking anywhere as a sort method
+					$element.on('click', function () {
+						return $timeout($scope.toggleSort);
+					});
+				}
 			};
 
 			$scope.$watch('qbTable.query.sort', function (sorter) {
@@ -240,10 +291,10 @@ angular.module('angular-ui-query-builder')
 			$scope.toggleSort = function () {
 				if ($scope.sortable) {
 					// Sort by a specific field
-					$scope.qbTable.setField('sort', $scope.sortable);
+					$scope.qbTable.setField('sort', $scope.sortable).setDirty();
 				} else if ($scope.qbCol && $attrs.sortable === '') {
 					// Has attribute but no value - assume main key if we have one
-					$scope.qbTable.setField('sort', $scope.qbCol);
+					$scope.qbTable.setField('sort', $scope.qbCol).setDirty();
 				}
 			};
 			// }}}
@@ -363,7 +414,7 @@ angular.module('angular-ui-query-builder')
 		link: function link(scope, element, attrs, parentScope) {
 			scope.qbTable = parentScope;
 		},
-		template: '\n\t\t<ng-transclude></ng-transclude>\n\t\t<div ng-if="isSelector && isMeta" class="btn-group">\n\t\t\t<a class="btn btn-default dropdown-toggle" data-toggle="dropdown">\n\t\t\t\t<i class="fa fa-lg fa-fw" ng-class="metaStatus == \'all\' ? \'fa-check-square-o text-primary\' : metaStatus == \'some\' ? \'fa-minus-square-o\' : \'fa-square-o\'"></i>\n\t\t\t\t<i class="fa fa-caret-down"></i>\n\t\t\t</a>\n\t\t\t<ul class="dropdown-menu">\n\t\t\t\t<li><a ng-click="metaSelect(\'all\')">All</a></li>\n\t\t\t\t<li><a ng-click="metaSelect(\'invert\')">Invert</a></li>\n\t\t\t\t<li><a ng-click="metaSelect(\'none\')">None</a></li>\n\t\t\t</ul>\n\t\t</div>\n\t\t<div ng-if="isSelector && !isMeta">\n\t\t\t<i class="fa fa-lg fa-fw" ng-class="selector ? \'fa-check-square-o\' : \'fa-square-o\'"></i>\n\t\t</div>\n\t'
+		template: '\n\t\t<ng-transclude></ng-transclude>\n\t\t<div ng-if="isSelector && isMeta" class="btn-group">\n\t\t\t<a class="btn btn-default dropdown-toggle" data-toggle="dropdown">\n\t\t\t\t<i ng-class="metaStatus == \'all\' ? qbTableSettings.icons.checkMetaChecked : metaStatus == \'some\' ? qbTableSettings.icons.checkMetaUnchecked : qbTableSettings.icons.checkMetaUnchecked"></i>\n\t\t\t\t<i ng-class="qbTableSettings.icons.checkMetaCaret"></i>\n\t\t\t</a>\n\t\t\t<ul class="dropdown-menu">\n\t\t\t\t<li><a ng-click="metaSelect(\'all\')">All</a></li>\n\t\t\t\t<li><a ng-click="metaSelect(\'invert\')">Invert</a></li>\n\t\t\t\t<li><a ng-click="metaSelect(\'none\')">None</a></li>\n\t\t\t</ul>\n\t\t</div>\n\t\t<div ng-if="isSelector && !isMeta">\n\t\t\t<i ng-class="selector ? qbTableSettings.icons.checkItemChecked : qbTableSettings.icons.checkItemUnchecked"></i>\n\t\t</div>\n\t'
 	};
 })
 // }}}
@@ -373,6 +424,7 @@ angular.module('angular-ui-query-builder')
 * Directive to add table pagination
 * NOTE: Any transcluded content will be inserted in the center of the pagination area
 * @param {Object} ^qbTable.qbTable The query Object to mutate
+* @param {Number} ^qbTable.count The matching number of documents (used to show the page numbers, 'X of Y' displays etc.
 */
 .directive('qbPagination', function () {
 	return {
@@ -387,26 +439,58 @@ angular.module('angular-ui-query-builder')
 
 			$scope.canPrev = true;
 			$scope.canNext = true;
+			$scope.showRange = {};
 
-			$scope.$watchGroup(['qbTable.query.limit', 'qbTable.query.skip'], function (sorter) {
+			$scope.$watchGroup(['qbTable.query.limit', 'qbTable.query.skip', 'qbTable.count'], function (sorter) {
 				$scope.canPrev = $scope.qbTable.query.skip > 0;
-				$scope.canNext = !$scope.total || $scope.qbTable.query.skip + $scope.qbTable.query.limit < $scope.total;
+				$scope.canNext = !$scope.qbTable.count || $scope.qbTable.query.skip + $scope.qbTable.query.limit < $scope.qbTable.count;
+
+				// Page X of Y display {{{
+				if (qbTableSettings.pagination.showXOfY) {
+					$scope.showRange = {
+						start: ($scope.qbTable.query.skip || 0) + 1,
+						end: Math.min(($scope.qbTable.query.skip || 0) + $scope.qbTable.query.limit, $scope.qbTable.count),
+						total: $scope.qbTable.count
+					};
+				}
+				// }}}
+
+				// Page view calculation {{{
+				if (qbTableSettings.pagination.showPages) {
+					$scope.pages = {
+						current: $scope.qbTable.query.limit ? Math.floor(($scope.qbTable.query.skip || 0) / $scope.qbTable.query.limit) : false
+					};
+					$scope.pages.min = Math.max($scope.pages.current - qbTableSettings.pagination.pageRangeBack, 0);
+					$scope.pages.total = $scope.qbTable.query.limit ? Math.ceil($scope.qbTable.count / $scope.qbTable.query.limit) : 1; // No limit specified therefore there is only one page
+					$scope.pages.max = Math.min($scope.pages.total, $scope.pages.current + qbTableSettings.pagination.pageRangeFore + 1);
+					$scope.pages.range = _.range($scope.pages.min, $scope.pages.max).map(function (i) {
+						return {
+							number: i,
+							mode: i == $scope.pages.current ? 'current' : i == $scope.pages.current - 1 ? 'prev' : i == $scope.pages.current + 1 ? 'next' : 'normal'
+						};
+					});
+				}
+				// }}}
 			});
 
 			$scope.navPageRelative = function (pageRelative) {
 				if (pageRelative == -1) {
-					$scope.qbTable.setField('skip', Math.min(($scope.qbTable.query.skip || 0) - ($scope.qbTable.query.limit || 10), 0));
+					$scope.qbTable.setField('skip', Math.max(($scope.qbTable.query.skip || 0) - ($scope.qbTable.query.limit || 10), 0)).setDirty();
 				} else if (pageRelative == 1) {
-					$scope.qbTable.setField('skip', ($scope.qbTable.query.skip || 0) + ($scope.qbTable.query.limit || 10), 0);
+					$scope.qbTable.setField('skip', ($scope.qbTable.query.skip || 0) + ($scope.qbTable.query.limit || 10)).setDirty();
 				} else {
 					throw new Error('Unsupported page move: ' + pageRelative);
 				}
+			};
+
+			$scope.navPageNumber = function (number) {
+				return $scope.qbTable.setField('skip', (number || 0) * ($scope.qbTable.query.limit || 10)).setDirty();
 			};
 		}],
 		link: function link(scope, element, attrs, parentScope) {
 			scope.qbTable = parentScope;
 		},
-		template: '\n\t\t<nav>\n\t\t\t<ul class="pager">\n\t\t\t\t<li ng-class="canPrev ? \'\' : \'disabled\'" class="previous"><a ng-click="navPageRelative(-1)"><i class="fa fa-arrow-left"></i></a></li>\n\t\t\t\t<ng-transclude class="text-center"></ng-transclude>\n\t\t\t\t<li ng-class="canNext ? \'\' : \'disabled\'" class="next"><a ng-click="navPageRelative(1)"><i class="fa fa-arrow-right"></i></a></li>\n\t\t\t</ul>\n\t\t</nav>\n\t'
+		template: '\n\t\t<nav>\n\t\t\t<ul class="pager">\n\t\t\t\t<li ng-class="canPrev ? \'\' : \'disabled\'" class="previous"><a ng-click="navPageRelative(-1)"><i ng-class="qbTableSettings.icons.paginationPrev"></i></a></li>\n\t\t\t\t<ng-transclude class="text-center">\n\t\t\t\t\t<span ng-if="qbTableSettings.pagination.showXOfY && showRange.end" class="display-xofy">\n\t\t\t\t\t\tShowing documents {{showRange.start | number}} - {{showRange.end | number}}\n\t\t\t\t\t\t<span ng-if="showRange.total">\n\t\t\t\t\t\t\tof {{showRange.total | number}}\n\t\t\t\t\t\t</span>\n\t\t\t\t\t</span>\n\t\t\t\t\t<ul ng-if="qbTableSettings.pagination.showPages && showRange.end && pages.max > 1" class="display-pages pagination">\n\t\t\t\t\t\t<li ng-repeat="page in pages.range track by page.number" ng-class="page.mode == \'current\' ? \'active\' : \'\'">\n\t\t\t\t\t\t\t<a ng-click="navPageNumber(page.number)">\n\t\t\t\t\t\t\t\t{{page.number + 1 | number}}\n\t\t\t\t\t\t\t</a>\n\t\t\t\t\t\t</li>\n\t\t\t\t\t</ul>\n\t\t\t\t</ng-transclude>\n\t\t\t\t<li ng-class="canNext ? \'\' : \'disabled\'" class="next"><a ng-click="navPageRelative(1)"><i ng-class="qbTableSettings.icons.paginationNext"></i></a></li>\n\t\t\t</ul>\n\t\t</nav>\n\t'
 	};
 })
 // }}}
@@ -508,7 +592,7 @@ angular.module('angular-ui-query-builder')
 			});
 			// }}}
 		}],
-		template: '\n\t\t<div class="modal fade">\n\t\t\t<div class="modal-dialog modal-lg">\n\t\t\t\t<div ng-if="isShowing" class="modal-content">\n\t\t\t\t\t<div class="modal-header">\n\t\t\t\t\t\t<a class="close" data-dismiss="modal"><i class="fa fa-times"></i></a>\n\t\t\t\t\t\t<h4 class="modal-title">Export</h4>\n\t\t\t\t\t</div>\n\t\t\t\t\t<div class="modal-body form-horizontal">\n\t\t\t\t\t\t<div class="form-group">\n\t\t\t\t\t\t\t<label class="col-sm-3 control-label">Output format</label>\n\t\t\t\t\t\t\t<div class="col-sm-9">\n\t\t\t\t\t\t\t\t<select ng-model="settings.format" class="form-control">\n\t\t\t\t\t\t\t\t\t<option ng-repeat="format in qbTableSettings.export.formats track by format.id" value="{{format.id}}">{{format.title}}</option>\n\t\t\t\t\t\t\t\t</select>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t\t<div class="form-group">\n\t\t\t\t\t\t\t<label class="col-sm-3 control-label">Criteria</label>\n\t\t\t\t\t\t\t<div class="col-sm-9">\n\t\t\t\t\t\t\t\t<div class="panel-group" id="qb-export-criteria-{{$id}}">\n\t\t\t\t\t\t\t\t\t<div class="panel panel-default">\n\t\t\t\t\t\t\t\t\t\t<div class="panel-heading">\n\t\t\t\t\t\t\t\t\t\t\t<h4 class="panel-title">\n\t\t\t\t\t\t\t\t\t\t\t\t<a data-toggle="collapse" data-target="#qb-export-criteria-{{$id}}-query" data-parent="#qb-export-criteria-{{$id}}" class="btn-block collapsed">\n\t\t\t\t\t\t\t\t\t\t\t\t\t{{querySynopsis}}\n\t\t\t\t\t\t\t\t\t\t\t\t\t<i class="fa fa-caret-right pull-right"></i>\n\t\t\t\t\t\t\t\t\t\t\t\t</a>\n\t\t\t\t\t\t\t\t\t\t\t</h4>\n\t\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t\t\t<div id="qb-export-criteria-{{$id}}-query" class="panel-collapse collapse container">\n\t\t\t\t\t\t\t\t\t\t\t<ui-query-builder\n\t\t\t\t\t\t\t\t\t\t\t\tquery="settings.query"\n\t\t\t\t\t\t\t\t\t\t\t\tspec="spec"\n\t\t\t\t\t\t\t\t\t\t\t></ui-query-builder>\n\t\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t\t<div class="form-group">\n\t\t\t\t\t\t\t<label class="col-sm-3 control-label">Columns</label>\n\t\t\t\t\t\t\t<div class="col-sm-9">\n\t\t\t\t\t\t\t\t<div class="panel-group" id="qb-export-columns-{{$id}}">\n\t\t\t\t\t\t\t\t\t<div class="panel panel-default">\n\t\t\t\t\t\t\t\t\t\t<div class="panel-heading">\n\t\t\t\t\t\t\t\t\t\t\t<h4 class="panel-title">\n\t\t\t\t\t\t\t\t\t\t\t\t<a data-toggle="collapse" data-target="#qb-export-columns-{{$id}}-columns" data-parent="#qb-export-columns-{{$id}}" class="btn-block collapsed">\n\t\t\t\t\t\t\t\t\t\t\t\t\t{{columnSynopsis}}\n\t\t\t\t\t\t\t\t\t\t\t\t\t<i class="fa fa-caret-right pull-right"></i>\n\t\t\t\t\t\t\t\t\t\t\t\t</a>\n\t\t\t\t\t\t\t\t\t\t\t</h4>\n\t\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t\t\t<div id="qb-export-columns-{{$id}}-columns" class="panel-collapse collapse row">\n\t\t\t\t\t\t\t\t\t\t\t<div class="col-xs-12">\n\t\t\t\t\t\t\t\t\t\t\t\t<table qb-table class="table table-hover">\n\t\t\t\t\t\t\t\t\t\t\t\t\t<thead>\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t<tr>\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t<th qb-cell selector></th>\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t<th>Column</th>\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t</tr>\n\t\t\t\t\t\t\t\t\t\t\t\t\t</thead>\n\t\t\t\t\t\t\t\t\t\t\t\t\t<tbody>\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t<tr ng-repeat="col in settings.columns track by col.id">\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t<td qb-cell selector="col.selected"></td>\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t<td>{{col.title}}</td>\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t</tr>\n\t\t\t\t\t\t\t\t\t\t\t\t\t</tbody>\n\t\t\t\t\t\t\t\t\t\t\t\t</table>\n\t\t\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t\t<div ng-repeat="question in qbTableSettings.export.questions track by question.id" class="form-group">\n\t\t\t\t\t\t\t<label class="col-sm-3 control-label">{{question.title}}</label>\n\t\t\t\t\t\t\t<div ng-switch="question.type" class="col-sm-9">\n\t\t\t\t\t\t\t\t<div ng-switch-when="text">\n\t\t\t\t\t\t\t\t\t<input type="text" ng-model="settings.questions[question.id]" class="form-control"/>\n\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t<div ng-switch-default>\n\t\t\t\t\t\t\t\t\t<div class="alert alert-danger">\n\t\t\t\t\t\t\t\t\t\tUnknown question type: "{{question.type}}"\n\t\t\t\t\t\t\t\t\t\t<pre>{{question | json}}</pre>\n\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t<div ng-if="question.help" class="help-block">{{question.help}}</div>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t</div>\n\t\t\t\t\t<div class="modal-footer">\n\t\t\t\t\t\t<div class="pull-left">\n\t\t\t\t\t\t\t<a class="btn btn-danger" data-dismiss="modal">Cancel</a>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t\t<div class="pull-right">\n\t\t\t\t\t\t\t<a ng-click="exportExecute()" class="btn btn-primary" data-dismiss="modal">Export</a>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t</div>\n\t\t<ng-transclude>\n\t\t\t<a ng-click="exportPrompt()" class="btn btn-default">Export...</a>\n\t\t</ng-transclude>\n\t'
+		template: '\n\t\t<div class="modal fade">\n\t\t\t<div class="modal-dialog modal-lg">\n\t\t\t\t<div ng-if="isShowing" class="modal-content">\n\t\t\t\t\t<div class="modal-header">\n\t\t\t\t\t\t<a class="close" data-dismiss="modal"><i ng-class="qbTableSettings.icons.modalClose"></i></a>\n\t\t\t\t\t\t<h4 class="modal-title">Export</h4>\n\t\t\t\t\t</div>\n\t\t\t\t\t<div class="modal-body form-horizontal">\n\t\t\t\t\t\t<div class="form-group">\n\t\t\t\t\t\t\t<label class="col-sm-3 control-label">Output format</label>\n\t\t\t\t\t\t\t<div class="col-sm-9">\n\t\t\t\t\t\t\t\t<select ng-model="settings.format" class="form-control">\n\t\t\t\t\t\t\t\t\t<option ng-repeat="format in qbTableSettings.export.formats track by format.id" value="{{format.id}}">{{format.title}}</option>\n\t\t\t\t\t\t\t\t</select>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t\t<div class="form-group">\n\t\t\t\t\t\t\t<label class="col-sm-3 control-label">Criteria</label>\n\t\t\t\t\t\t\t<div class="col-sm-9">\n\t\t\t\t\t\t\t\t<div class="panel-group" id="qb-export-criteria-{{$id}}">\n\t\t\t\t\t\t\t\t\t<div class="panel panel-default">\n\t\t\t\t\t\t\t\t\t\t<div class="panel-heading">\n\t\t\t\t\t\t\t\t\t\t\t<h4 class="panel-title">\n\t\t\t\t\t\t\t\t\t\t\t\t<a data-toggle="collapse" data-target="#qb-export-criteria-{{$id}}-query" data-parent="#qb-export-criteria-{{$id}}" class="btn-block collapsed">\n\t\t\t\t\t\t\t\t\t\t\t\t\t{{querySynopsis}}\n\t\t\t\t\t\t\t\t\t\t\t\t\t<i ng-class="qbTableSettings.icons.modalCollapseClosed"></i>\n\t\t\t\t\t\t\t\t\t\t\t\t</a>\n\t\t\t\t\t\t\t\t\t\t\t</h4>\n\t\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t\t\t<div id="qb-export-criteria-{{$id}}-query" class="panel-collapse collapse container">\n\t\t\t\t\t\t\t\t\t\t\t<ui-query-builder\n\t\t\t\t\t\t\t\t\t\t\t\tquery="settings.query"\n\t\t\t\t\t\t\t\t\t\t\t\tspec="spec"\n\t\t\t\t\t\t\t\t\t\t\t></ui-query-builder>\n\t\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t\t<div class="form-group">\n\t\t\t\t\t\t\t<label class="col-sm-3 control-label">Columns</label>\n\t\t\t\t\t\t\t<div class="col-sm-9">\n\t\t\t\t\t\t\t\t<div class="panel-group" id="qb-export-columns-{{$id}}">\n\t\t\t\t\t\t\t\t\t<div class="panel panel-default">\n\t\t\t\t\t\t\t\t\t\t<div class="panel-heading">\n\t\t\t\t\t\t\t\t\t\t\t<h4 class="panel-title">\n\t\t\t\t\t\t\t\t\t\t\t\t<a data-toggle="collapse" data-target="#qb-export-columns-{{$id}}-columns" data-parent="#qb-export-columns-{{$id}}" class="btn-block collapsed">\n\t\t\t\t\t\t\t\t\t\t\t\t\t{{columnSynopsis}}\n\t\t\t\t\t\t\t\t\t\t\t\t\t<i ng-class="qbTableSettings.icons.modalCollapseClosed"></i>\n\t\t\t\t\t\t\t\t\t\t\t\t</a>\n\t\t\t\t\t\t\t\t\t\t\t</h4>\n\t\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t\t\t<div id="qb-export-columns-{{$id}}-columns" class="panel-collapse collapse row">\n\t\t\t\t\t\t\t\t\t\t\t<div class="col-xs-12">\n\t\t\t\t\t\t\t\t\t\t\t\t<table qb-table class="table table-hover">\n\t\t\t\t\t\t\t\t\t\t\t\t\t<thead>\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t<tr>\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t<th qb-cell selector></th>\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t<th>Column</th>\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t</tr>\n\t\t\t\t\t\t\t\t\t\t\t\t\t</thead>\n\t\t\t\t\t\t\t\t\t\t\t\t\t<tbody>\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t<tr ng-repeat="col in settings.columns track by col.id">\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t<td qb-cell selector="col.selected"></td>\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t<td>{{col.title}}</td>\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t</tr>\n\t\t\t\t\t\t\t\t\t\t\t\t\t</tbody>\n\t\t\t\t\t\t\t\t\t\t\t\t</table>\n\t\t\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t\t<div ng-repeat="question in qbTableSettings.export.questions track by question.id" class="form-group">\n\t\t\t\t\t\t\t<label class="col-sm-3 control-label">{{question.title}}</label>\n\t\t\t\t\t\t\t<div ng-switch="question.type" class="col-sm-9">\n\t\t\t\t\t\t\t\t<div ng-switch-when="text">\n\t\t\t\t\t\t\t\t\t<input type="text" ng-model="settings.questions[question.id]" class="form-control"/>\n\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t<div ng-switch-default>\n\t\t\t\t\t\t\t\t\t<div class="alert alert-danger">\n\t\t\t\t\t\t\t\t\t\tUnknown question type: "{{question.type}}"\n\t\t\t\t\t\t\t\t\t\t<pre>{{question | json}}</pre>\n\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t<div ng-if="question.help" class="help-block">{{question.help}}</div>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t</div>\n\t\t\t\t\t<div class="modal-footer">\n\t\t\t\t\t\t<div class="pull-left">\n\t\t\t\t\t\t\t<a class="btn btn-danger" data-dismiss="modal">Cancel</a>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t\t<div class="pull-right">\n\t\t\t\t\t\t\t<a ng-click="exportExecute()" class="btn btn-primary" data-dismiss="modal">Export</a>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t</div>\n\t\t<ng-transclude>\n\t\t\t<a ng-click="exportPrompt()" class="btn btn-default">Export...</a>\n\t\t</ng-transclude>\n\t'
 	};
 })
 // }}}
@@ -536,8 +620,10 @@ angular.module('angular-ui-query-builder')
 		},
 		transclude: true,
 		restrict: 'A',
-		controller: ['$element', '$scope', function controller($element, $scope) {
+		controller: ['$element', '$scope', 'qbTableSettings', function controller($element, $scope, qbTableSettings) {
 			var $ctrl = this;
+
+			$scope.qbTableSettings = qbTableSettings;
 
 			$ctrl.isShown = false;
 			$ctrl.rebind = function () {
@@ -563,7 +649,7 @@ angular.module('angular-ui-query-builder')
 
 			$ctrl.rebind();
 		}],
-		template: '\n\t\t<ng-transclude></ng-transclude>\n\t\t<div class="qb-modal modal fade">\n\t\t\t<div class="modal-dialog modal-lg">\n\t\t\t\t<div class="modal-content">\n\t\t\t\t\t<div class="modal-header">\n\t\t\t\t\t\t<a class="close" data-dismiss="modal"><i class="fa fa-times"></i></a>\n\t\t\t\t\t\t<h4 class="modal-title">{{title || \'Edit Filter\'}}</h4>\n\t\t\t\t\t</div>\n\t\t\t\t\t<div class="modal-body">\n\t\t\t\t\t\t<ui-query-builder\n\t\t\t\t\t\t\tquery="queryCopy"\n\t\t\t\t\t\t\tspec="spec"\n\t\t\t\t\t\t></ui-query-builder>\n\t\t\t\t\t</div>\n\t\t\t\t\t<div class="modal-footer">\n\t\t\t\t\t\t<div class="pull-left">\n\t\t\t\t\t\t\t<a class="btn btn-danger" data-dismiss="modal">Cancel</a>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t\t<div class="pull-right">\n\t\t\t\t\t\t\t<a ng-click="submit()" class="btn btn-success">Refresh</a>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t</div>\n\t'
+		template: '\n\t\t<ng-transclude></ng-transclude>\n\t\t<div class="qb-modal modal fade">\n\t\t\t<div class="modal-dialog modal-lg">\n\t\t\t\t<div class="modal-content">\n\t\t\t\t\t<div class="modal-header">\n\t\t\t\t\t\t<a class="close" data-dismiss="modal"><i ng-class="qbTableSettings.icons.modalClose"></i></a>\n\t\t\t\t\t\t<h4 class="modal-title">{{title || \'Edit Filter\'}}</h4>\n\t\t\t\t\t</div>\n\t\t\t\t\t<div class="modal-body">\n\t\t\t\t\t\t<ui-query-builder\n\t\t\t\t\t\t\tquery="queryCopy"\n\t\t\t\t\t\t\tspec="spec"\n\t\t\t\t\t\t></ui-query-builder>\n\t\t\t\t\t</div>\n\t\t\t\t\t<div class="modal-footer">\n\t\t\t\t\t\t<div class="pull-left">\n\t\t\t\t\t\t\t<a class="btn btn-danger" data-dismiss="modal">Cancel</a>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t\t<div class="pull-right">\n\t\t\t\t\t\t\t<a ng-click="submit()" class="btn btn-success">Refresh</a>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t</div>\n\t'
 	};
 })
 // }}}
@@ -589,20 +675,27 @@ angular.module('angular-ui-query-builder')
 		},
 		restrict: 'AE',
 		transclude: true,
-		controller: ['$scope', '$rootScope', '$timeout', 'qbTableUtilities', function controller($scope, $rootScope, $timeout, qbTableUtilities) {
+		controller: ['$element', '$scope', '$rootScope', '$timeout', 'qbTableSettings', 'qbTableUtilities', function controller($element, $scope, $rootScope, $timeout, qbTableSettings, qbTableUtilities) {
 			var $ctrl = this;
 
+			$scope.qbTableSettings = qbTableSettings;
+
 			$scope.search = '';
+			$scope.isSearching = false;
 
+			/**
+   * Submit a search query - injecting the search terms into the query as needed
+   */
 			$scope.submit = function () {
-				if (!$scope.search) return $scope.clear();
+				if (!$scope.search) return $scope.clear(false);
 
+				var safeRegEx = qbTableUtilities.escapeRegExp(_.trim($scope.search));
 				var searchQuery = {
 					$comment: 'search',
 					$or: _($scope.spec).pickBy(function (v) {
 						return v.type == 'string';
 					}).mapValues(function (v, k) {
-						return [{ $regexp: qbTableUtilities.escapeRegExp($scope.search), options: 'i' }];
+						return [{ $regex: safeRegEx, $options: 'i' }];
 					}).value()
 				};
 
@@ -639,11 +732,66 @@ angular.module('angular-ui-query-builder')
 								throw new Error('Unknown field selection method: "' + indexMethod + '"');
 						}
 					}).map(function (v, k) {
-						return _defineProperty({}, k, { $regexp: qbTableUtilities.escapeRegExp($scope.search), options: 'i' });
+						return _defineProperty({}, k, { $regex: qbTableUtilities.escapeRegExp($scope.search), $options: 'i' });
 					}).value();
 				} else {
 					// Give up
-					console.warn('Unable to place search query', searchQuery, 'within complex query', newQuery);
+					console.warn(qbTableSettings.debugPrefix, 'Unable to inject search term', searchQuery, 'within complex query object', newQuery);
+				}
+
+				$scope.isSearching = true;
+
+				// Inform the main query builder that we've changed something
+				$rootScope.$broadcast('queryBuilder.change', newQuery);
+				if (angular.isFunction($ctrl.onRefresh)) $ctrl.onRefresh({ query: newQuery });
+				if ($ctrl.binding == 'complete' || angular.isUndefined($ctrl.binding)) {
+					$scope.query = newQuery;
+				}
+			};
+
+			/**
+   * Attempt to remove a search query from the currently active query block
+   * @param {boolean} [refocus=true] Attempt to move the user focus to the input element when clearing
+   */
+			$scope.clear = function () {
+				var refocus = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
+
+				var existingQuery = qbTableUtilities.find($scope.query, { $comment: 'search' });
+				$scope.isSearching = false;
+				$scope.search = '';
+
+				if (refocus) angular.element($element).find('input').focus();
+
+				var newQuery;
+				if (existingQuery && _.isEqual(existingQuery, ['$comment'])) {
+					// Existing - found at root level
+					newQuery = {};
+				} else if (existingQuery && existingQuery[0] == '$and') {
+					// Existing - Found within $and wrapper, unwrap and return to simple key/val format
+					newQuery = angular.copy($scope.query);
+					newQuery.$and.find(function (v, k) {
+						return v.$comment != 'search';
+					});
+				} else if (existingQuery) {
+					// Existing - Delete by path
+					newQuery = angular.copy($scope.query);
+					_.unset(newQuery, existingQuery);
+				} else if ($scope.query.$or && $scope.query.$or.every(function (field) {
+					return _.size(field) == 1 && _.chain(field).first().keys().find(function (k) {
+						return k == '$regEx';
+					});
+				})) {
+					newQuery = angular.copy($scope.query);
+					delete newQuery.$or;
+				} else if (qbTableSettings.debug) {
+					// Scream if we can't find the query anywhere and debugging mode is enabled
+					console.warn(qbTableSettings.debugPrefix, 'Unable to clear search query within complex query', $scope.query);
+					return;
+				} else {
+					// Give up - this should only happen either when:
+					// a) there is no search term anyway and we are being asked to clear
+					// b) we can't find any search term using any of the techniques above
+					return;
 				}
 
 				// Inform the main query builder that we've changed something
@@ -654,32 +802,13 @@ angular.module('angular-ui-query-builder')
 				}
 			};
 
-			$scope.clear = function () {
-				var existingQuery = qbTableUtilities.find($scope.query, { $comment: 'search' });
-				if (existingQuery && _.isEqual(existingQuery, ['$comment'])) {
-					// Existing - found at root level
-					$scope.query = {};
-				} else if (existingQuery && existingQuery[0] == '$and') {
-					// Existing - Found within $and wrapper, unwrap and return to simple key/val format
-					$scope.query = $scope.query.$and.find(function (v, k) {
-						return v.$comment != 'search';
-					});
-				} else if (existingQuery) {
-					// Existing - Delete by path
-					_.unset($scope.query, existingQuery);
-				} else {
-					// Give up
-					console.warn('Unable to clear search query within complex query', $scope.query);
-				}
-			};
-
 			/**
    * Try and populate initial query
-   * NOTE: This is currently only compatible with query.$or.0.*.$regexp level queries
+   * NOTE: This is currently only compatible with query.$or.0.*.$regex level queries
    */
 			$scope.check = function () {
 				try {
-					$scope.search = _.chain($scope.query).get('$or').first().values().first().get('$regexp').thru(function (v) {
+					$scope.search = _.chain($scope.query).get('$or').first().values().first().get('$regex').thru(function (v) {
 						return qbTableUtilities.unescapeRegExp(v || '');
 					}).value();
 				} catch (e) {
@@ -691,7 +820,7 @@ angular.module('angular-ui-query-builder')
 				return $scope.check();
 			};
 		}],
-		template: '\n\t\t<ng-transclude>\n\t\t\t<form ng-submit="submit()" class="form-inline">\n\t\t\t\t<div class="form-group">\n\t\t\t\t\t<div class="input-group">\n\t\t\t\t\t\t<input ng-blur="submit()" type="text" ng-model="search" class="form-control"/>\n\t\t\t\t\t\t<a ng-click="submit()" class="btn btn-default input-group-addon">\n\t\t\t\t\t\t\t<i class="fa fa-search"/>\n\t\t\t\t\t\t</a>\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t</ng-transclude>\n\t'
+		template: '\n\t\t<ng-transclude>\n\t\t\t<form ng-submit="submit()" class="form-inline">\n\t\t\t\t<div class="form-group">\n\t\t\t\t\t<div class="input-group">\n\t\t\t\t\t\t<input type="text" ng-model="search" ng-blur="submit()" class="form-control"/>\n\t\t\t\t\t\t<a ng-click="isSearching ? clear() : submit()" class="btn btn-default input-group-addon">\n\t\t\t\t\t\t\t<i ng-class="isSearching ? qbTableSettings.icons.searchClear : qbTableSettings.icons.search"/>\n\t\t\t\t\t\t</a>\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t</ng-transclude>\n\t'
 	};
 });
 // }}}

@@ -9,3 +9,11 @@ legend {
 table > thead > tr > th {
 	vertical-align: middle !important;
 }
+
+.toolbar {
+	float: right;
+}
+
+.toolbar > .form-group {
+	display: inline-block;
+}

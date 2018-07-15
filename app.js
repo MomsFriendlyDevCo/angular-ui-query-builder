@@ -7,6 +7,8 @@ app.config($httpProvider => $httpProvider.defaults.paramSerializer = '$httpParam
 
 // Add a custom quesiton to the exporter
 app.config(qbTableSettingsProvider => {
+	qbTableSettingsProvider.debug = true;
+
 	qbTableSettingsProvider.export.questions.push({
 		id: 'docTitle',
 		type: 'text',
@@ -46,10 +48,14 @@ app.controller('queryBuilderExampleCtrl', function($http, $scope) {
 	};
 
 	$scope.data;
+	$scope.count;
 	$scope.$watch('query', ()=> {
 		// console.log('REFRESH', $scope.query);
 		$http.get('data.json', {params: $scope.query})
-			.then(res => $scope.data = res.data)
+			.then(res => $scope.data = res.data);
+
+		$http.get('count.json', {params: $scope.query})
+			.then(res => $scope.count = res.data.count);
 	}, true);
 
 	$scope.notifyChange = (id, value) => console.log('Value of', id, 'changed to', value);
