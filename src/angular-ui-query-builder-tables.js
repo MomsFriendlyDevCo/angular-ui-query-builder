@@ -759,8 +759,12 @@ angular.module('angular-ui-query-builder')
 		$scope.search = '';
 		$scope.isSearching = false;
 
+
+		/**
+		* Submit a search query - injecting the search terms into the query as needed
+		*/
 		$scope.submit = ()=> {
-			if (!$scope.search) return $scope.clear();
+			if (!$scope.search) return $scope.clear(false);
 
 			var safeRegEx = qbTableUtilities.escapeRegExp(_.trim($scope.search));
 			var searchQuery = {
@@ -813,11 +817,17 @@ angular.module('angular-ui-query-builder')
 			}
 		};
 
-		$scope.clear = ()=> {
+
+		/**
+		* Attempt to remove a search query from the currently active query block
+		* @param {boolean} [refocus=true] Attempt to move the user focus to the input element when clearing
+		*/
+		$scope.clear = (refocus = true) => {
 			var existingQuery = qbTableUtilities.find($scope.query, {$comment: 'search'});
 			$scope.isSearching = false;
 			$scope.search = '';
-			angular.element($element).find('input').focus();
+
+			if (refocus) angular.element($element).find('input').focus();
 
 			var newQuery;
 			if (existingQuery && _.isEqual(existingQuery, ['$comment'])) { // Existing - found at root level
@@ -875,7 +885,7 @@ angular.module('angular-ui-query-builder')
 			<form ng-submit="submit()" class="form-inline">
 				<div class="form-group">
 					<div class="input-group">
-						<input ng-blur="submit()" type="text" ng-model="search" class="form-control"/>
+						<input type="text" ng-model="search" ng-blur="submit()" class="form-control"/>
 						<a ng-click="isSearching ? clear() : submit()" class="btn btn-default input-group-addon">
 							<i ng-class="isSearching ? qbTableSettings.icons.searchClear : qbTableSettings.icons.search"/>
 						</a>
