@@ -7,6 +7,8 @@ app.config($httpProvider => $httpProvider.defaults.paramSerializer = '$httpParam
 
 // Add a custom quesiton to the exporter
 app.config(qbTableSettingsProvider => {
+	qbTableSettingsProvider.debug = true;
+
 	qbTableSettingsProvider.export.questions.push({
 		id: 'docTitle',
 		type: 'text',
