@@ -4,6 +4,9 @@ angular.module('angular-ui-query-builder')
 .provider('qbTableSettings', function() {
 	var qbTableSettings = this;
 
+	qbTableSettings.debug = false;
+	qbTableSettings.debugPrefix = '[angular-ui-query-builder]';
+
 	qbTableSettings.icons = {
 		sortNone: 'fa fa-fw fa-sort text-muted',
 		sortAsc: 'fa fa-fw fa-sort-alpha-asc text-primary',
@@ -91,7 +94,10 @@ angular.module('angular-ui-query-builder')
 
 		$ctrl.$broadcast = (msg, ...args) => $scope.$broadcast(msg, ...args); // Rebind broadcast so its accessible from children
 		$ctrl.$on = (event, cb) => $scope.$on(event, cb);
-		$ctrl.setDirty = ()=> $rootScope.$broadcast('queryBuilder.change', $scope.qbTable);
+		$ctrl.setDirty = ()=> {
+			if (qbTableSettings.debug) console.log(qbTableSettings.debugPrefix, 'Declare query dirty', $scope.qbTable);
+			$rootScope.$broadcast('queryBuilder.change', $scope.qbTable);
+		};
 
 		/**
 		* Set the value of a query element to another value
@@ -160,7 +166,7 @@ angular.module('angular-ui-query-builder')
 
 		// Sanity checks {{{
 		var unSanityChecks = $scope.$watchGroup(['qbTable', 'sortable'], ()=> {
-			if ($attrs.sortable === '' && !$scope.qbTable) console.warn('Added qb-col + sortable onto element', $element, 'but no qb-table query has been assigned on the table element!');
+			if ($attrs.sortable === '' && !$scope.qbTable && qbTableSettings.debug) console.warn(qbTableSettings.debugPrefix, 'Added qb-col + sortable onto element', $element, 'but no qb-table query has been assigned on the table element!');
 			unSanityChecks();
 		});
 		// }}}
@@ -794,7 +800,7 @@ angular.module('angular-ui-query-builder')
 					}))
 					.value()
 			} else { // Give up
-				console.warn('Unable to place search query', searchQuery, 'within complex query', newQuery);
+				console.warn(qbTableSettings.debugPrefix, 'Unable to inject search term', searchQuery, 'within complex query object', newQuery);
 			}
 
 			$scope.isSearching = true;
@@ -825,8 +831,14 @@ angular.module('angular-ui-query-builder')
 			} else if ($scope.query.$or && $scope.query.$or.every(field => _.size(field) == 1 && _.chain(field).first().keys().find(k => k == '$regEx'))) {
 				newQuery = angular.copy($scope.query);
 				delete newQuery.$or;
-			} else { // Give up
-				console.warn('Unable to clear search query within complex query', $scope.query);
+			} else if (qbTableSettings.debug) { // Scream if we can't find the query anywhere and debugging mode is enabled
+				console.warn(qbTableSettings.debugPrefix, 'Unable to clear search query within complex query', $scope.query);
+				return;
+			} else {
+				// Give up - this should only happen either when:
+				// a) there is no search term anyway and we are being asked to clear
+				// b) we can't find any search term using any of the techniques above
+				return;
 			}
 
 			// Inform the main query builder that we've changed something
