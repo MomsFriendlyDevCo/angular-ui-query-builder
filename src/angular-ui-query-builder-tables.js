@@ -373,7 +373,7 @@ angular.module('angular-ui-query-builder')
 
 		$scope.$watchGroup(['qbTable.query.limit', 'qbTable.query.skip', 'qbTable.count'], sorter => {
 			$scope.canPrev = $scope.qbTable.query.skip > 0;
-			$scope.canNext = !$scope.total || $scope.qbTable.query.skip + $scope.qbTable.query.limit < $scope.total;
+			$scope.canNext = !$scope.qbTable.count || $scope.qbTable.query.skip + $scope.qbTable.query.limit < $scope.qbTable.count;
 
 			// Page X of Y display {{{
 			if (qbTableSettings.pagination.showXOfY) {
