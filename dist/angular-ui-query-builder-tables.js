@@ -8,6 +8,9 @@ angular.module('angular-ui-query-builder')
 .provider('qbTableSettings', function () {
 	var qbTableSettings = this;
 
+	qbTableSettings.debug = false;
+	qbTableSettings.debugPrefix = '[angular-ui-query-builder]';
+
 	qbTableSettings.icons = {
 		sortNone: 'fa fa-fw fa-sort text-muted',
 		sortAsc: 'fa fa-fw fa-sort-alpha-asc text-primary',
@@ -165,7 +168,7 @@ angular.module('angular-ui-query-builder')
 				return $scope.$on(event, cb);
 			};
 			$ctrl.setDirty = function () {
-				console.log('DECLARE DIRTY', $scope.qbTable);
+				if (qbTableSettings.debug) console.log(qbTableSettings.debugPrefix, 'Declare query dirty', $scope.qbTable);
 				$rootScope.$broadcast('queryBuilder.change', $scope.qbTable);
 			};
 
@@ -246,7 +249,7 @@ angular.module('angular-ui-query-builder')
 
 			// Sanity checks {{{
 			var unSanityChecks = $scope.$watchGroup(['qbTable', 'sortable'], function () {
-				if ($attrs.sortable === '' && !$scope.qbTable) console.warn('Added qb-col + sortable onto element', $element, 'but no qb-table query has been assigned on the table element!');
+				if ($attrs.sortable === '' && !$scope.qbTable && qbTableSettings.debug) console.warn(qbTableSettings.debugPrefix, 'Added qb-col + sortable onto element', $element, 'but no qb-table query has been assigned on the table element!');
 				unSanityChecks();
 			});
 			// }}}
@@ -440,7 +443,7 @@ angular.module('angular-ui-query-builder')
 
 			$scope.$watchGroup(['qbTable.query.limit', 'qbTable.query.skip', 'qbTable.count'], function (sorter) {
 				$scope.canPrev = $scope.qbTable.query.skip > 0;
-				$scope.canNext = !$scope.total || $scope.qbTable.query.skip + $scope.qbTable.query.limit < $scope.total;
+				$scope.canNext = !$scope.qbTable.count || $scope.qbTable.query.skip + $scope.qbTable.query.limit < $scope.qbTable.count;
 
 				// Page X of Y display {{{
 				if (qbTableSettings.pagination.showXOfY) {
@@ -487,7 +490,7 @@ angular.module('angular-ui-query-builder')
 		link: function link(scope, element, attrs, parentScope) {
 			scope.qbTable = parentScope;
 		},
-		template: '\n\t\t<nav>\n\t\t\t<ul class="pager">\n\t\t\t\t<li ng-class="canPrev ? \'\' : \'disabled\'" class="previous"><a ng-click="navPageRelative(-1)"><i ng-class="qbTableSettings.icons.paginationPrev"></i></a></li>\n\t\t\t\t<ng-transclude class="text-center">\n\t\t\t\t\t<span ng-if="qbTableSettings.pagination.showXOfY && showRange.end" class="display-xofy">\n\t\t\t\t\t\tShowing documents {{showRange.start | number}} - {{showRange.end | number}}\n\t\t\t\t\t\t<span ng-if="showRange.total">\n\t\t\t\t\t\t\tof {{showRange.total | number}}\n\t\t\t\t\t\t</span>\n\t\t\t\t\t</span>\n\t\t\t\t\t<ul ng-if="qbTableSettings.pagination.showPages && showRange.end" class="display-pages pagination">\n\t\t\t\t\t\t<li ng-repeat="page in pages.range track by page.number" ng-class="page.mode == \'current\' ? \'active\' : \'\'">\n\t\t\t\t\t\t\t<a ng-click="navPageNumber(page.number)">\n\t\t\t\t\t\t\t\t{{page.number + 1 | number}}\n\t\t\t\t\t\t\t</a>\n\t\t\t\t\t\t</li>\n\t\t\t\t\t</ul>\n\t\t\t\t</ng-transclude>\n\t\t\t\t<li ng-class="canNext ? \'\' : \'disabled\'" class="next"><a ng-click="navPageRelative(1)"><i ng-class="qbTableSettings.icons.paginationNext"></i></a></li>\n\t\t\t</ul>\n\t\t</nav>\n\t'
+		template: '\n\t\t<nav>\n\t\t\t<ul class="pager">\n\t\t\t\t<li ng-class="canPrev ? \'\' : \'disabled\'" class="previous"><a ng-click="navPageRelative(-1)"><i ng-class="qbTableSettings.icons.paginationPrev"></i></a></li>\n\t\t\t\t<ng-transclude class="text-center">\n\t\t\t\t\t<span ng-if="qbTableSettings.pagination.showXOfY && showRange.end" class="display-xofy">\n\t\t\t\t\t\tShowing documents {{showRange.start | number}} - {{showRange.end | number}}\n\t\t\t\t\t\t<span ng-if="showRange.total">\n\t\t\t\t\t\t\tof {{showRange.total | number}}\n\t\t\t\t\t\t</span>\n\t\t\t\t\t</span>\n\t\t\t\t\t<ul ng-if="qbTableSettings.pagination.showPages && showRange.end && pages.max > 1" class="display-pages pagination">\n\t\t\t\t\t\t<li ng-repeat="page in pages.range track by page.number" ng-class="page.mode == \'current\' ? \'active\' : \'\'">\n\t\t\t\t\t\t\t<a ng-click="navPageNumber(page.number)">\n\t\t\t\t\t\t\t\t{{page.number + 1 | number}}\n\t\t\t\t\t\t\t</a>\n\t\t\t\t\t\t</li>\n\t\t\t\t\t</ul>\n\t\t\t\t</ng-transclude>\n\t\t\t\t<li ng-class="canNext ? \'\' : \'disabled\'" class="next"><a ng-click="navPageRelative(1)"><i ng-class="qbTableSettings.icons.paginationNext"></i></a></li>\n\t\t\t</ul>\n\t\t</nav>\n\t'
 	};
 })
 // }}}
@@ -680,8 +683,11 @@ angular.module('angular-ui-query-builder')
 			$scope.search = '';
 			$scope.isSearching = false;
 
+			/**
+   * Submit a search query - injecting the search terms into the query as needed
+   */
 			$scope.submit = function () {
-				if (!$scope.search) return $scope.clear();
+				if (!$scope.search) return $scope.clear(false);
 
 				var safeRegEx = qbTableUtilities.escapeRegExp(_.trim($scope.search));
 				var searchQuery = {
@@ -730,7 +736,7 @@ angular.module('angular-ui-query-builder')
 					}).value();
 				} else {
 					// Give up
-					console.warn('Unable to place search query', searchQuery, 'within complex query', newQuery);
+					console.warn(qbTableSettings.debugPrefix, 'Unable to inject search term', searchQuery, 'within complex query object', newQuery);
 				}
 
 				$scope.isSearching = true;
@@ -743,11 +749,18 @@ angular.module('angular-ui-query-builder')
 				}
 			};
 
+			/**
+   * Attempt to remove a search query from the currently active query block
+   * @param {boolean} [refocus=true] Attempt to move the user focus to the input element when clearing
+   */
 			$scope.clear = function () {
+				var refocus = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
+
 				var existingQuery = qbTableUtilities.find($scope.query, { $comment: 'search' });
 				$scope.isSearching = false;
 				$scope.search = '';
-				angular.element($element).find('input').focus();
+
+				if (refocus) angular.element($element).find('input').focus();
 
 				var newQuery;
 				if (existingQuery && _.isEqual(existingQuery, ['$comment'])) {
@@ -770,9 +783,15 @@ angular.module('angular-ui-query-builder')
 				})) {
 					newQuery = angular.copy($scope.query);
 					delete newQuery.$or;
+				} else if (qbTableSettings.debug) {
+					// Scream if we can't find the query anywhere and debugging mode is enabled
+					console.warn(qbTableSettings.debugPrefix, 'Unable to clear search query within complex query', $scope.query);
+					return;
 				} else {
-					// Give up
-					console.warn('Unable to clear search query within complex query', $scope.query);
+					// Give up - this should only happen either when:
+					// a) there is no search term anyway and we are being asked to clear
+					// b) we can't find any search term using any of the techniques above
+					return;
 				}
 
 				// Inform the main query builder that we've changed something
@@ -801,7 +820,7 @@ angular.module('angular-ui-query-builder')
 				return $scope.check();
 			};
 		}],
-		template: '\n\t\t<ng-transclude>\n\t\t\t<form ng-submit="submit()" class="form-inline">\n\t\t\t\t<div class="form-group">\n\t\t\t\t\t<div class="input-group">\n\t\t\t\t\t\t<input ng-blur="submit()" type="text" ng-model="search" class="form-control"/>\n\t\t\t\t\t\t<a ng-click="isSearching ? clear() : submit()" class="btn btn-default input-group-addon">\n\t\t\t\t\t\t\t<i ng-class="isSearching ? qbTableSettings.icons.searchClear : qbTableSettings.icons.search"/>\n\t\t\t\t\t\t</a>\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t</ng-transclude>\n\t'
+		template: '\n\t\t<ng-transclude>\n\t\t\t<form ng-submit="submit()" class="form-inline">\n\t\t\t\t<div class="form-group">\n\t\t\t\t\t<div class="input-group">\n\t\t\t\t\t\t<input type="text" ng-model="search" ng-blur="submit()" class="form-control"/>\n\t\t\t\t\t\t<a ng-click="isSearching ? clear() : submit()" class="btn btn-default input-group-addon">\n\t\t\t\t\t\t\t<i ng-class="isSearching ? qbTableSettings.icons.searchClear : qbTableSettings.icons.search"/>\n\t\t\t\t\t\t</a>\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t</ng-transclude>\n\t'
 	};
 });
 // }}}

@@ -1,6 +1,6 @@
 {
   "name": "@momsfriendlydevco/angular-ui-query-builder",
-  "version": "1.2.18",
+  "version": "1.2.19",
   "description": "MongoDB format query-builder UI component for Angular",
   "main": "src/utilities.js",
   "scripts": {
