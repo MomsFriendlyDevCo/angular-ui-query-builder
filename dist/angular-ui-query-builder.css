@@ -377,6 +377,25 @@ input[type='date']::-webkit-clear-button {
 }
 /* }}} */
 
+/* table.qb-noresults (gets added when count == 0) {{{ */
+.qb-table.qb-noresults {
+	position: relative;
+	min-height: 250px;
+}
+
+.qb-table.qb-noresults tbody::before {
+	display: flex;
+	position: absolute;
+	content: 'No results found';
+	color: #AAA;
+	background: #FFF;
+	height: 150px;
+	width: 100%;
+	align-items: center;
+	justify-content: center;
+}
+/* }}} */
+
 /* qb-col {{{ */
 .qb-table .qb-col .qb-col-wrapper {
 	text-overflow: ellipsis;

@@ -147,7 +147,7 @@ angular.module('angular-ui-query-builder')
 			stickyTfoot: '<?'
 		},
 		restrict: 'AC',
-		controller: ['$attrs', '$element', '$rootScope', '$scope', 'qbTableSettings', function controller($attrs, $element, $rootScope, $scope, qbTableSettings) {
+		controller: ['$attrs', '$element', '$rootScope', '$scope', '$timeout', 'qbTableSettings', function controller($attrs, $element, $rootScope, $scope, $timeout, qbTableSettings) {
 			var $ctrl = this;
 
 			// Copy into $ctrl so children can access it / $watch it
@@ -213,6 +213,15 @@ angular.module('angular-ui-query-builder')
 			});
 			$scope.$watch('stickyTfoot', function () {
 				return $element.toggleClass('qb-sticky-tfoot', $scope.stickyTfoot || $attrs.stickyTfoot === '');
+			});
+			$scope.$watch('count', function () {
+				return $element.toggleClass('qb-noresults', $scope.count === 0);
+			});
+			$scope.$on('queryBuilder.change.replace', function (e, q) {
+				$ctrl.query = $scope.qbTable = q;
+				$timeout(function () {
+					return $ctrl.setDirty();
+				});
 			});
 		}]
 	};
@@ -742,7 +751,7 @@ angular.module('angular-ui-query-builder')
 				$scope.isSearching = true;
 
 				// Inform the main query builder that we've changed something
-				$rootScope.$broadcast('queryBuilder.change', newQuery);
+				$rootScope.$broadcast('queryBuilder.change.replace', newQuery);
 				if (angular.isFunction($ctrl.onRefresh)) $ctrl.onRefresh({ query: newQuery });
 				if ($ctrl.binding == 'complete' || angular.isUndefined($ctrl.binding)) {
 					$scope.query = newQuery;
@@ -785,7 +794,7 @@ angular.module('angular-ui-query-builder')
 					delete newQuery.$or;
 				} else if (qbTableSettings.debug) {
 					// Scream if we can't find the query anywhere and debugging mode is enabled
-					console.warn(qbTableSettings.debugPrefix, 'Unable to clear search query within complex query', $scope.query);
+					console.warn(qbTableSettings.debugPrefix, 'Unable to clear search query within complex query - or query doesnt contain a search anyway', $scope.query);
 					return;
 				} else {
 					// Give up - this should only happen either when:
@@ -795,7 +804,7 @@ angular.module('angular-ui-query-builder')
 				}
 
 				// Inform the main query builder that we've changed something
-				$rootScope.$broadcast('queryBuilder.change', newQuery);
+				$rootScope.$broadcast('queryBuilder.change.replace', newQuery);
 				if (angular.isFunction($ctrl.onRefresh)) $ctrl.onRefresh({ query: newQuery });
 				if ($ctrl.binding == 'complete' || angular.isUndefined($ctrl.binding)) {
 					$scope.query = newQuery;
