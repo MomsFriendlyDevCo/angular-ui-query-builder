@@ -38,7 +38,8 @@
     "gulp-util": "^3.0.8",
     "gulp-watch": "^4.3.11",
     "mocha": "^5.0.1",
-    "rimraf": "^2.6.2"
+    "rimraf": "^2.6.2",
+    "sift": "^6.0.0"
   },
   "dependencies": {
     "angular": "^1.6.6",
