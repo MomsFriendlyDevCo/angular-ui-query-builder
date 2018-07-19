@@ -49,7 +49,7 @@ var applyFiltering = (data, query) => {
 	var metaOperations = _.pick(query, metaParams);
 	var query = _.omit(query, metaParams);
 
-	console.log('applyFiltering', {metaOperations, query});
+	// console.log('applyFiltering', {metaOperations, query});
 
 	return _(data)
 		// Filtering (handled by sift) {{{
