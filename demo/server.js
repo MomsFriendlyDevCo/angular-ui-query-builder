@@ -15,8 +15,9 @@
 
 var _ = require('lodash');
 var express = require('express');
-var data = require('./testData');
+var sift = require('sift');
 
+var data = require('./testData');
 var root = __dirname + '/..';
 var app = express();
 
@@ -32,55 +33,59 @@ app.get('/app.css', (req, res) => res.sendFile('app.css', {root: root + '/demo'}
 app.get('/dist/angular-ui-query-builder.js', (req, res) => res.sendFile('angular-ui-query-builder.js', {root: root + '/dist'}));
 app.get('/dist/angular-ui-query-builder.css', (req, res) => res.sendFile('angular-ui-query-builder.css', {root: root + '/dist'}));
 
-app.get('/api/data', function(req, res) {
-	var outData = [...data];
 
-	// Very basic simulation of a ReST server to sort / mutate output data {{{
+/**
+* Apply a simple ReST server filter
+* @param {array} data The data to filter
+* @param {Object} [query] The query to apply
+* @param {string} [query.sort] Sorting criteria to apply - if this has the '-' prefix it will be reversed
+* @param {number} [query.limit] Record limitation
+* @param {number} [query.skip] Record skipping
+* @param {*} [query.*] Additional MongoDB / Sift compatible filters to apply
+* @returns {array} The input data with the applied filters / mutators
+*/
+var applyFiltering = (data, query) => {
+	var metaParams = ['sort', 'limit', 'skip'];
+	var metaOperations = _.pick(query, metaParams);
+	var query = _.omit(query, metaParams);
 
-	// Filtering {{{
-	var dataFilter = _(req.query)
-		.omit(['sort', 'skip', 'limit'])
-		.pickBy(v => _.isString(v) || _.isNumber(v)) // Ignore all complex queries - yes this is wrong but we can't aford to include a full Mongo stack here
+	console.log('applyFiltering', {metaOperations, query});
+
+	return _(data)
+		// Filtering (handled by sift) {{{
+		.thru(d => {
+			return sift(query, data);
+		})
+		// }}}
+		// Sorting {{{
+		.thru(d => {
+			if (!metaOperations.sort) return d;
+			if (!metaOperations.sort.startsWith('-')) {
+				return _.sortBy(d, metaOperations.sort);
+			} else { // Sort reverse
+				return _(d)
+					.sortBy(metaOperations.sort.substr(1))
+					.reverse()
+					.value();
+			}
+		})
+		// }}}
+		// Limit {{{
+		.thru(d =>
+			metaOperations.limit ?  d.slice(0, metaOperations.limit) : d
+		)
+		// }}}
+		// Skip {{{
+		.thru(d =>
+			metaOperations.skip ? d.slice(metaOperations.skip) : d
+		)
+		// }}}
 		.value()
+};
 
-	outData = _.filter(outData, dataFilter);
-	// }}}
+app.get('/api/data', (req, res) => res.send(applyFiltering(data, req.query)));
 
-	// Sorting {{{
-	if (req.query.sort) {
-		if (!req.query.sort.startsWith('-')) {
-			outData = _.sortBy(outData, req.query.sort);
-		} else { // Sort reverse
-			outData = _(outData)
-				.sortBy(req.query.sort.substr(1))
-				.reverse()
-				.value();
-		}
-	}
-	// }}}
-
-	// Limiting / Skip {{{
-	if (req.query.skip) outData = outData.slice(req.query.skip);
-	if (req.query.limit) outData = outData.slice(0, req.query.limit);
-	// }}}
-
-	// }}}
-
-	res.send(outData);
-});
-
-app.get('/api/count', function(req, res) {
-	// Filtering {{{
-	var dataFilter = _(req.query)
-		.omit(['sort', 'skip', 'limit'])
-		.pickBy(v => _.isString(v) || _.isNumber(v)) // Ignore all complex queries - yes this is wrong but we can't aford to include a full Mongo stack here
-		.value()
-
-	outData = _.filter(data, dataFilter);
-	// }}}
-
-	res.send({count: outData.length});
-});
+app.get('/api/count', (req, res) => res.send({count: applyFiltering(data, req.query).length}));
 
 app.get('/api/data/export', function(req, res) {
 	res.send(`

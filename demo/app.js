@@ -42,21 +42,29 @@ app.controller('queryBuilderExampleCtrl', function($http, $scope) {
 		email: {$exists: true},
 		role: 'user',
 		status: {$in: ['pending', 'active']},
-		lastLogin: {$lt: moment().subtract(2, 'd').toDate()},
 		sort: 'username',
 		limit: 10,
 	};
 
+
+	// Data refresher {{{
 	$scope.data;
 	$scope.count;
-	$scope.$watch('query', ()=> {
-		// console.log('REFRESH', $scope.query);
+	$scope.refresh = ()=> {
+		console.log('REFRESH', $scope.query);
 		$http.get('api/data', {params: $scope.query})
 			.then(res => $scope.data = res.data);
 
 		$http.get('api/count', {params: $scope.query})
 			.then(res => $scope.count = res.data.count);
-	}, true);
+	}
+
+	$scope.$on('queryBuilder.change', $scope.refresh);
+
+	// Kickoff initial refresh
+	$scope.$evalAsync($scope.refresh);
+	// }}}
+
 
 	$scope.notifyChange = (id, value) => console.log('Value of', id, 'changed to', value);
 
