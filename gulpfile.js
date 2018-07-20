@@ -64,7 +64,7 @@ gulp.task('js:all', ()=>
 		.pipe(concat('angular-ui-query-builder.js'))
 		.pipe(preprocess({context: {ANGULAR: true}}))
 		.pipe(babel({
-			presets: ['es2015'],
+			presets: ['env'],
 			plugins: ['angularjs-annotate'],
 		}))
 		.pipe(gulp.dest('./dist'))
@@ -85,7 +85,7 @@ gulp.task('js:core', ()=>
 		.pipe(concat('angular-ui-query-builder-core.js'))
 		.pipe(preprocess({context: {ANGULAR: true}}))
 		.pipe(babel({
-			presets: ['es2015'],
+			presets: ['env'],
 			plugins: ['angularjs-annotate'],
 		}))
 		.pipe(gulp.dest('./dist'))
@@ -106,7 +106,7 @@ gulp.task('js:tables', ()=>
 		.pipe(concat('angular-ui-query-builder-tables.js'))
 		.pipe(preprocess({context: {ANGULAR: true}}))
 		.pipe(babel({
-			presets: ['es2015'],
+			presets: ['env'],
 			plugins: ['angularjs-annotate'],
 		}))
 		.pipe(gulp.dest('./dist'))
