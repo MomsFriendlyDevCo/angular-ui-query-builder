@@ -196,7 +196,7 @@
 /* Add button {{{ */
 /* Note: acts as both a row and block */
 .ui-query-builder .btn-add {
-	background: #008000;
+	background: #ddd;
 	border: 0;
 	border-radius: 50%;
 	bottom: 10px;
@@ -214,6 +214,10 @@
 	z-index: 3;
 }
 
+.ui-query-builder .btn-add:hover {
+	background: #aaa;
+}
+
 ui-query-builder-group > div + .btn-add {
 	margin-top: 10px;
 }
@@ -227,11 +231,11 @@ ui-query-builder-group > div + .btn-add {
 	color: white;
 	content: '+';
 	font-family: sans-serif;
-	font-size: 18px;
+	font-size: 22px;
 	font-weight: bold;
 	text-align: center;
 	width: 100%;
-	padding-left: 1px;
+	padding-left: 2px;
 }
 
 .ui-query-builder .btn-add::before {
