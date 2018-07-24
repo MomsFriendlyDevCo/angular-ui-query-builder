@@ -43,6 +43,7 @@
 	max-width: 400px;
 	position: relative;
 	vertical-align: middle;
+	box-shadow: 1px 3px 5px 0px rgba(50, 50, 50, 0.75);
 }
 
 .ui-query-builder .query-row > .query-block:first-child,
@@ -196,42 +197,46 @@
 /* Add button {{{ */
 /* Note: acts as both a row and block */
 .ui-query-builder .btn-add {
-	background: #008000;
+	background: #ddd;
 	border: 0;
 	border-radius: 50%;
 	bottom: 10px;
 	clear: left;
 	display: flex;
 	float: left;
-	height: 0;
+	height: 26px;
 	left: 0;
 	line-height: 26px;
 	margin-bottom: 5px;
 	margin-left: 34px;
-	opacity: 0;
 	padding: 0;
-	pointer-events: none;
 	position: relative;
 	width: 26px;
 	z-index: 3;
 }
-	ui-query-builder-group > div + .btn-add {
-		margin-top: 10px;
-	}
-	.ui-query-builder ui-query-builder-group > .btn-add {
-		margin-left: 21px;
-	}
+
+.ui-query-builder .btn-add:hover {
+	background: #aaa;
+}
+
+ui-query-builder-group > div + .btn-add {
+	margin-top: 10px;
+}
+
+.ui-query-builder ui-query-builder-group > .btn-add {
+	margin-left: 21px;
+}
 
 .ui-query-builder .btn-add::after {
 	position: relative;
 	color: white;
 	content: '+';
 	font-family: sans-serif;
-	font-size: 18px;
+	font-size: 22px;
 	font-weight: bold;
 	text-align: center;
 	width: 100%;
-	padding-left: 1px;
+	padding-left: 2px;
 }
 
 .ui-query-builder .btn-add::before {
@@ -258,13 +263,6 @@
 	outline: 0;
 }
 
-/* On query container hover */
-.ui-query-builder:hover .btn-add {
-	height: 26px;
-	opacity: 1;
-	pointer-events: all;
-}
-/* }}} */
 /* }}} */
 
 /* Pills {{{ */

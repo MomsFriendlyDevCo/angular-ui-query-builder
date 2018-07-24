@@ -56,15 +56,113 @@ angular.module('angular-ui-query-builder', [])
 	};
 
 	/**
+ * Actions that can apply to all fields by default
+ * The contents of this array are mutated by QueryBuilder.queryPathPrototype to select the items that are actually applicable
+ * @var {array}
+ */
+	QueryBuilder.queryPathPrototypeActions = [{ id: '$eq', title: 'Equals' }, { id: '$neq', title: 'Doesnt equal' }, { id: '$lt', title: 'Is less than' }, { id: '$lte', title: 'Is equal to or less than' }, { id: '$gt', title: 'Is greater than' }, { id: '$gte', title: 'Is equal or greater than' }, { id: '$in', title: 'Is one of' }, { id: '$nin', title: 'Is not one of' }, { id: '$exists', title: 'Has a value' }, { id: '$nexists', title: 'Does not have a value' }];
+
+	/**
+ * Utility function for QueryBuilder.queryToArray which returns a prototype of a query element based on its meta properties
+ * For example if 'foo' has a spec which defines it as a string, the string options are populated (['$eq', '$ne'...]) accordingly
+ * @param {string} path The Mongo path of the item to prototype
+ * @param {Object} [operand={}] An existing query infrastructure
+ * @return {Object} A prototype qbTable collection item representing the spec of the path
+ */
+	QueryBuilder.queryPathPrototype = function (path) {
+		var operand = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+		var spec = arguments[2];
+
+		var pathSpec = spec[path];
+		var firstKey = _.isObject(operand) && _(operand).keys().first();
+		var firstValue = _.isObject(operand) ? _(operand).values().first() : operand;
+
+		if ( // Looks like a meta 'search' entry?
+		path == '$or' && operand.every(function (i) {
+			return _.isObject(i) && _.keys(i).length == 1;
+		}) && operand.map(function (i) {
+			return _.chain(i).first().values().first().keys().find(function (i) {
+				return i == '$regexp';
+			}).value();
+		}).length == operand.length // Every key has a $regexp search
+		) {
+				return {
+					path: path,
+					type: 'search',
+					title: 'Search',
+					value: // Horrible expression to find the first regexp value
+					_.chain(operand).first().values().first().get('$regexp').value(),
+					fields: _(operand).map(function (i) {
+						return _.keys(i);
+					}).flatten().value(),
+					actions: QueryBuilder.queryPathPrototypeActions
+				};
+			} else if (path == '$and' || path == '$or') {
+			// Meta combinational types
+			if (!_.isArray(operand)) {
+				console.warn('query-builder', 'Query path', path, 'is a meta key', operand, 'but is not an array!', 'Given', typeof operand === 'undefined' ? 'undefined' : _typeof(operand));
+				operand = [];
+			}
+
+			return {
+				path: path,
+				type: 'binaryGroup',
+				title: path == '$and' ? 'AND' : path == '$or' ? 'OR' : 'UNKNOWN',
+				condition: path.replace(/\$/, ''),
+				children: operand.map(function (i) {
+					return QueryBuilder.queryToArray(i, spec);
+				}),
+				actions: QueryBuilder.queryPathPrototypeActions
+			};
+		} else if (QueryBuilder.metaProperties[path]) {
+			// Is a meta property
+			return Object.assign({
+				path: path,
+				title: _.startCase(path),
+				value: operand,
+				type: 'hidden',
+				action: '$hidden',
+				actions: QueryBuilder.queryPathPrototypeActions
+			}, QueryBuilder.metaProperties[path]);
+		} else if (firstKey == '$exists') {
+			return {
+				path: path,
+				title: operand.title || _.startCase(path), // Create a title from the key if its omitted
+				value: !!operand,
+				type: 'exists',
+				action: '$exists',
+				actions: QueryBuilder.queryPathPrototypeActions
+			};
+		} else if (pathSpec.type == 'string' && _.isArray(pathSpec.enum) && pathSpec.enum.length) {
+			return {
+				path: path,
+				title: operand.title || _.startCase(path),
+				type: 'enum',
+				action: operand.$in ? '$in' : operand.$nin ? '$nin' : pathSpec.enum.length ? '$in' : '$eq',
+				enum: pathSpec.enum,
+				value: operand.$in ? operand.$in : operand.$nin ? operand.$nin : pathSpec.enum.length && !_.isArray(operand) ? [operand] : operand,
+				actions: QueryBuilder.queryPathPrototypeActions
+			};
+		} else {
+			// General fields
+			return {
+				path: path,
+				title: operand.title || _.startCase(path), // Create a title from the key if its omitted
+				type: pathSpec.type == 'string' ? 'string' : pathSpec.type == 'number' ? 'number' : pathSpec.type == 'date' ? 'date' : 'string',
+				action: '$eq',
+				value: pathSpec.type == 'date' ? moment(firstValue).toDate() // Convert date string weirdness into real dates
+				: firstValue,
+				actions: QueryBuilder.queryPathPrototypeActions
+			};
+		}
+	};
+
+	/**
  * Returns a queryList collection from a query object
  * @param {Object} query The raw MongoDB / Sift object to transform from an object into a collection
  * @returns {array} An array where each parameter is represented as a object for easier handling
  */
 	QueryBuilder.queryToArray = function (query, spec) {
-		// Actions applicable to all fields {{{
-		var actions = [{ id: '$eq', title: 'Equals' }, { id: '$neq', title: 'Doesnt equal' }, { id: '$lt', title: 'Is less than' }, { id: '$lte', title: 'Is equal to or less than' }, { id: '$gt', title: 'Is greater than' }, { id: '$gte', title: 'Is equal or greater than' }, { id: '$in', title: 'Is one of' }, { id: '$nin', title: 'Is not one of' }, { id: '$exists', title: 'Has a value' }, { id: '$nexists', title: 'Does not have a value' }];
-		// }}}
-
 		return _(query).pickBy(function (v, k) {
 			var maps = spec[k] // Maps onto a spec path
 			|| k == '$and' || k == '$or' || QueryBuilder.metaProperties[k]; // is a meta directive
@@ -72,88 +170,7 @@ angular.module('angular-ui-query-builder', [])
 			if (!maps) console.warn('query-builder', 'Incomming query path', k, 'Does not map to anything in spec', spec);
 			return !!maps;
 		}).map(function (v, k) {
-			var s = spec[k];
-			var firstKey = _.isObject(v) && _(v).keys().first();
-			var firstValue = _.isObject(v) ? _(v).values().first() : v;
-
-			if ( // Looks like a meta 'search' entry?
-			k == '$or' && v.every(function (i) {
-				return _.isObject(i) && _.keys(i).length == 1;
-			}) && v.map(function (i) {
-				return _.chain(i).first().values().first().keys().find(function (i) {
-					return i == '$regexp';
-				}).value();
-			}).length == v.length // Every key has a $regexp search
-			) {
-					return {
-						path: k,
-						type: 'search',
-						title: 'Search',
-						value: // Horrible expression to find the first regexp value
-						_.chain(v).first().values().first().get('$regexp').value(),
-						fields: _(v).map(function (i) {
-							return _.keys(i);
-						}).flatten().value(),
-						actions: actions
-					};
-				} else if (k == '$and' || k == '$or') {
-				// Meta combinational types
-				if (!_.isArray(v)) {
-					console.warn('query-builder', 'Query path', k, 'is a meta key', v, 'but is not an array!', 'Given', typeof v === 'undefined' ? 'undefined' : _typeof(v));
-					v = [];
-				}
-
-				return {
-					path: k,
-					type: 'binaryGroup',
-					title: k == '$and' ? 'AND' : k == '$or' ? 'OR' : 'UNKNOWN',
-					condition: k.replace(/\$/, ''),
-					children: v.map(function (i) {
-						return QueryBuilder.queryToArray(i, spec);
-					}),
-					actions: actions
-				};
-			} else if (QueryBuilder.metaProperties[k]) {
-				// Is a meta property
-				return Object.assign({
-					path: k,
-					title: _.startCase(k),
-					value: v,
-					type: 'hidden',
-					action: '$hidden',
-					actions: actions
-				}, QueryBuilder.metaProperties[k]);
-			} else if (firstKey == '$exists') {
-				return {
-					path: k,
-					title: v.title || _.startCase(k), // Create a title from the key if its omitted
-					value: !!v,
-					type: 'exists',
-					action: '$exists',
-					actions: actions
-				};
-			} else if (s.type == 'string' && _.isArray(s.enum) && s.enum.length) {
-				return {
-					path: k,
-					title: v.title || _.startCase(k),
-					type: 'enum',
-					action: v.$in ? '$in' : v.$nin ? '$nin' : s.enum.length ? '$in' : '$eq',
-					enum: s.enum,
-					value: v.$in ? v.$in : v.$nin ? v.$nin : s.enum.length && !_.isArray(v) ? [v] : v,
-					actions: actions
-				};
-			} else {
-				// General fields
-				return {
-					path: k,
-					title: v.title || _.startCase(k), // Create a title from the key if its omitted
-					type: s.type == 'string' ? 'string' : s.type == 'number' ? 'number' : s.type == 'date' ? 'date' : 'string',
-					action: '$eq',
-					value: s.type == 'date' ? moment(firstValue).toDate() // Convert date string weirdness into real dates
-					: firstValue,
-					actions: actions
-				};
-			}
+			return QueryBuilder.queryPathPrototype(k, v, spec);
 		}).value();
 	};
 
@@ -264,15 +281,16 @@ angular.module('angular-ui-query-builder', [])
   * @param {string} path The path to swap
   * @param {string} newPath The new path to use
   */
-		$scope.$on('queryBuilder.pathAction.swap', function (e, path, newPath) {
-			// Drop existing path
-			$ctrl.qbQuery = $ctrl.qbQuery.filter(function (p) {
-				return p.path != path;
+		$scope.$on('queryBuilder.pathAction.swapPath', function (e, path, newPath) {
+			var existingItemIndex = $ctrl.qbQuery.findIndex(function (q) {
+				return q.path == path;
 			});
-			$ctrl.query = QueryBuilder.arrayToQuery($ctrl.qbQuery);
+			if (!existingItemIndex) throw new Error('Cannot find path "' + path + '" to swap with new path "' + newPath + '"');
 
-			// Add new path query (also performs a recompute)
-			$scope.$emit('queryBuilder.pathAction.add', newPath);
+			$ctrl.qbQuery[existingItemIndex] = QueryBuilder.queryPathPrototype(newPath, undefined, $ctrl.qbSpec);
+			$timeout(function () {
+				return $scope.$broadcast('queryBuilder.focusOperand', newPath);
+			}); // Tell the widget to try and focus itself
 		});
 
 		$scope.$on('queryBuilder.pathAction.swapAction', function (e, path, newAction) {
@@ -282,15 +300,20 @@ angular.module('angular-ui-query-builder', [])
 		/**
   * Add a new item by path
   * @param {Object} event
-  * @param {string} path The new path to add
+  * @param {string} [path] The new path to add, if omitted the new path is added at the root element
   */
 		$scope.$on('queryBuilder.pathAction.add', function (e, path) {
 			// Append new path and set to blank
-			$ctrl.query[path] = '';
-			$ctrl.qbQuery = QueryBuilder.queryToArray($ctrl.query, $ctrl.qbSpec);
+			$ctrl.qbQuery.push({
+				path: '',
+				type: 'blank',
+				value: null,
+				fields: []
+			});
 
-			// Recompute
-			$ctrl.query = QueryBuilder.arrayToQuery($ctrl.qbQuery);
+			$timeout(function () {
+				return $scope.$broadcast('queryBuilder.focusPath', '');
+			}); // Tell the widget to try and focus itself
 		});
 	}]
 })
@@ -301,6 +324,7 @@ angular.module('angular-ui-query-builder', [])
 * Query builder element that holds a collection of queries - an array
 * @param {array} qbGroup Collection of fields to render
 * @param {Object} qbSpec Processed queryBuilder spec to pass to sub-controls
+* @emits queryBuilder.pathAction.add
 */
 .component('uiQueryBuilderGroup', {
 	bindings: {
@@ -310,6 +334,10 @@ angular.module('angular-ui-query-builder', [])
 	template: '\n\t\t<div ng-repeat="row in $ctrl.qbGroup | filter:$ctrl.qbGroupFilter" meta-key="{{row.path}}">\n\t\t\t<ui-query-builder-row\n\t\t\t\tqb-item="row"\n\t\t\t\tqb-spec="$ctrl.qbSpec"\n\t\t\t></ui-query-builder-row>\n\t\t</div>\n\t\t<button ng-click="$ctrl.add()" type="button" class="btn-add"></button>\n\t',
 	controller: ['$scope', 'QueryBuilder', function controller($scope, QueryBuilder) {
 		var $ctrl = this;
+
+		$ctrl.add = function () {
+			return $scope.$emit('queryBuilder.pathAction.add');
+		};
 
 		$ctrl.qbGroupFilter = function (item) {
 			return item.type != 'hidden';
@@ -322,13 +350,16 @@ angular.module('angular-ui-query-builder', [])
 /**
 * Individual line-item for a query row
 * @param {Object} qbItem Individual line item to render
+* @emits queryBuilder.pathAction.drop
+* @emits queryBuilder.change
+* @emits queryBuilder.pathAction.swapAction
 */
 .component('uiQueryBuilderRow', {
 	bindings: {
 		qbItem: '=',
 		qbSpec: '<'
 	},
-	controller: ['$scope', 'QueryBuilder', function controller($scope, QueryBuilder) {
+	controller: ['$element', '$scope', 'QueryBuilder', function controller($element, $scope, QueryBuilder) {
 		var $ctrl = this;
 
 		$ctrl.delete = function (path) {
@@ -340,8 +371,24 @@ angular.module('angular-ui-query-builder', [])
 		$ctrl.setAction = function (action) {
 			return $scope.$emit('queryBuilder.pathAction.swapAction', $ctrl.qbItem, action);
 		};
+
+		$scope.$on('queryBuilder.focusPath', function (e, path) {
+			if ($ctrl.qbItem.path != path) return; // We don't control this path - ignore
+
+			$element.find('ui-query-builder-path .dropdown-toggle').dropdown('toggle');
+		});
+
+		$scope.$on('queryBuilder.focusOperand', function (e, path) {
+			if ($ctrl.qbItem.path != path) return; // We don't control this path - ignore
+
+			// Try finding a single input box {{{
+			var focusElem = $element.find('input.form-control');
+			if (focusElem.length == 1) return focusElem.focus();
+			// }}}
+			console.warn('Unable to focus any element within DOM', $element[0], 'for type', $ctrl.type, 'on line item', $ctrl.qbItem);
+		});
 	}],
-	template: '\n\t\t<div ng-switch="$ctrl.qbItem.type">\n\t\t\t<!-- $and / $or condition {{{ -->\n\t\t\t<div ng-switch-when="binaryGroup" class="query-row">\n\t\t\t\t<a ng-click="$ctrl.delete($ctrl.qbItem.path)" class="btn-trash"></a>\n\t\t\t\t<div class="query-block">\n\t\t\t\t\t<div class="btn btn-1 btn-block">\n\t\t\t\t\t\t{{$ctrl.qbItem.title}}\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t\t<div ng-repeat="conditional in $ctrl.qbItem.children" class="query-container clearfix">\n\t\t\t\t\t<ui-query-builder-group\n\t\t\t\t\t\tqb-group="conditional"\n\t\t\t\t\t\tqb-spec="$ctrl.spec"\n\t\t\t\t\t></ui-query-builder-group>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t\t<!-- }}} -->\n\t\t\t<!-- String {{{ -->\n\t\t\t<div ng-switch-when="string" class="query-row">\n\t\t\t\t<a ng-click="$ctrl.delete($ctrl.qbItem.path)" class="btn-trash"></a>\n\t\t\t\t<ui-query-builder-path\n\t\t\t\t\tclass="query-block"\n\t\t\t\t\tlevel="1"\n\t\t\t\t\tselected="$ctrl.qbItem.path"\n\t\t\t\t\tqb-spec="$ctrl.qbSpec"\n\t\t\t\t></ui-query-builder-path>\n\t\t\t\t<ui-query-builder-block-menu\n\t\t\t\t\tclass="query-block"\n\t\t\t\t\tlevel="2"\n\t\t\t\t\tselected="$ctrl.qbItem.action"\n\t\t\t\t\toptions="$ctrl.qbItem.actions"\n\t\t\t\t\ton-change="$ctrl.setAction(selected)"\n\t\t\t\t></ui-query-builder-block-menu>\n\t\t\t\t<div class="query-block">\n\t\t\t\t\t<div class="btn btn-3 btn-block">\n\t\t\t\t\t\t<input\n\t\t\t\t\t\t\tng-model="$ctrl.qbItem.value"\n\t\t\t\t\t\t\tng-change="$ctrl.setChanged()"\n\t\t\t\t\t\t\ttype="text"\n\t\t\t\t\t\t\tclass="form-control"\n\t\t\t\t\t\t/>\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t\t<!-- }}} -->\n\t\t\t<!-- Enum {{{ -->\n\t\t\t<div ng-switch-when="enum" class="query-row">\n\t\t\t\t<a ng-click="$ctrl.delete($ctrl.qbItem.path)" class="btn-trash"></a>\n\t\t\t\t<ui-query-builder-path\n\t\t\t\t\tclass="query-block"\n\t\t\t\t\tlevel="1"\n\t\t\t\t\tselected="$ctrl.qbItem.path"\n\t\t\t\t\tqb-spec="$ctrl.qbSpec"\n\t\t\t\t></ui-query-builder-path>\n\t\t\t\t<ui-query-builder-block-menu\n\t\t\t\t\tclass="query-block"\n\t\t\t\t\tlevel="2"\n\t\t\t\t\tselected="$ctrl.qbItem.action"\n\t\t\t\t\toptions="$ctrl.qbItem.actions"\n\t\t\t\t\ton-change="$ctrl.setAction(selected)"\n\t\t\t\t></ui-query-builder-block-menu>\n\t\t\t\t<ui-query-builder-block-menu-multiple\n\t\t\t\t\tclass="query-block"\n\t\t\t\t\tlevel="3"\n\t\t\t\t\tselected="$ctrl.qbItem.value"\n\t\t\t\t\toptions="$ctrl.qbItem.enum"\n\t\t\t\t></ui-query-builder-block-menu-multiple>\n\t\t\t</div>\n\t\t\t<!-- }}} -->\n\t\t\t<!-- Date {{{ -->\n\t\t\t<div ng-switch-when="date" class="query-row">\n\t\t\t\t<a ng-click="$ctrl.delete($ctrl.qbItem.path)" class="btn-trash"></a>\n\t\t\t\t<ui-query-builder-path\n\t\t\t\t\tclass="query-block"\n\t\t\t\t\tlevel="1"\n\t\t\t\t\tselected="$ctrl.qbItem.path"\n\t\t\t\t\tqb-spec="$ctrl.qbSpec"\n\t\t\t\t></ui-query-builder-path>\n\t\t\t\t<ui-query-builder-block-menu\n\t\t\t\t\tclass="query-block"\n\t\t\t\t\tlevel="2"\n\t\t\t\t\tselected="$ctrl.qbItem.action"\n\t\t\t\t\toptions="$ctrl.qbItem.actions"\n\t\t\t\t\ton-change="$ctrl.setAction(selected)"\n\t\t\t\t></ui-query-builder-block-menu>\n\t\t\t\t<div class="query-block">\n\t\t\t\t\t<div class="btn btn-3 btn-block">\n\t\t\t\t\t\t<input\n\t\t\t\t\t\t\tng-model="$ctrl.qbItem.value"\n\t\t\t\t\t\t\tng-change="$ctrl.setChanged()"\n\t\t\t\t\t\t\ttype="date"\n\t\t\t\t\t\t\tclass="form-control"\n\t\t\t\t\t\t/>\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t\t<!-- }}} -->\n\t\t\t<!-- Number {{{ -->\n\t\t\t<div ng-switch-when="number" class="query-row">\n\t\t\t\t<a ng-click="$ctrl.delete($ctrl.qbItem.path)" class="btn-trash"></a>\n\t\t\t\t<ui-query-builder-path\n\t\t\t\t\tclass="query-block"\n\t\t\t\t\tlevel="1"\n\t\t\t\t\tselected="$ctrl.qbItem.path"\n\t\t\t\t\tqb-spec="$ctrl.qbSpec"\n\t\t\t\t></ui-query-builder-path>\n\t\t\t\t<ui-query-builder-block-menu\n\t\t\t\t\tclass="query-block"\n\t\t\t\t\tlevel="2"\n\t\t\t\t\tselected="$ctrl.qbItem.action"\n\t\t\t\t\toptions="$ctrl.qbItem.actions"\n\t\t\t\t\ton-change="$ctrl.setAction(selected)"\n\t\t\t\t></ui-query-builder-block-menu>\n\t\t\t\t<div class="query-block">\n\t\t\t\t\t<div class="btn btn-3 btn-block">\n\t\t\t\t\t\t<input\n\t\t\t\t\t\t\tng-value="$ctrl.qbItem.value"\n\t\t\t\t\t\t\tng-changed="$ctrl.setChanged()"\n\t\t\t\t\t\t\ttype="number"\n\t\t\t\t\t\t\tclass="form-control"\n\t\t\t\t\t\t/>\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t\t<!-- }}} -->\n\t\t\t<!-- Exists {{{ -->\n\t\t\t<div ng-switch-when="exists" class="query-row">\n\t\t\t\t<a ng-click="$ctrl.delete($ctrl.qbItem.path)" class="btn-trash"></a>\n\t\t\t\t<ui-query-builder-path\n\t\t\t\t\tclass="query-block"\n\t\t\t\t\tlevel="1"\n\t\t\t\t\tselected="$ctrl.qbItem.path"\n\t\t\t\t\tqb-spec="$ctrl.qbSpec"\n\t\t\t\t></ui-query-builder-path>\n\t\t\t\t<ui-query-builder-block-menu\n\t\t\t\t\tclass="query-block"\n\t\t\t\t\tlevel="2"\n\t\t\t\t\tselected="$ctrl.qbItem.action"\n\t\t\t\t\toptions="$ctrl.qbItem.actions"\n\t\t\t\t\ton-change="$ctrl.setAction(selected)"\n\t\t\t\t></ui-query-builder-block-menu>\n\t\t\t</div>\n\t\t\t<!-- }}} -->\n\t\t\t<!-- Search {{{ -->\n\t\t\t<div ng-switch-when="search" class="query-row">\n\t\t\t\t<a ng-click="$ctrl.delete($ctrl.qbItem.path)" class="btn-trash"></a>\n\t\t\t\t<ui-query-builder-path\n\t\t\t\t\tclass="query-block"\n\t\t\t\t\tlevel="1"\n\t\t\t\t\tselected="$ctrl.qbItem.path"\n\t\t\t\t\tqb-spec="$ctrl.qbSpec"\n\t\t\t\t\ton-change="$ctrl.setAction(selected)"\n\t\t\t\t></ui-query-builder-path>\n\t\t\t\t<div class="query-block">\n\t\t\t\t\t<div class="btn btn-2 btn-block">\n\t\t\t\t\t\t<input\n\t\t\t\t\t\t\tng-model="$ctrl.qbItem.value"\n\t\t\t\t\t\t\tng-change="$ctrl.setChanged()"\n\t\t\t\t\t\t\ttype="text"\n\t\t\t\t\t\t\tclass="form-control"\n\t\t\t\t\t\t/>\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t\t<!-- }}} -->\n\t\t\t<!-- keyVal (Only title + value) {{{ -->\n\t\t\t<div ng-switch-when="keyVal" class="query-row">\n\t\t\t\t<a ng-if="$ctrl.qbItem.canDelete === undefined || $ctrl.qbItem.canDelete" ng-click="$ctrl.delete($ctrl.qbItem.path)" class="btn-trash"></a>\n\t\t\t\t<ui-query-builder-block\n\t\t\t\t\tclass="query-block"\n\t\t\t\t\tlevel="1"\n\t\t\t\t\ttitle="$ctrl.qbItem.title"\n\t\t\t\t></ui-query-builder-block>\n\t\t\t\t<div class="query-block">\n\t\t\t\t\t<div class="btn btn-2 btn-block">\n\t\t\t\t\t\t<input\n\t\t\t\t\t\t\tng-model="$ctrl.qbItem.value"\n\t\t\t\t\t\t\tng-change="$ctrl.setChanged()"\n\t\t\t\t\t\t\ttype="text"\n\t\t\t\t\t\t\tclass="form-control"\n\t\t\t\t\t\t/>\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t\t<!-- }}} -->\n\t\t\t<!-- Unknown {{{ -->\n\t\t\t<div ng-switch-default class="query-row">\n\t\t\t\t<a ng-click="$ctrl.delete($ctrl.qbItem.path)" class="btn-trash"></a>\n\t\t\t\t<ui-query-builder-path\n\t\t\t\t\tclass="query-block"\n\t\t\t\t\tlevel="1"\n\t\t\t\t\tselected="$ctrl.qbItem.path"\n\t\t\t\t\tqb-spec="$ctrl.qbSpec"\n\t\t\t\t></ui-query-builder-path>\n\t\t\t\t<div class="query-block">\n\t\t\t\t\t<div class="btn btn-warning btn-block">\n\t\t\t\t\t\tUnknown handler: {{$ctrl.qbItem.type}}\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t\t<!-- }}} -->\n\t\t</div>\n\t'
+	template: '\n\t\t<div ng-switch="$ctrl.qbItem.type">\n\t\t\t<!-- $and / $or condition {{{ -->\n\t\t\t<div ng-switch-when="binaryGroup" class="query-row">\n\t\t\t\t<a ng-click="$ctrl.delete($ctrl.qbItem.path)" class="btn-trash"></a>\n\t\t\t\t<div class="query-block">\n\t\t\t\t\t<div class="btn btn-1 btn-block">\n\t\t\t\t\t\t{{$ctrl.qbItem.title}}\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t\t<div ng-repeat="conditional in $ctrl.qbItem.children" class="query-container clearfix">\n\t\t\t\t\t<ui-query-builder-group\n\t\t\t\t\t\tqb-group="conditional"\n\t\t\t\t\t\tqb-spec="$ctrl.spec"\n\t\t\t\t\t></ui-query-builder-group>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t\t<!-- }}} -->\n\t\t\t<!-- String {{{ -->\n\t\t\t<div ng-switch-when="string" class="query-row">\n\t\t\t\t<a ng-click="$ctrl.delete($ctrl.qbItem.path)" class="btn-trash"></a>\n\t\t\t\t<ui-query-builder-path\n\t\t\t\t\tclass="query-block"\n\t\t\t\t\tlevel="1"\n\t\t\t\t\tselected="$ctrl.qbItem.path"\n\t\t\t\t\tqb-spec="$ctrl.qbSpec"\n\t\t\t\t></ui-query-builder-path>\n\t\t\t\t<ui-query-builder-block-menu\n\t\t\t\t\tclass="query-block"\n\t\t\t\t\tlevel="2"\n\t\t\t\t\tselected="$ctrl.qbItem.action"\n\t\t\t\t\toptions="$ctrl.qbItem.actions"\n\t\t\t\t\ton-change="$ctrl.setAction(selected)"\n\t\t\t\t></ui-query-builder-block-menu>\n\t\t\t\t<div class="query-block">\n\t\t\t\t\t<div class="btn btn-3 btn-block">\n\t\t\t\t\t\t<input\n\t\t\t\t\t\t\tng-model="$ctrl.qbItem.value"\n\t\t\t\t\t\t\tng-change="$ctrl.setChanged()"\n\t\t\t\t\t\t\ttype="text"\n\t\t\t\t\t\t\tclass="form-control"\n\t\t\t\t\t\t/>\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t\t<!-- }}} -->\n\t\t\t<!-- Enum {{{ -->\n\t\t\t<div ng-switch-when="enum" class="query-row">\n\t\t\t\t<a ng-click="$ctrl.delete($ctrl.qbItem.path)" class="btn-trash"></a>\n\t\t\t\t<ui-query-builder-path\n\t\t\t\t\tclass="query-block"\n\t\t\t\t\tlevel="1"\n\t\t\t\t\tselected="$ctrl.qbItem.path"\n\t\t\t\t\tqb-spec="$ctrl.qbSpec"\n\t\t\t\t></ui-query-builder-path>\n\t\t\t\t<ui-query-builder-block-menu\n\t\t\t\t\tclass="query-block"\n\t\t\t\t\tlevel="2"\n\t\t\t\t\tselected="$ctrl.qbItem.action"\n\t\t\t\t\toptions="$ctrl.qbItem.actions"\n\t\t\t\t\ton-change="$ctrl.setAction(selected)"\n\t\t\t\t></ui-query-builder-block-menu>\n\t\t\t\t<ui-query-builder-block-menu-multiple\n\t\t\t\t\tclass="query-block"\n\t\t\t\t\tlevel="3"\n\t\t\t\t\tselected="$ctrl.qbItem.value"\n\t\t\t\t\toptions="$ctrl.qbItem.enum"\n\t\t\t\t></ui-query-builder-block-menu-multiple>\n\t\t\t</div>\n\t\t\t<!-- }}} -->\n\t\t\t<!-- Date {{{ -->\n\t\t\t<div ng-switch-when="date" class="query-row">\n\t\t\t\t<a ng-click="$ctrl.delete($ctrl.qbItem.path)" class="btn-trash"></a>\n\t\t\t\t<ui-query-builder-path\n\t\t\t\t\tclass="query-block"\n\t\t\t\t\tlevel="1"\n\t\t\t\t\tselected="$ctrl.qbItem.path"\n\t\t\t\t\tqb-spec="$ctrl.qbSpec"\n\t\t\t\t></ui-query-builder-path>\n\t\t\t\t<ui-query-builder-block-menu\n\t\t\t\t\tclass="query-block"\n\t\t\t\t\tlevel="2"\n\t\t\t\t\tselected="$ctrl.qbItem.action"\n\t\t\t\t\toptions="$ctrl.qbItem.actions"\n\t\t\t\t\ton-change="$ctrl.setAction(selected)"\n\t\t\t\t></ui-query-builder-block-menu>\n\t\t\t\t<div class="query-block">\n\t\t\t\t\t<div class="btn btn-3 btn-block">\n\t\t\t\t\t\t<input\n\t\t\t\t\t\t\tng-model="$ctrl.qbItem.value"\n\t\t\t\t\t\t\tng-change="$ctrl.setChanged()"\n\t\t\t\t\t\t\ttype="date"\n\t\t\t\t\t\t\tclass="form-control"\n\t\t\t\t\t\t/>\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t\t<!-- }}} -->\n\t\t\t<!-- Number {{{ -->\n\t\t\t<div ng-switch-when="number" class="query-row">\n\t\t\t\t<a ng-click="$ctrl.delete($ctrl.qbItem.path)" class="btn-trash"></a>\n\t\t\t\t<ui-query-builder-path\n\t\t\t\t\tclass="query-block"\n\t\t\t\t\tlevel="1"\n\t\t\t\t\tselected="$ctrl.qbItem.path"\n\t\t\t\t\tqb-spec="$ctrl.qbSpec"\n\t\t\t\t></ui-query-builder-path>\n\t\t\t\t<ui-query-builder-block-menu\n\t\t\t\t\tclass="query-block"\n\t\t\t\t\tlevel="2"\n\t\t\t\t\tselected="$ctrl.qbItem.action"\n\t\t\t\t\toptions="$ctrl.qbItem.actions"\n\t\t\t\t\ton-change="$ctrl.setAction(selected)"\n\t\t\t\t></ui-query-builder-block-menu>\n\t\t\t\t<div class="query-block">\n\t\t\t\t\t<div class="btn btn-3 btn-block">\n\t\t\t\t\t\t<input\n\t\t\t\t\t\t\tng-value="$ctrl.qbItem.value"\n\t\t\t\t\t\t\tng-changed="$ctrl.setChanged()"\n\t\t\t\t\t\t\ttype="number"\n\t\t\t\t\t\t\tclass="form-control"\n\t\t\t\t\t\t/>\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t\t<!-- }}} -->\n\t\t\t<!-- Exists {{{ -->\n\t\t\t<div ng-switch-when="exists" class="query-row">\n\t\t\t\t<a ng-click="$ctrl.delete($ctrl.qbItem.path)" class="btn-trash"></a>\n\t\t\t\t<ui-query-builder-path\n\t\t\t\t\tclass="query-block"\n\t\t\t\t\tlevel="1"\n\t\t\t\t\tselected="$ctrl.qbItem.path"\n\t\t\t\t\tqb-spec="$ctrl.qbSpec"\n\t\t\t\t></ui-query-builder-path>\n\t\t\t\t<ui-query-builder-block-menu\n\t\t\t\t\tclass="query-block"\n\t\t\t\t\tlevel="2"\n\t\t\t\t\tselected="$ctrl.qbItem.action"\n\t\t\t\t\toptions="$ctrl.qbItem.actions"\n\t\t\t\t\ton-change="$ctrl.setAction(selected)"\n\t\t\t\t></ui-query-builder-block-menu>\n\t\t\t</div>\n\t\t\t<!-- }}} -->\n\t\t\t<!-- Search {{{ -->\n\t\t\t<div ng-switch-when="search" class="query-row">\n\t\t\t\t<a ng-click="$ctrl.delete($ctrl.qbItem.path)" class="btn-trash"></a>\n\t\t\t\t<ui-query-builder-path\n\t\t\t\t\tclass="query-block"\n\t\t\t\t\tlevel="1"\n\t\t\t\t\tselected="$ctrl.qbItem.path"\n\t\t\t\t\tqb-spec="$ctrl.qbSpec"\n\t\t\t\t\ton-change="$ctrl.setAction(selected)"\n\t\t\t\t></ui-query-builder-path>\n\t\t\t\t<div class="query-block">\n\t\t\t\t\t<div class="btn btn-2 btn-block">\n\t\t\t\t\t\t<input\n\t\t\t\t\t\t\tng-model="$ctrl.qbItem.value"\n\t\t\t\t\t\t\tng-change="$ctrl.setChanged()"\n\t\t\t\t\t\t\ttype="text"\n\t\t\t\t\t\t\tclass="form-control"\n\t\t\t\t\t\t/>\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t\t<!-- }}} -->\n\t\t\t<!-- keyVal (Only title + value) {{{ -->\n\t\t\t<div ng-switch-when="keyVal" class="query-row">\n\t\t\t\t<a ng-if="$ctrl.qbItem.canDelete === undefined || $ctrl.qbItem.canDelete" ng-click="$ctrl.delete($ctrl.qbItem.path)" class="btn-trash"></a>\n\t\t\t\t<ui-query-builder-block\n\t\t\t\t\tclass="query-block"\n\t\t\t\t\tlevel="1"\n\t\t\t\t\ttitle="$ctrl.qbItem.title"\n\t\t\t\t></ui-query-builder-block>\n\t\t\t\t<div class="query-block">\n\t\t\t\t\t<div class="btn btn-2 btn-block">\n\t\t\t\t\t\t<input\n\t\t\t\t\t\t\tng-model="$ctrl.qbItem.value"\n\t\t\t\t\t\t\tng-change="$ctrl.setChanged()"\n\t\t\t\t\t\t\ttype="text"\n\t\t\t\t\t\t\tclass="form-control"\n\t\t\t\t\t\t/>\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t\t<!-- }}} -->\n\t\t\t<!-- Blank (i.e. field not set yet) {{{ -->\n\t\t\t<div ng-switch-when="blank" class="query-row">\n\t\t\t\t<a ng-click="$ctrl.delete($ctrl.qbItem.path)" class="btn-trash"></a>\n\t\t\t\t<ui-query-builder-path\n\t\t\t\t\tclass="query-block"\n\t\t\t\t\tlevel="1"\n\t\t\t\t\tselected="$ctrl.qbItem.path"\n\t\t\t\t\tqb-spec="$ctrl.qbSpec"\n\t\t\t\t></ui-query-builder-path>\n\t\t\t</div>\n\t\t\t<!-- }}} -->\n\t\t\t<!-- Unknown {{{ -->\n\t\t\t<div ng-switch-default class="query-row">\n\t\t\t\t<a ng-click="$ctrl.delete($ctrl.qbItem.path)" class="btn-trash"></a>\n\t\t\t\t<ui-query-builder-path\n\t\t\t\t\tclass="query-block"\n\t\t\t\t\tlevel="1"\n\t\t\t\t\tselected="$ctrl.qbItem.path"\n\t\t\t\t\tqb-spec="$ctrl.qbSpec"\n\t\t\t\t></ui-query-builder-path>\n\t\t\t\t<div class="query-block">\n\t\t\t\t\t<div class="btn btn-warning btn-block">\n\t\t\t\t\t\tUnknown handler: {{$ctrl.qbItem.type}}\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t\t<!-- }}} -->\n\t\t</div>\n\t'
 })
 // }}}
 
@@ -352,6 +399,7 @@ angular.module('angular-ui-query-builder', [])
 * @param {number} level The level of button we are drawing
 * @param {string} selected The currently selected path in dotted notation
 * @param {Object} qbSpec Processed queryBuilder spec of the query to allow choices from
+* @emits queryBuilder.pathAction.swapPath
 */
 .component('uiQueryBuilderPath', {
 	bindings: {
@@ -363,7 +411,7 @@ angular.module('angular-ui-query-builder', [])
 		var $ctrl = this;
 
 		$ctrl.setSelected = function (option) {
-			return $scope.$emit('queryBuilder.pathAction.swap', $ctrl.selected, option);
+			return $scope.$emit('queryBuilder.pathAction.swapPath', $ctrl.selected, option);
 		};
 
 		$ctrl.options;
@@ -442,6 +490,7 @@ angular.module('angular-ui-query-builder', [])
 * @param {number} level The level of button we are drawing
 * @param {array} options A collection of options to display. Each should be of the form {id, title}
 * @param {*} selected The currently selected ID
+* @emits queryBuilder.change
 */
 .component('uiQueryBuilderBlockMenuMultiple', {
 	bindings: {
