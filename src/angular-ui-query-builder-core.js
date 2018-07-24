@@ -316,6 +316,7 @@ angular.module('angular-ui-query-builder',[])
 			if (!existingItemIndex) throw new Error(`Cannot find path "${path}" to swap with new path "${newPath}"`);
 
 			$ctrl.qbQuery[existingItemIndex] = QueryBuilder.queryPathPrototype(newPath, undefined, $ctrl.qbSpec);
+			$timeout(()=> $scope.$broadcast('queryBuilder.focusOperand', newPath)); // Tell the widget to try and focus itself
 		});
 
 
@@ -337,6 +338,8 @@ angular.module('angular-ui-query-builder',[])
 				value: null,
 				fields: [],
 			});
+
+			$timeout(()=> $scope.$broadcast('queryBuilder.focusPath', '')); // Tell the widget to try and focus itself
 		});
 	},
 })
@@ -386,12 +389,28 @@ angular.module('angular-ui-query-builder',[])
 		qbItem: '=',
 		qbSpec: '<',
 	},
-	controller: function($scope, QueryBuilder) {
+	controller: function($element, $scope, QueryBuilder) {
 		var $ctrl = this;
 
 		$ctrl.delete = path => $scope.$emit('queryBuilder.pathAction.drop', path);
 		$ctrl.setChanged = ()=> $scope.$emit('queryBuilder.change');
 		$ctrl.setAction = action => $scope.$emit('queryBuilder.pathAction.swapAction', $ctrl.qbItem, action);
+
+		$scope.$on('queryBuilder.focusPath', (e, path) => {
+			if ($ctrl.qbItem.path != path) return; // We don't control this path - ignore
+
+			$element.find('ui-query-builder-path .dropdown-toggle').dropdown('toggle');
+		});
+
+		$scope.$on('queryBuilder.focusOperand', (e, path) => {
+			if ($ctrl.qbItem.path != path) return; // We don't control this path - ignore
+
+			// Try finding a single input box {{{
+			var focusElem = $element.find('input.form-control');
+			if (focusElem.length == 1) return focusElem.focus();
+			// }}}
+			console.warn('Unable to focus any element within DOM', $element[0], 'for type', $ctrl.type, 'on line item',$ctrl.qbItem);
+		});
 	},
 	template: `
 		<div ng-switch="$ctrl.qbItem.type">
