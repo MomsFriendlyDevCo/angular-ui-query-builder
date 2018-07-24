@@ -43,6 +43,7 @@
 	max-width: 400px;
 	position: relative;
 	vertical-align: middle;
+	box-shadow: 1px 3px 5px 0px rgba(50, 50, 50, 0.75);
 }
 
 .ui-query-builder .query-row > .query-block:first-child,
