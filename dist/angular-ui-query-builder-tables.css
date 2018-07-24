@@ -122,7 +122,8 @@
 
 /* qb-modal {{{ */
 .modal.qb-modal .modal-body {
-	overflow: auto;
+	/* Scroll horizontally (when queries get big) but always show vertical (to allow dropdowns to work) */
+	overflow: auto visible;
 }
 /* }}} */
 
