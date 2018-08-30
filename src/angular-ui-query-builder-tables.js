@@ -248,7 +248,8 @@ angular.module('angular-ui-query-builder')
 * Directive for cell elements within a table
 * @param {Object} ^qbTable.qbTable The query Object to mutate
 * @param {boolean} [selector] Whether the cell should act as a select / unselect prompt, if any value bind to this as the selection variable
-* @param {function} [onSelect] Function to run when the selection value changes. Called as ({value})
+* @param {function} [onPreSelect] Function to run before the selection value changes. Called as ({value})
+* @param {function} [onSelect] Function to run after the selection value changes. Called as ({value})
 *
 * @emits qbTableCellSelectMeta Issued by the meta-selector element to peer selection elements that the selection criteria has changed. Called as (arg) where arg is 'all', 'none', 'invert'
 * @emits qbTableCellSelect Issued by a regular selector element to broadcast its state has changed
@@ -260,6 +261,7 @@ angular.module('angular-ui-query-builder')
 .directive('qbCell', function() { return {
 	scope: {
 		selector: '=?',
+		onPreSelect: '&?',
 		onSelect: '&?',
 	},
 	require: '^qbTable',
@@ -299,9 +301,10 @@ angular.module('angular-ui-query-builder')
 		// Respond to clicking anywhere in the 'TD' tag
 		if ($scope.isSelector && !$scope.isMeta) {
 			$element.on('click', e => $scope.$apply(()=> {
+				if ($scope.onPreSelect) $scope.onPreSelect({value: $scope.selector});
 				$scope.selector = !$scope.selector;
-				if ($scope.onSelect) $scope.onSelect({value: $scope.selector});
 				$scope.qbTable.$broadcast('qbTableCellSelect');
+				if ($scope.onSelect) $timeout(()=> $scope.onSelect({value: $scope.selector}));
 			}));
 		}
 
@@ -355,7 +358,7 @@ angular.module('angular-ui-query-builder')
 }})
 // }}}
 
-// qbPagination {{{
+// qbPagination (directive) {{{
 /**
 * Directive to add table pagination
 * NOTE: Any transcluded content will be inserted in the center of the pagination area
@@ -460,7 +463,7 @@ angular.module('angular-ui-query-builder')
 }})
 // }}}
 
-// qbExport {{{
+// qbExport (directive) {{{
 /**
 * Directive to export a table via a query
 * NOTE: This element draws a simple 'Export...' button by default but can be replaced by any valid transcluded HTML. Simply call `exportPrompt()` to action
@@ -656,7 +659,7 @@ angular.module('angular-ui-query-builder')
 }})
 // }}}
 
-// qbModal {{{
+// qbModal (directive) {{{
 /**
 * Button binding that shows a modal allowing the user to edit a query
 * @param {Object} query The query Object to use when exporting
@@ -736,7 +739,7 @@ angular.module('angular-ui-query-builder')
 }})
 // }}}
 
-// qbSearch {{{
+// qbSearch (directive) {{{
 /**
 * Directive to automatically populate a generic search into a query via a single textbox
 * NOTE: Any transcluded content will replace the basic `<input/>` template. Bind to `search` to set the search criteria and fire `submit()` to submit the change, 'clear()' to clear the search
