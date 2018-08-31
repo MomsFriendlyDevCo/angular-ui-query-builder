@@ -770,9 +770,10 @@ angular.module('angular-ui-query-builder')
 
 		/**
 		* Submit a search query - injecting the search terms into the query as needed
+		* @param {boolean} [clear=true] Clear the existing search before continuing
 		*/
-		$scope.submit = ()=> {
-			if (!$scope.search) return $scope.clear(false);
+		$scope.submit = (clear = true)=> {
+			if (!$scope.search && clear) return $scope.clear(false);
 
 			var safeRegEx = qbTableUtilities.escapeRegExp(_.trim($scope.search));
 			var searchQuery = {
@@ -893,8 +894,8 @@ angular.module('angular-ui-query-builder')
 			<form ng-submit="submit()" class="form-inline">
 				<div class="form-group">
 					<div class="input-group">
-						<input type="text" ng-model="search" ng-blur="submit()" class="form-control"/>
-						<a ng-click="isSearching ? clear() : submit()" class="btn btn-default input-group-addon">
+						<input type="text" ng-model="search" class="form-control"/>
+						<a ng-click="isSearching ? clear() : submit(false)" class="btn btn-default input-group-addon">
 							<i ng-class="isSearching ? qbTableSettings.icons.searchClear : qbTableSettings.icons.search"/>
 						</a>
 					</div>
