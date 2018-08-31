@@ -323,7 +323,8 @@ angular.module('angular-ui-query-builder')
 * Directive for cell elements within a table
 * @param {Object} ^qbTable.qbTable The query Object to mutate
 * @param {boolean} [selector] Whether the cell should act as a select / unselect prompt, if any value bind to this as the selection variable
-* @param {function} [onSelect] Function to run when the selection value changes. Called as ({value})
+* @param {function} [onPreSelect] Function to run before the selection value changes. Called as ({value})
+* @param {function} [onSelect] Function to run after the selection value changes. Called as ({value})
 *
 * @emits qbTableCellSelectMeta Issued by the meta-selector element to peer selection elements that the selection criteria has changed. Called as (arg) where arg is 'all', 'none', 'invert'
 * @emits qbTableCellSelect Issued by a regular selector element to broadcast its state has changed
@@ -336,6 +337,7 @@ angular.module('angular-ui-query-builder')
 	return {
 		scope: {
 			selector: '=?',
+			onPreSelect: '&?',
 			onSelect: '&?'
 		},
 		require: '^qbTable',
@@ -379,9 +381,12 @@ angular.module('angular-ui-query-builder')
 			if ($scope.isSelector && !$scope.isMeta) {
 				$element.on('click', function (e) {
 					return $scope.$apply(function () {
+						if ($scope.onPreSelect) $scope.onPreSelect({ value: $scope.selector });
 						$scope.selector = !$scope.selector;
-						if ($scope.onSelect) $scope.onSelect({ value: $scope.selector });
 						$scope.qbTable.$broadcast('qbTableCellSelect');
+						if ($scope.onSelect) $timeout(function () {
+							return $scope.onSelect({ value: $scope.selector });
+						});
 					});
 				});
 			}
@@ -428,7 +433,7 @@ angular.module('angular-ui-query-builder')
 })
 // }}}
 
-// qbPagination {{{
+// qbPagination (directive) {{{
 /**
 * Directive to add table pagination
 * NOTE: Any transcluded content will be inserted in the center of the pagination area
@@ -504,7 +509,7 @@ angular.module('angular-ui-query-builder')
 })
 // }}}
 
-// qbExport {{{
+// qbExport (directive) {{{
 /**
 * Directive to export a table via a query
 * NOTE: This element draws a simple 'Export...' button by default but can be replaced by any valid transcluded HTML. Simply call `exportPrompt()` to action
@@ -606,7 +611,7 @@ angular.module('angular-ui-query-builder')
 })
 // }}}
 
-// qbModal {{{
+// qbModal (directive) {{{
 /**
 * Button binding that shows a modal allowing the user to edit a query
 * @param {Object} query The query Object to use when exporting
@@ -663,7 +668,7 @@ angular.module('angular-ui-query-builder')
 })
 // }}}
 
-// qbSearch {{{
+// qbSearch (directive) {{{
 /**
 * Directive to automatically populate a generic search into a query via a single textbox
 * NOTE: Any transcluded content will replace the basic `<input/>` template. Bind to `search` to set the search criteria and fire `submit()` to submit the change, 'clear()' to clear the search
@@ -694,9 +699,12 @@ angular.module('angular-ui-query-builder')
 
 			/**
    * Submit a search query - injecting the search terms into the query as needed
+   * @param {boolean} [clear=true] Clear the existing search before continuing
    */
 			$scope.submit = function () {
-				if (!$scope.search) return $scope.clear(false);
+				var clear = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
+
+				if (!$scope.search && clear) return $scope.clear(false);
 
 				var safeRegEx = qbTableUtilities.escapeRegExp(_.trim($scope.search));
 				var searchQuery = {
@@ -829,7 +837,7 @@ angular.module('angular-ui-query-builder')
 				return $scope.check();
 			};
 		}],
-		template: '\n\t\t<ng-transclude>\n\t\t\t<form ng-submit="submit()" class="form-inline">\n\t\t\t\t<div class="form-group">\n\t\t\t\t\t<div class="input-group">\n\t\t\t\t\t\t<input type="text" ng-model="search" ng-blur="submit()" class="form-control"/>\n\t\t\t\t\t\t<a ng-click="isSearching ? clear() : submit()" class="btn btn-default input-group-addon">\n\t\t\t\t\t\t\t<i ng-class="isSearching ? qbTableSettings.icons.searchClear : qbTableSettings.icons.search"/>\n\t\t\t\t\t\t</a>\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t</ng-transclude>\n\t'
+		template: '\n\t\t<ng-transclude>\n\t\t\t<form ng-submit="submit()" class="form-inline">\n\t\t\t\t<div class="form-group">\n\t\t\t\t\t<div class="input-group">\n\t\t\t\t\t\t<input type="text" ng-model="search" class="form-control"/>\n\t\t\t\t\t\t<a ng-click="isSearching ? clear() : submit(false)" class="btn btn-default input-group-addon">\n\t\t\t\t\t\t\t<i ng-class="isSearching ? qbTableSettings.icons.searchClear : qbTableSettings.icons.search"/>\n\t\t\t\t\t\t</a>\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t</ng-transclude>\n\t'
 	};
 });
 // }}}
