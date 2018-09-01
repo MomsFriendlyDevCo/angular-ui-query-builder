@@ -746,6 +746,7 @@ angular.module('angular-ui-query-builder')
 * NOTE: The logic on what fields to search is that the field is a string AND if at least one field has 'index:true' to check for that. If no fields claim an index all string fields are searched (this may cause issues with your backend database). See the useIndexes property for further details
 * @param {Object} query The query object to populate
 * @param {Object} spec The specification object of the collection
+* @param {array} [fields] Optional array of fields to search by, if specified and non-empty this is used as the definitive list of fields to search by instead of computing via `useIndexes`
 * @param {function} [onRefresh] Function to call as ({query}) when the user changes the search string and a new query is generated
 * @param {string} [binding='complete'] How to bind the given query to the one in progress. ENUM: 'none' - do nothing (only call onRefresh), 'complete' - only update when the user finishes and presses enter or blurs the input
 * @param {string} [useIndexes='auto'] How to determine what fields to search. ENUM: 'all' - All fields', 'string' - Only string fields', 'stringIndexed' - only indexed string fields, 'auto' - 'stringIndexed' if at least one field has {index:true} else 'string'
@@ -755,6 +756,7 @@ angular.module('angular-ui-query-builder')
 		query: '=',
 		spec: '<',
 		onRefresh: '&?',
+		fields: '<?',
 		useIndexes: '@?',
 	},
 	restrict: 'AE',
@@ -798,9 +800,11 @@ angular.module('angular-ui-query-builder')
 				if (indexMethod == 'auto') { // Determine what indexing method to use before we begin
 					indexMethod = _.keys($scope.spec).some(k => k != '_id' && $scope.spec[k].index) ? 'stringIndexed' : 'string';
 				}
+
 				newQuery.$or = _($scope.spec)
 					.pickBy((v, k) => {
 						if (k == '_id') return false; // Never search by ID
+						if ($scope.fields && $scope.fields.length) return $scope.fields.includes(k);
 						switch (indexMethod) {
 							case 'all': return true;
 							case 'string': return (v.type == 'string');
