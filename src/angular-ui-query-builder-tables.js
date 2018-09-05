@@ -804,21 +804,29 @@ angular.module('angular-ui-query-builder')
 					indexMethod = _.keys($scope.spec).some(k => k != '_id' && $scope.spec[k].index) ? 'stringIndexed' : 'string';
 				}
 
-				newQuery.$or = _($scope.spec)
-					.pickBy((v, k) => {
-						if (k == '_id') return false; // Never search by ID
-						if ($scope.fields && $scope.fields.length) return $scope.fields.includes(k);
-						switch (indexMethod) {
-							case 'all': return true;
-							case 'string': return (v.type == 'string');
-							case 'stringIndexed': return (v.type == 'string' && v.index);
-							default: throw new Error('Unknown field selection method: "' + indexMethod + '"');
-						}
-					})
-					.map((v, k) => ({
-						[k]: {$regex: qbTableUtilities.escapeRegExp($scope.search), $options: 'i'},
-					}))
-					.value()
+				if ($scope.fields) { // User is specifying fields to search
+					newQuery.$or = _($scope.fields)
+						.map(k => ({
+							[k]: {$regex: qbTableUtilities.escapeRegExp($scope.search), $options: 'i'},
+						}))
+						.value();
+				} else { // Auto-compute the fields to use
+					newQuery.$or = _($scope.spec)
+						.pickBy((v, k) => {
+							if (k == '_id') return false; // Never search by ID
+							if ($scope.fields && $scope.fields.length) return $scope.fields.includes(k);
+							switch (indexMethod) {
+								case 'all': return true;
+								case 'string': return (v.type == 'string');
+								case 'stringIndexed': return (v.type == 'string' && v.index);
+								default: throw new Error('Unknown field selection method: "' + indexMethod + '"');
+							}
+						})
+						.map((v, k) => ({
+							[k]: {$regex: qbTableUtilities.escapeRegExp($scope.search), $options: 'i'},
+						}))
+						.value()
+				}
 			} else { // Give up
 				console.warn(qbTableSettings.debugPrefix, 'Unable to inject search term', searchQuery, 'within complex query object', newQuery);
 			}
