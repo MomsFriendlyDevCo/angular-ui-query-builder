@@ -475,7 +475,7 @@ angular.module('angular-ui-query-builder')
 * <qb-export query="myQuery" spec="mySpec"></qb-export>
 * @example Custom button
 * <qb-export query="myQuery" spec="mySpec">
-*   <a class="btn btn-primary" ng-click="exportPrompt()">Export this list</a>
+*   <a class="btn btn-primary">Export this list</a>
 * </qb-export>
 */
 .directive('qbExport', function() { return {
@@ -549,6 +549,9 @@ angular.module('angular-ui-query-builder')
 			$scope.columnSynopsis = $scope.settings.columns.filter(c => c.selected).length + ' columns';
 		});
 		// }}}
+	},
+	link: function($scope, $elem) {
+		$elem.find('ng-transclude').on('click', ()=> $scope.$applyAsync(()=> $scope.exportPrompt()));
 	},
 	template: `
 		<div class="modal fade">
