@@ -486,7 +486,7 @@ angular.module('angular-ui-query-builder')
 	},
 	transclude: true,
 	restrict: 'EA',
-	controller: function($element, $httpParamSerializer, $scope, $timeout, $window, qbTableSettings, qbTableUtilities) {
+	controller: function($element, $httpParamSerializerJQLike, $scope, $timeout, $window, qbTableSettings, qbTableUtilities) {
 		var $ctrl = this;
 
 		$scope.qbTableSettings = qbTableSettings;
@@ -528,7 +528,7 @@ angular.module('angular-ui-query-builder')
 				format: $scope.settings.format,
 			}, $scope.settings.questions);
 
-			$window.open(`${$scope.url}?${$httpParamSerializer(query)}`);
+			$window.open($scope.url + '?' + $httpParamSerializerJQLike(query));
 		};
 
 		// Generate a readable synopsis of the query {{{
