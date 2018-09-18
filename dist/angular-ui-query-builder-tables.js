@@ -521,7 +521,7 @@ angular.module('angular-ui-query-builder')
 * <qb-export query="myQuery" spec="mySpec"></qb-export>
 * @example Custom button
 * <qb-export query="myQuery" spec="mySpec">
-*   <a class="btn btn-primary" ng-click="exportPrompt()">Export this list</a>
+*   <a class="btn btn-primary">Export this list</a>
 * </qb-export>
 */
 .directive('qbExport', function () {
@@ -533,7 +533,7 @@ angular.module('angular-ui-query-builder')
 		},
 		transclude: true,
 		restrict: 'EA',
-		controller: ['$element', '$httpParamSerializer', '$scope', '$timeout', '$window', 'qbTableSettings', 'qbTableUtilities', function controller($element, $httpParamSerializer, $scope, $timeout, $window, qbTableSettings, qbTableUtilities) {
+		controller: ['$element', '$httpParamSerializerJQLike', '$scope', '$timeout', '$window', 'qbTableSettings', 'qbTableUtilities', function controller($element, $httpParamSerializerJQLike, $scope, $timeout, $window, qbTableSettings, qbTableUtilities) {
 			var $ctrl = this;
 
 			$scope.qbTableSettings = qbTableSettings;
@@ -581,7 +581,7 @@ angular.module('angular-ui-query-builder')
 					format: $scope.settings.format
 				}, $scope.settings.questions);
 
-				$window.open($scope.url + '?' + $httpParamSerializer(query));
+				$window.open($scope.url + '?' + $httpParamSerializerJQLike(query));
 			};
 
 			// Generate a readable synopsis of the query {{{
@@ -606,6 +606,13 @@ angular.module('angular-ui-query-builder')
 			});
 			// }}}
 		}],
+		link: function link($scope, $elem) {
+			$elem.find('ng-transclude').on('click', function () {
+				return $scope.$applyAsync(function () {
+					return $scope.exportPrompt();
+				});
+			});
+		},
 		template: '\n\t\t<div class="modal fade">\n\t\t\t<div class="modal-dialog modal-lg">\n\t\t\t\t<div ng-if="isShowing" class="modal-content">\n\t\t\t\t\t<div class="modal-header">\n\t\t\t\t\t\t<a class="close" data-dismiss="modal"><i ng-class="qbTableSettings.icons.modalClose"></i></a>\n\t\t\t\t\t\t<h4 class="modal-title">Export</h4>\n\t\t\t\t\t</div>\n\t\t\t\t\t<div class="modal-body form-horizontal">\n\t\t\t\t\t\t<div class="form-group">\n\t\t\t\t\t\t\t<label class="col-sm-3 control-label">Output format</label>\n\t\t\t\t\t\t\t<div class="col-sm-9">\n\t\t\t\t\t\t\t\t<select ng-model="settings.format" class="form-control">\n\t\t\t\t\t\t\t\t\t<option ng-repeat="format in qbTableSettings.export.formats track by format.id" value="{{format.id}}">{{format.title}}</option>\n\t\t\t\t\t\t\t\t</select>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t\t<div class="form-group">\n\t\t\t\t\t\t\t<label class="col-sm-3 control-label">Criteria</label>\n\t\t\t\t\t\t\t<div class="col-sm-9">\n\t\t\t\t\t\t\t\t<div class="panel-group" id="qb-export-criteria-{{$id}}">\n\t\t\t\t\t\t\t\t\t<div class="panel panel-default">\n\t\t\t\t\t\t\t\t\t\t<div class="panel-heading">\n\t\t\t\t\t\t\t\t\t\t\t<h4 class="panel-title">\n\t\t\t\t\t\t\t\t\t\t\t\t<a data-toggle="collapse" data-target="#qb-export-criteria-{{$id}}-query" data-parent="#qb-export-criteria-{{$id}}" class="btn-block collapsed">\n\t\t\t\t\t\t\t\t\t\t\t\t\t{{querySynopsis}}\n\t\t\t\t\t\t\t\t\t\t\t\t\t<i ng-class="qbTableSettings.icons.modalCollapseClosed"></i>\n\t\t\t\t\t\t\t\t\t\t\t\t</a>\n\t\t\t\t\t\t\t\t\t\t\t</h4>\n\t\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t\t\t<div id="qb-export-criteria-{{$id}}-query" class="panel-collapse collapse container">\n\t\t\t\t\t\t\t\t\t\t\t<ui-query-builder\n\t\t\t\t\t\t\t\t\t\t\t\tquery="settings.query"\n\t\t\t\t\t\t\t\t\t\t\t\tspec="spec"\n\t\t\t\t\t\t\t\t\t\t\t></ui-query-builder>\n\t\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t\t<div class="form-group">\n\t\t\t\t\t\t\t<label class="col-sm-3 control-label">Columns</label>\n\t\t\t\t\t\t\t<div class="col-sm-9">\n\t\t\t\t\t\t\t\t<div class="panel-group" id="qb-export-columns-{{$id}}">\n\t\t\t\t\t\t\t\t\t<div class="panel panel-default">\n\t\t\t\t\t\t\t\t\t\t<div class="panel-heading">\n\t\t\t\t\t\t\t\t\t\t\t<h4 class="panel-title">\n\t\t\t\t\t\t\t\t\t\t\t\t<a data-toggle="collapse" data-target="#qb-export-columns-{{$id}}-columns" data-parent="#qb-export-columns-{{$id}}" class="btn-block collapsed">\n\t\t\t\t\t\t\t\t\t\t\t\t\t{{columnSynopsis}}\n\t\t\t\t\t\t\t\t\t\t\t\t\t<i ng-class="qbTableSettings.icons.modalCollapseClosed"></i>\n\t\t\t\t\t\t\t\t\t\t\t\t</a>\n\t\t\t\t\t\t\t\t\t\t\t</h4>\n\t\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t\t\t<div id="qb-export-columns-{{$id}}-columns" class="panel-collapse collapse row">\n\t\t\t\t\t\t\t\t\t\t\t<div class="col-xs-12">\n\t\t\t\t\t\t\t\t\t\t\t\t<table qb-table class="table table-hover">\n\t\t\t\t\t\t\t\t\t\t\t\t\t<thead>\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t<tr>\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t<th qb-cell selector></th>\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t<th>Column</th>\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t</tr>\n\t\t\t\t\t\t\t\t\t\t\t\t\t</thead>\n\t\t\t\t\t\t\t\t\t\t\t\t\t<tbody>\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t<tr ng-repeat="col in settings.columns track by col.id">\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t<td qb-cell selector="col.selected"></td>\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t<td>{{col.title}}</td>\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t</tr>\n\t\t\t\t\t\t\t\t\t\t\t\t\t</tbody>\n\t\t\t\t\t\t\t\t\t\t\t\t</table>\n\t\t\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t\t<div ng-repeat="question in qbTableSettings.export.questions track by question.id" class="form-group">\n\t\t\t\t\t\t\t<label class="col-sm-3 control-label">{{question.title}}</label>\n\t\t\t\t\t\t\t<div ng-switch="question.type" class="col-sm-9">\n\t\t\t\t\t\t\t\t<div ng-switch-when="text">\n\t\t\t\t\t\t\t\t\t<input type="text" ng-model="settings.questions[question.id]" class="form-control"/>\n\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t<div ng-switch-default>\n\t\t\t\t\t\t\t\t\t<div class="alert alert-danger">\n\t\t\t\t\t\t\t\t\t\tUnknown question type: "{{question.type}}"\n\t\t\t\t\t\t\t\t\t\t<pre>{{question | json}}</pre>\n\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t<div ng-if="question.help" class="help-block">{{question.help}}</div>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t</div>\n\t\t\t\t\t<div class="modal-footer">\n\t\t\t\t\t\t<div class="pull-left">\n\t\t\t\t\t\t\t<a class="btn btn-danger" data-dismiss="modal">Cancel</a>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t\t<div class="pull-right">\n\t\t\t\t\t\t\t<a ng-click="exportExecute()" class="btn btn-primary" data-dismiss="modal">Export</a>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t</div>\n\t\t<ng-transclude>\n\t\t\t<a ng-click="exportPrompt()" class="btn btn-default">Export...</a>\n\t\t</ng-transclude>\n\t'
 	};
 })
@@ -675,6 +682,7 @@ angular.module('angular-ui-query-builder')
 * NOTE: The logic on what fields to search is that the field is a string AND if at least one field has 'index:true' to check for that. If no fields claim an index all string fields are searched (this may cause issues with your backend database). See the useIndexes property for further details
 * @param {Object} query The query object to populate
 * @param {Object} spec The specification object of the collection
+* @param {array} [fields] Optional array of fields to search by, if specified and non-empty this is used as the definitive list of fields to search by instead of computing via `useIndexes`
 * @param {function} [onRefresh] Function to call as ({query}) when the user changes the search string and a new query is generated
 * @param {string} [binding='complete'] How to bind the given query to the one in progress. ENUM: 'none' - do nothing (only call onRefresh), 'complete' - only update when the user finishes and presses enter or blurs the input
 * @param {string} [useIndexes='auto'] How to determine what fields to search. ENUM: 'all' - All fields', 'string' - Only string fields', 'stringIndexed' - only indexed string fields, 'auto' - 'stringIndexed' if at least one field has {index:true} else 'string'
@@ -685,6 +693,7 @@ angular.module('angular-ui-query-builder')
 			query: '=',
 			spec: '<',
 			onRefresh: '&?',
+			fields: '<?',
 			useIndexes: '@?'
 		},
 		restrict: 'AE',
@@ -736,21 +745,31 @@ angular.module('angular-ui-query-builder')
 							return k != '_id' && $scope.spec[k].index;
 						}) ? 'stringIndexed' : 'string';
 					}
-					newQuery.$or = _($scope.spec).pickBy(function (v, k) {
-						if (k == '_id') return false; // Never search by ID
-						switch (indexMethod) {
-							case 'all':
-								return true;
-							case 'string':
-								return v.type == 'string';
-							case 'stringIndexed':
-								return v.type == 'string' && v.index;
-							default:
-								throw new Error('Unknown field selection method: "' + indexMethod + '"');
-						}
-					}).map(function (v, k) {
-						return _defineProperty({}, k, { $regex: qbTableUtilities.escapeRegExp($scope.search), $options: 'i' });
-					}).value();
+
+					if ($scope.fields) {
+						// User is specifying fields to search
+						newQuery.$or = _($scope.fields).map(function (k) {
+							return _defineProperty({}, k, { $regex: qbTableUtilities.escapeRegExp($scope.search), $options: 'i' });
+						}).value();
+					} else {
+						// Auto-compute the fields to use
+						newQuery.$or = _($scope.spec).pickBy(function (v, k) {
+							if (k == '_id') return false; // Never search by ID
+							if ($scope.fields && $scope.fields.length) return $scope.fields.includes(k);
+							switch (indexMethod) {
+								case 'all':
+									return true;
+								case 'string':
+									return v.type == 'string';
+								case 'stringIndexed':
+									return v.type == 'string' && v.index;
+								default:
+									throw new Error('Unknown field selection method: "' + indexMethod + '"');
+							}
+						}).map(function (v, k) {
+							return _defineProperty({}, k, { $regex: qbTableUtilities.escapeRegExp($scope.search), $options: 'i' });
+						}).value();
+					}
 				} else {
 					// Give up
 					console.warn(qbTableSettings.debugPrefix, 'Unable to inject search term', searchQuery, 'within complex query object', newQuery);
