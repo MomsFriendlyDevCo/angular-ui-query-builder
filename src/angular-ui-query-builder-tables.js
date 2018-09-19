@@ -501,12 +501,15 @@ angular.module('angular-ui-query-builder')
 					query: _($scope.query)
 						.omitBy((v, k) => ['skip', 'limit'].includes(k))
 						.value(),
-					columns: _.map($scope.spec, (v, k) => {
-						v.id = k;
-						v.title = _.startCase(k);
-						v.selected = true;
-						return v;
-					}),
+					columns: _($scope.spec)
+						.pickBy(v => v && v.type && ['string', 'number', 'data', 'boolean', 'objectid'].includes(v.type))
+						.map((v, k) => {
+							v.id = k;
+							v.title = _.startCase(k);
+							v.selected = true;
+							return v;
+						})
+						.value(),
 					questions: _(qbTableSettings.export.questions) // Populate questions with defaults
 						.mapKeys(v => v.id)
 						.mapValues(v => v.default)
