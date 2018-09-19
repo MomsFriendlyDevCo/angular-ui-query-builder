@@ -12,7 +12,9 @@ module.exports = {
 		var filters = _.keys(query).filter(i => !['sort', 'skip', 'limit', 'select'].includes(i));
 
 		return [
-			filters.length ? `${filters.length} filters` : 'All records',
+			!filters.length ? 'All documents'
+				: filters.length == 1 ? '1 filter'
+				: `${filters.length} filters`,
 			query.sort
 				? (
 					query.sort.startsWith('-')
