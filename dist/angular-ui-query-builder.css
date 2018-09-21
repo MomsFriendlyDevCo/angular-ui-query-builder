@@ -410,7 +410,12 @@ input[type='date']::-webkit-clear-button {
 	margin-right: 10px;
 }
 
+.qb-table .qb-col:hover .qb-col-right {
+	display: inline-block;
+}
+
 .qb-table .qb-col .qb-col-right {
+	display: none; /* Hide until hover */
 	position: absolute;
 	right: 0;
 }
