@@ -70,28 +70,28 @@
 /* }}} */
 
 /* qb-col {{{ */
-.qb-table .qb-col .qb-col-wrapper {
+.qb-table [qb-col] .qb-col-wrapper {
 	text-overflow: ellipsis;
 	white-space: nowrap;
 	overflow: hidden;
 }
 
-.qb-table .qb-col .qb-col-wrapper i {
+.qb-table [qb-col] .qb-col-wrapper i {
 	margin-top: 2px;
 }
 
 /* Add slight right margin if we have to show the sort control */
-.qb-table .qb-col.sortable .qb-col-wrapper {
+.qb-table [qb-col].sortable .qb-col-wrapper {
 	margin-right: 10px;
 }
 
-.qb-table .qb-col .qb-col-right {
+.qb-table [qb-col] .qb-col-right {
 	display: none; /* Hide until hover */
 	position: absolute;
 	right: 0;
 }
 
-.qb-table .qb-col:hover .qb-col-right {
+.qb-table [qb-col]:hover .qb-col-right {
 	display: inline-block;
 }
 /* }}} */

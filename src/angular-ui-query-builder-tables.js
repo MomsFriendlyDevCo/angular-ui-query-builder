@@ -222,8 +222,6 @@ angular.module('angular-ui-query-builder')
 			}
 		};
 		// }}}
-
-		$element.addClass('qb-col');
 	},
 	link: function(scope, element, attrs, parentScope) {
 		scope.qbTable = parentScope;
