@@ -257,6 +257,7 @@ TODO
 ui-query-builder
 ----------------
 
+* [x] Indicator for 'No query - show all records'
 * [x] Basic field filtering
 * [ ] CSS tidyup
 * [ ] Compound queries - `$or` / `$and`
