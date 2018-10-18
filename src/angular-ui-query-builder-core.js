@@ -319,7 +319,7 @@ angular.module('angular-ui-query-builder',[])
 		*/
 		$scope.$on('queryBuilder.pathAction.swapPath', (e, path, newPath) => {
 			var existingItemIndex = $ctrl.qbQuery.findIndex(q => q.path == path);
-			if (!existingItemIndex) throw new Error(`Cannot find path "${path}" to swap with new path "${newPath}"`);
+			if (existingItemIndex < 0) throw new Error(`Cannot find path "${path}" to swap with new path "${newPath}"`);
 
 			$ctrl.qbQuery[existingItemIndex] = QueryBuilder.queryPathPrototype(newPath, undefined, $ctrl.qbSpec);
 			$timeout(()=> $scope.$broadcast('queryBuilder.focusOperand', newPath)); // Tell the widget to try and focus itself
