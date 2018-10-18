@@ -257,7 +257,13 @@ angular.module('angular-ui-query-builder',[])
 	},
 	template: `
 		<div class="ui-query-builder">
-			<div class="query-container">
+			<div ng-if="$ctrl.isEmpty">
+				<ui-query-builder-group
+					qb-group="$ctrl.emptyQueryLayout"
+					qb-spec="$ctrl.qbSpec"
+				></ui-query-builder-group>
+			</div>
+			<div ng-if="!$ctrl.isEmpty" class="query-container">
 				<ui-query-builder-group
 					qb-group="$ctrl.qbQuery"
 					qb-spec="$ctrl.qbSpec"
@@ -341,6 +347,16 @@ angular.module('angular-ui-query-builder',[])
 
 			$timeout(()=> $scope.$broadcast('queryBuilder.focusPath', '')); // Tell the widget to try and focus itself
 		});
+
+		// Manage empty queries {{{
+		$ctrl.emptyQueryLayout = [{
+			type: 'alert',
+			title: 'No query specified',
+		}];
+
+		$ctrl.isEmpty;
+		$scope.$watchCollection('$ctrl.qbQuery', ()=> $ctrl.isEmpty = _.isEmpty($ctrl.qbQuery));
+		// }}}
 	},
 })
 // }}}
@@ -607,6 +623,13 @@ angular.module('angular-ui-query-builder',[])
 					selected="$ctrl.qbItem.path"
 					qb-spec="$ctrl.qbSpec"
 				></ui-query-builder-path>
+			</div>
+			<!-- }}} -->
+			<!-- Alert {{{ -->
+			<div ng-switch-when="alert" class="query-row">
+				<div class="query-block query-block-2">
+					<div class="btn btn-block btn-noclick" ng-bind="$ctrl.qbItem.title"></div>
+				</div>
 			</div>
 			<!-- }}} -->
 			<!-- Unknown {{{ -->

@@ -46,6 +46,10 @@
 	box-shadow: 1px 3px 5px 0px rgba(50, 50, 50, 0.75);
 }
 
+.ui-query-builder .query-block.query-block-2 {
+	min-width: 400px;
+}
+
 .ui-query-builder .query-row > .query-block:first-child,
 .ui-query-builder .query-row > .btn-trash:first-child + .query-block {
 	margin-left: 17px;
@@ -151,6 +155,10 @@
 	cursor: pointer;
 	height: 100%;
 	padding: 0;
+}
+
+.ui-query-builder .btn.btn-noclick {
+	pointer-events: none;
 }
 
 /* Trash button {{{ */
