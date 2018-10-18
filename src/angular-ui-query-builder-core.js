@@ -692,10 +692,7 @@ angular.module('angular-ui-query-builder',[])
 		};
 	},
 	template: `
-		<a class="btn btn-block btn-{{$ctrl.level}} dropdown-toggle" data-toggle="dropdown">
-			{{$ctrl.selectedOption.title}}
-			<i class="fa fa-caret-down"></i>
-		</a>
+		<a class="btn btn-block btn-{{$ctrl.level}} dropdown-toggle" data-toggle="dropdown" ng-bind="$ctrl.selectedOption.title"></a>
 		<ul class="dropdown-menu pull-right">
 			<li ng-repeat="path in $ctrl.options track by path.path"><a ng-click="$ctrl.setSelected(path.path)">{{path.title}}</a></li>
 		</ul>
@@ -754,10 +751,7 @@ angular.module('angular-ui-query-builder',[])
 		});
 	},
 	template: `
-		<a class="btn btn-block btn-{{$ctrl.level}} dropdown-toggle" data-toggle="dropdown">
-			{{$ctrl.selectedOption.title}}
-			<i class="fa fa-caret-down"></i>
-		</a>
+		<a class="btn btn-block btn-{{$ctrl.level}} dropdown-toggle" data-toggle="dropdown" ng-bind="$ctrl.selectedOption.title"></a>
 		<ul class="dropdown-menu pull-right">
 			<li ng-repeat="option in $ctrl.options track by option.id"><a ng-click="$ctrl.setSelected(option)">{{option.title}}</a></li>
 		</ul>
@@ -806,7 +800,6 @@ angular.module('angular-ui-query-builder',[])
 			<span ng-repeat="item in $ctrl.selectedOptions track by item.id" class="pill">
 				{{item.title}}
 			</span>
-			<i class="fa fa-caret-down"></i></a>
 		</a>
 		<ul class="dropdown-menu pull-right">
 			<li ng-repeat="option in $ctrl.options track by option.id">
