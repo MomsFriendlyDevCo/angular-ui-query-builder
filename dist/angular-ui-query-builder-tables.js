@@ -313,8 +313,6 @@ angular.module('angular-ui-query-builder') // qbTableSettings (provider) {{{
         }
       }; // }}}
 
-
-      $element.addClass('qb-col');
     }],
     link: function link(scope, element, attrs, parentScope) {
       scope.qbTable = parentScope;

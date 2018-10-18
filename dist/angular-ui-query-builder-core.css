@@ -46,6 +46,10 @@
 	box-shadow: 1px 3px 5px 0px rgba(50, 50, 50, 0.75);
 }
 
+.ui-query-builder .query-block.query-block-2 {
+	min-width: 400px;
+}
+
 .ui-query-builder .query-row > .query-block:first-child,
 .ui-query-builder .query-row > .btn-trash:first-child + .query-block {
 	margin-left: 17px;
@@ -151,6 +155,10 @@
 	cursor: pointer;
 	height: 100%;
 	padding: 0;
+}
+
+.ui-query-builder .btn.btn-noclick {
+	pointer-events: none;
 }
 
 /* Trash button {{{ */
@@ -283,8 +291,39 @@ ui-query-builder-group > div + .btn-add {
 }
 /* }}} */
 
+/* BUGFIX: Correct the weird choice of hover color for buttons in BS5 {{{ */
+.ui-query-builder .btn.btn-1:hover,
+.ui-query-builder .btn.btn-2:hover,
+.ui-query-builder .btn.btn-3:hover
+{
+	color: #FFF;
+}
+/* }}} */
+
+/* Apply .btn.dropdown-toggle chevrons to BS3 {{{ */
+.ui-query-builder .btn.dropdown-toggle::after {
+	visibility: hidden;
+	display: inline-block;
+	width: 0;
+	height: 0;
+	float: right;
+	margin-left: .255em;
+	margin-top: 10px;
+	vertical-align: .255em;
+	content: "";
+	border-top: .3em solid;
+	border-right: .3em solid transparent;
+	border-bottom: 0;
+	border-left: .3em solid transparent;
+}
+
+.ui-query-builder .btn:hover.dropdown-toggle::after {
+	visibility: visible;
+}
+/* }}} */
+
 /* BUGFIX: Disable silly box-shadow when opening a dropdown {{{ */
-.btn-group.open .dropdown-toggle {
+.ui-query-builder .btn-group.open .dropdown-toggle {
 	box-shadow: none;
 }
 /* }}} */
