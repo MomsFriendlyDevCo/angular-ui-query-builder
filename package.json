@@ -17,11 +17,11 @@
   },
   "homepage": "https://github.com/MomsFriendlyDevCo/angular-ui-query-builder#readme",
   "devDependencies": {
-    "@babel/core": "^7.0.0",
-    "@babel/preset-env": "^7.0.0",
+    "@babel/core": "^7.1.2",
+    "@babel/preset-env": "^7.1.0",
     "babel-plugin-angularjs-annotate": "^0.9.0",
-    "chai": "^4.1.2",
-    "express": "^4.16.3",
+    "chai": "^4.2.0",
+    "express": "^4.16.4",
     "faker": "^4.1.0",
     "font-awesome": "^4.7.0",
     "gulp": "^3.9.1",
@@ -40,10 +40,10 @@
     "gulp-watch": "^5.0.1",
     "mocha": "^5.2.0",
     "rimraf": "^2.6.2",
-    "sift": "^6.0.0"
+    "sift": "^7.0.1"
   },
   "dependencies": {
-    "angular": "^1.7.4",
+    "angular": "^1.7.5",
     "bootstrap": "^3.3.7",
     "jquery": "^3.3.1",
     "lodash": "^4.17.11",

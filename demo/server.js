@@ -15,7 +15,7 @@
 
 var _ = require('lodash');
 var express = require('express');
-var sift = require('sift');
+var sift = require('sift').default;
 
 var data = require('./testData');
 var root = __dirname + '/..';
