@@ -337,15 +337,23 @@ angular.module('angular-ui-query-builder',[])
 		* @param {string} [path] The new path to add, if omitted the new path is added at the root element
 		*/
 		$scope.$on('queryBuilder.pathAction.add', (e, path) => {
-			// Append new path and set to blank
-			$ctrl.qbQuery.push({
-				path: '',
-				type: 'blank',
-				value: null,
-				fields: [],
-			});
+			if (!path) {
+				var existingItemIndex = $ctrl.qbQuery.findIndex(q => !q.path); // Adding an existing path somewhere already?
 
-			$timeout(()=> $scope.$broadcast('queryBuilder.focusPath', '')); // Tell the widget to try and focus itself
+				if (existingItemIndex) {
+					// Append new path and set to blank
+					$ctrl.qbQuery.push({
+						path: '',
+						type: 'blank',
+						value: null,
+						fields: [],
+					});
+				}
+
+				$timeout(()=> $scope.$broadcast('queryBuilder.focusPath', '')); // Tell the widget to try and focus itself
+			} else {
+				console.warn('Adding a path to a sub-node is not yet supported');
+			}
 		});
 
 		// Manage empty queries {{{
