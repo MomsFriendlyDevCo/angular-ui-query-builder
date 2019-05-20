@@ -687,7 +687,7 @@ angular.module('angular-ui-query-builder')
 	},
 	transclude: true,
 	restrict: 'A',
-	controller: function($element, $scope, qbTableSettings) {
+	controller: function($element, $scope, $rootScope, qbTableSettings) {
 		var $ctrl = this;
 
 		$scope.qbTableSettings = qbTableSettings;
@@ -707,6 +707,9 @@ angular.module('angular-ui-query-builder')
 			if (!$scope.binding || $scope.binding == 'complete') $scope.query = $scope.queryCopy;
 
 			$element.find('.qb-modal').modal('hide');
+
+			// Inform the main query builder that we've changed something
+			$rootScope.$broadcast('queryBuilder.change.replace', $scope.query);
 		};
 
 		$ctrl.$onInit = ()=> {
