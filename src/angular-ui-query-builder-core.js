@@ -665,7 +665,7 @@ angular.module('angular-ui-query-builder',[])
 			{{$ctrl.selectedOption.title}}
 			<i class="fa fa-caret-down"></i>
 		</a>
-		<ul class="dropdown-menu pull-right">
+		<ul class="dropdown-menu">
 			<li ng-repeat="path in $ctrl.options track by path.path"><a ng-click="$ctrl.setSelected(path.path)">{{path.title}}</a></li>
 		</ul>
 	`,
@@ -727,7 +727,7 @@ angular.module('angular-ui-query-builder',[])
 			{{$ctrl.selectedOption.title}}
 			<i class="fa fa-caret-down"></i>
 		</a>
-		<ul class="dropdown-menu pull-right">
+		<ul class="dropdown-menu">
 			<li ng-repeat="option in $ctrl.options track by option.id"><a ng-click="$ctrl.setSelected(option)">{{option.title}}</a></li>
 		</ul>
 	`,
@@ -777,7 +777,7 @@ angular.module('angular-ui-query-builder',[])
 			</span>
 			<i class="fa fa-caret-down"></i></a>
 		</a>
-		<ul class="dropdown-menu pull-right">
+		<ul class="dropdown-menu">
 			<li ng-repeat="option in $ctrl.options track by option.id">
 				<a ng-click="$ctrl.toggle(option)">
 					<i class="fa fa-fw" ng-class="option.selected ? 'fa-check-square-o' : 'fa-square-o'"></i>
