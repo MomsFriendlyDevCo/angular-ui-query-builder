@@ -496,7 +496,7 @@ angular.module('angular-ui-query-builder', []) // Service: QueryBuilder {{{
       });
     };
   }],
-  template: "\n\t\t<a class=\"btn btn-block btn-{{$ctrl.level}} dropdown-toggle\" data-toggle=\"dropdown\" ng-bind=\"$ctrl.selectedOption.title\"></a>\n\t\t<ul class=\"dropdown-menu pull-right\">\n\t\t\t<li ng-repeat=\"path in $ctrl.options track by path.path\"><a ng-click=\"$ctrl.setSelected(path.path)\">{{path.title}}</a></li>\n\t\t</ul>\n\t"
+  template: "\n\t\t<a class=\"btn btn-block btn-{{$ctrl.level}} dropdown-toggle\" data-toggle=\"dropdown\" ng-bind=\"$ctrl.selectedOption.title\"></a>\n\t\t<ul class=\"dropdown-menu\">\n\t\t\t<li ng-repeat=\"path in $ctrl.options track by path.path\"><a ng-click=\"$ctrl.setSelected(path.path)\">{{path.title}}</a></li>\n\t\t</ul>\n\t"
 }) // }}}
 // Component: uiQueryBuilderBlock {{{
 
