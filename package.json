@@ -29,7 +29,7 @@
     "gulp-clean-css": "^4.2.0",
     "gulp-concat": "^2.6.1",
     "gulp-file": "^0.4.0",
-    "gulp-gh-pages": "^0.5.4",
+    "gulp-gh-pages": "https://github.com/tekd/gulp-gh-pages/tarball/9ebafeb4011982c98038d8e90373fe7ed91e3f88",
     "gulp-nodemon": "^2.4.2",
     "gulp-plumber": "^1.2.1",
     "gulp-preprocess": "^3.0.2",
