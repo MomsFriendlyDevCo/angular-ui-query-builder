@@ -693,7 +693,7 @@ angular.module('angular-ui-query-builder',[])
 	},
 	template: `
 		<a class="btn btn-block btn-{{$ctrl.level}} dropdown-toggle" data-toggle="dropdown" ng-bind="$ctrl.selectedOption.title"></a>
-		<ul class="dropdown-menu pull-right">
+		<ul class="dropdown-menu">
 			<li ng-repeat="path in $ctrl.options track by path.path"><a ng-click="$ctrl.setSelected(path.path)">{{path.title}}</a></li>
 		</ul>
 	`,
