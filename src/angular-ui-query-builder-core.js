@@ -801,7 +801,7 @@ angular.module('angular-ui-query-builder',[])
 				{{item.title}}
 			</span>
 		</a>
-		<ul class="dropdown-menu pull-right">
+		<ul class="dropdown-menu">
 			<li ng-repeat="option in $ctrl.options track by option.id">
 				<a ng-click="$ctrl.toggle(option)">
 					<i class="fa fa-fw" ng-class="option.selected ? 'fa-check-square-o' : 'fa-square-o'"></i>
