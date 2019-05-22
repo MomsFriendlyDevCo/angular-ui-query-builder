@@ -17,7 +17,7 @@ angular.module('angular-ui-query-builder', []) // Service: QueryBuilder {{{
     return _(spec).mapValues(function (v, k) {
       return {
         type: v.type,
-        enum: _(v.enum).map(function (e) {
+        "enum": _(v["enum"]).map(function (e) {
           return _.isString(e) ? {
             id: e,
             title: _.startCase(e)
@@ -178,14 +178,14 @@ angular.module('angular-ui-query-builder', []) // Service: QueryBuilder {{{
         action: '$exists',
         actions: QueryBuilder.queryPathPrototypeActions
       };
-    } else if (pathSpec.type == 'string' && _.isArray(pathSpec.enum) && pathSpec.enum.length) {
+    } else if (pathSpec.type == 'string' && _.isArray(pathSpec["enum"]) && pathSpec["enum"].length) {
       return {
         path: path,
         title: operand.title || _.startCase(path),
         type: 'enum',
-        action: operand.$in ? '$in' : operand.$nin ? '$nin' : pathSpec.enum.length ? '$in' : '$eq',
-        enum: pathSpec.enum,
-        value: operand.$in ? operand.$in : operand.$nin ? operand.$nin : pathSpec.enum.length && !_.isArray(operand) ? [operand] : operand,
+        action: operand.$in ? '$in' : operand.$nin ? '$nin' : pathSpec["enum"].length ? '$in' : '$eq',
+        "enum": pathSpec["enum"],
+        value: operand.$in ? operand.$in : operand.$nin ? operand.$nin : pathSpec["enum"].length && !_.isArray(operand) ? [operand] : operand,
         actions: QueryBuilder.queryPathPrototypeActions
       };
     } else {
@@ -430,7 +430,7 @@ angular.module('angular-ui-query-builder', []) // Service: QueryBuilder {{{
   controller: ["$element", "$scope", "QueryBuilder", function controller($element, $scope, QueryBuilder) {
     var $ctrl = this;
 
-    $ctrl.delete = function (path) {
+    $ctrl["delete"] = function (path) {
       return $scope.$emit('queryBuilder.pathAction.drop', path);
     };
 
@@ -594,7 +594,7 @@ angular.module('angular-ui-query-builder', []) // Service: QueryBuilder {{{
       });
     }, true);
   }],
-  template: "\n\t\t<a class=\"btn btn-block btn-{{$ctrl.level}} dropdown-toggle\" data-toggle=\"dropdown\">\n\t\t\t<span ng-repeat=\"item in $ctrl.selectedOptions track by item.id\" class=\"pill\">\n\t\t\t\t{{item.title}}\n\t\t\t</span>\n\t\t</a>\n\t\t<ul class=\"dropdown-menu pull-right\">\n\t\t\t<li ng-repeat=\"option in $ctrl.options track by option.id\">\n\t\t\t\t<a ng-click=\"$ctrl.toggle(option)\">\n\t\t\t\t\t<i class=\"fa fa-fw\" ng-class=\"option.selected ? 'fa-check-square-o' : 'fa-square-o'\"></i>\n\t\t\t\t\t{{option.title}}\n\t\t\t\t</a>\n\t\t\t</li>\n\t\t</ul>\n\t"
+  template: "\n\t\t<a class=\"btn btn-block btn-{{$ctrl.level}} dropdown-toggle\" data-toggle=\"dropdown\">\n\t\t\t<span ng-repeat=\"item in $ctrl.selectedOptions track by item.id\" class=\"pill\">\n\t\t\t\t{{item.title}}\n\t\t\t</span>\n\t\t</a>\n\t\t<ul class=\"dropdown-menu\">\n\t\t\t<li ng-repeat=\"option in $ctrl.options track by option.id\">\n\t\t\t\t<a ng-click=\"$ctrl.toggle(option)\">\n\t\t\t\t\t<i class=\"fa fa-fw\" ng-class=\"option.selected ? 'fa-check-square-o' : 'fa-square-o'\"></i>\n\t\t\t\t\t{{option.title}}\n\t\t\t\t</a>\n\t\t\t</li>\n\t\t</ul>\n\t"
 }); // }}}
 
 angular.module('angular-ui-query-builder') // qbTableSettings (provider) {{{
@@ -625,7 +625,7 @@ angular.module('angular-ui-query-builder') // qbTableSettings (provider) {{{
     pageRangeBack: 5,
     pageRangeFore: 5
   };
-  qbTableSettings.export = {
+  qbTableSettings["export"] = {
     defaults: {
       format: 'xlsx'
     },
@@ -1138,7 +1138,7 @@ angular.module('angular-ui-query-builder') // qbTableSettings (provider) {{{
       $scope.isShowing = false;
 
       $scope.exportPrompt = function () {
-        $scope.settings = angular.extend(angular.copy(qbTableSettings.export.defaults), {
+        $scope.settings = angular.extend(angular.copy(qbTableSettings["export"].defaults), {
           query: _($scope.query).omitBy(function (v, k) {
             return ['skip', 'limit'].includes(k);
           }).value(),
@@ -1150,11 +1150,11 @@ angular.module('angular-ui-query-builder') // qbTableSettings (provider) {{{
             v.selected = true;
             return v;
           }).value(),
-          questions: _(qbTableSettings.export.questions) // Populate questions with defaults
+          questions: _(qbTableSettings["export"].questions) // Populate questions with defaults
           .mapKeys(function (v) {
             return v.id;
           }).mapValues(function (v) {
-            return v.default;
+            return v["default"];
           }).value()
         });
         $element.find('.modal').on('show.bs.modal', function () {
@@ -1236,7 +1236,7 @@ angular.module('angular-ui-query-builder') // qbTableSettings (provider) {{{
     },
     transclude: true,
     restrict: 'A',
-    controller: ["$element", "$scope", "qbTableSettings", function controller($element, $scope, qbTableSettings) {
+    controller: ["$element", "$scope", "$rootScope", "qbTableSettings", function controller($element, $scope, $rootScope, qbTableSettings) {
       var $ctrl = this;
       $scope.qbTableSettings = qbTableSettings;
       $ctrl.isShown = false;
@@ -1257,7 +1257,9 @@ angular.module('angular-ui-query-builder') // qbTableSettings (provider) {{{
           spec: $scope.spec
         });
         if (!$scope.binding || $scope.binding == 'complete') $scope.query = $scope.queryCopy;
-        $element.find('.qb-modal').modal('hide');
+        $element.find('.qb-modal').modal('hide'); // Inform the main query builder that we've changed something
+
+        $rootScope.$broadcast('queryBuilder.change.replace', $scope.query);
       };
 
       $ctrl.$onInit = function () {

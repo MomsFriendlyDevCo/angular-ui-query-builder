@@ -30,7 +30,7 @@ angular.module('angular-ui-query-builder') // qbTableSettings (provider) {{{
     pageRangeBack: 5,
     pageRangeFore: 5
   };
-  qbTableSettings.export = {
+  qbTableSettings["export"] = {
     defaults: {
       format: 'xlsx'
     },
@@ -543,7 +543,7 @@ angular.module('angular-ui-query-builder') // qbTableSettings (provider) {{{
       $scope.isShowing = false;
 
       $scope.exportPrompt = function () {
-        $scope.settings = angular.extend(angular.copy(qbTableSettings.export.defaults), {
+        $scope.settings = angular.extend(angular.copy(qbTableSettings["export"].defaults), {
           query: _($scope.query).omitBy(function (v, k) {
             return ['skip', 'limit'].includes(k);
           }).value(),
@@ -555,11 +555,11 @@ angular.module('angular-ui-query-builder') // qbTableSettings (provider) {{{
             v.selected = true;
             return v;
           }).value(),
-          questions: _(qbTableSettings.export.questions) // Populate questions with defaults
+          questions: _(qbTableSettings["export"].questions) // Populate questions with defaults
           .mapKeys(function (v) {
             return v.id;
           }).mapValues(function (v) {
-            return v.default;
+            return v["default"];
           }).value()
         });
         $element.find('.modal').on('show.bs.modal', function () {
@@ -641,7 +641,7 @@ angular.module('angular-ui-query-builder') // qbTableSettings (provider) {{{
     },
     transclude: true,
     restrict: 'A',
-    controller: ["$element", "$scope", "qbTableSettings", function controller($element, $scope, qbTableSettings) {
+    controller: ["$element", "$scope", "$rootScope", "qbTableSettings", function controller($element, $scope, $rootScope, qbTableSettings) {
       var $ctrl = this;
       $scope.qbTableSettings = qbTableSettings;
       $ctrl.isShown = false;
@@ -662,7 +662,9 @@ angular.module('angular-ui-query-builder') // qbTableSettings (provider) {{{
           spec: $scope.spec
         });
         if (!$scope.binding || $scope.binding == 'complete') $scope.query = $scope.queryCopy;
-        $element.find('.qb-modal').modal('hide');
+        $element.find('.qb-modal').modal('hide'); // Inform the main query builder that we've changed something
+
+        $rootScope.$broadcast('queryBuilder.change.replace', $scope.query);
       };
 
       $ctrl.$onInit = function () {
