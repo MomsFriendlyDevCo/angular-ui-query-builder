@@ -226,6 +226,8 @@ angular.module('angular-ui-query-builder') // qbTableSettings (provider) {{{
         return $element.toggleClass('qb-noresults', $scope.count === 0);
       });
       $scope.$on('queryBuilder.change.replace', function (e, q) {
+        q.skip = 0; // Reset current page
+
         $ctrl.query = $scope.qbTable = q;
         $timeout(function () {
           return $ctrl.setDirty();
