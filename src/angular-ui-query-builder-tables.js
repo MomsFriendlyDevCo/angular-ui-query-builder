@@ -135,6 +135,7 @@ angular.module('angular-ui-query-builder')
 		$scope.$watch('stickyTfoot', ()=> $element.toggleClass('qb-sticky-tfoot', $scope.stickyTfoot || $attrs.stickyTfoot === ''));
 		$scope.$watch('count', ()=> $element.toggleClass('qb-noresults', $scope.count === 0));
 		$scope.$on('queryBuilder.change.replace', (e, q) => {
+			q.skip = 0; // Reset current page
 			$ctrl.query = $scope.qbTable = q;
 			$timeout(()=> $ctrl.setDirty());
 		});
