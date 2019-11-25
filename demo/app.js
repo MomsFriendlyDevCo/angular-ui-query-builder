@@ -41,7 +41,7 @@ app.controller('queryBuilderExampleCtrl', function($http, $scope) {
 	$scope.query = {
 		email: {$exists: true},
 		role: 'user',
-		status: {$in: ['pending', 'active']},
+		status: {$nin: ['deleted']},
 		sort: 'username',
 		limit: 10,
 	};

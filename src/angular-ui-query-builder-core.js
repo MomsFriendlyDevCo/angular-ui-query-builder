@@ -777,6 +777,8 @@ angular.module('angular-ui-query-builder',[])
 		var $ctrl = this;
 
 		$ctrl.toggle = option => {
+			// Clearing out invalid entries, only strings accepted
+			$ctrl.selected = $ctrl.selected.filter(i => typeof i === 'string');
 			if (!$ctrl.selected) $ctrl.selected = [];
 
 			if ($ctrl.selected.includes(option.id)) {
@@ -791,7 +793,6 @@ angular.module('angular-ui-query-builder',[])
 		$scope.$watch('$ctrl.selected', ()=> {
 			$ctrl.selectedOptions = $ctrl.options
 				.filter(i => ($ctrl.selected || []).includes(i.id))
-
 			$ctrl.options.forEach(o => o.selected = $ctrl.selectedOptions.some(s => s.id == o.id));
 		}, true);
 	},
