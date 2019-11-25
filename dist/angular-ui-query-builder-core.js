@@ -569,6 +569,10 @@ angular.module('angular-ui-query-builder', []) // Service: QueryBuilder {{{
     var $ctrl = this;
 
     $ctrl.toggle = function (option) {
+      // Clearing out invalid entries, only strings accepted
+      $ctrl.selected = $ctrl.selected.filter(function (i) {
+        return typeof i === 'string';
+      });
       if (!$ctrl.selected) $ctrl.selected = [];
 
       if ($ctrl.selected.includes(option.id)) {
