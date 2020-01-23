@@ -45,6 +45,7 @@ app.controller('queryBuilderExampleCtrl', function($http, $scope, $timeout) {
 		status: {$nin: ['deleted']},
 		sort: 'username',
 		limit: 10,
+		tags: 'foo',
 	};
 
 
