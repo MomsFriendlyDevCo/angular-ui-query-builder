@@ -19,7 +19,7 @@ app.config(qbTableSettingsProvider => {
 
 });
 
-app.controller('queryBuilderExampleCtrl', function($http, $scope) {
+app.controller('queryBuilderExampleCtrl', function($http, $scope, $timeout) {
 	$scope.spec = {
 		_id: {type: 'objectId'},
 		name: {type: 'string'},
@@ -52,12 +52,14 @@ app.controller('queryBuilderExampleCtrl', function($http, $scope) {
 	$scope.data;
 	$scope.count;
 	$scope.refresh = ()=> {
-		console.log('REFRESH', $scope.query);
-		$http.get('api/data', {params: $scope.query})
-			.then(res => $scope.data = res.data);
+		$timeout(()=> {
+			console.log('REFRESH', JSON.stringify($scope.query));
+			$http.get('api/data', {params: $scope.query})
+				.then(res => $scope.data = res.data);
 
-		$http.get('api/count', {params: $scope.query})
-			.then(res => $scope.count = res.data.count);
+			$http.get('api/count', {params: $scope.query})
+				.then(res => $scope.count = res.data.count);
+		});
 	}
 
 	$scope.$on('queryBuilder.change', $scope.refresh);
