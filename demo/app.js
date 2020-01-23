@@ -36,6 +36,7 @@ app.controller('queryBuilderExampleCtrl', function($http, $scope) {
 		role: {type: 'string', enum: ['user', 'admin', 'root']},
 		status: {type: 'string', enum: ['pending', 'active', 'deleted']},
 		lastLogin: {type: 'date'},
+		tags: [{type: 'mixed'}],
 	};
 
 	$scope.query = {
