@@ -33,4 +33,5 @@ module.exports = [...Array(100)].map((i, offset) => ({
 	lastLogin: Math.random() > 0.5
 		? faker.date.past()
 		: faker.date.recent(),
+	tags: ['foo', 'bar'],
 }));
