@@ -124,7 +124,8 @@ angular.module('angular-ui-query-builder')
 					}
 					break;
 				default:
-					$scope.qbTable[field] = value;
+					// FIXME: Setting `$ctrl.query` required for pagination, `$scope.qbTable[field]` required for query.
+					$ctrl.query[field] = $scope.qbTable[field] = value;
 			}
 
 			return $ctrl;
