@@ -381,8 +381,8 @@ angular.module('angular-ui-query-builder')
 
 		$scope.$watchGroup(['qbTable.query.limit', 'qbTable.query.skip', 'qbTable.count'], sorter => {
 			if ($scope.qbTable.query.limit && typeof $scope.qbTable.query.limit !== 'number') $scope.qbTable.setField('limit', parseInt($scope.qbTable.query.limit, 10));
-			if ($scope.qbTable.query.skip && typeof $scope.qbTable.query.skip !== 'number') $scope.qbTable.setField('skip', parseInt($scope.qbTable.query.skip, 10));
-			if ($scope.qbTable.query.count && typeof $scope.qbTable.query.count !== 'number') $scope.qbTable.setField('count', parseInt($scope.qbTable.query.count, 10));
+							if ($scope.qbTable.query.skip && typeof $scope.qbTable.query.skip !== 'number') $scope.qbTable.setField('skip', parseInt($scope.qbTable.query.skip, 10));
+							if ($scope.qbTable.query.count && typeof $scope.qbTable.query.count !== 'number') $scope.qbTable.setField('count', parseInt($scope.qbTable.query.count, 10));
 
 			$scope.canPrev = $scope.qbTable.query.skip > 0;
 			$scope.canNext = !$scope.qbTable.count || $scope.qbTable.query.skip + $scope.qbTable.query.limit < $scope.qbTable.count;
@@ -444,7 +444,7 @@ angular.module('angular-ui-query-builder')
 	template: `
 		<nav>
 			<ul class="pager">
-				<li ng-class="canPrev ? '' : 'disabled'" class="previous"><a ng-click="navPageRelative(-1)"><i ng-class="qbTableSettings.icons.paginationPrev"></i></a></li>
+				<li ng-class="canPrev ? '' : 'disabled'" class="previous"><a ng-click="canPrev && navPageRelative(-1)"><i ng-class="qbTableSettings.icons.paginationPrev"></i></a></li>
 				<ng-transclude class="text-center">
 					<span ng-if="qbTableSettings.pagination.showXOfY && showRange.end" class="display-xofy">
 						Showing documents {{showRange.start | number}} - {{showRange.end | number}}
@@ -460,7 +460,7 @@ angular.module('angular-ui-query-builder')
 						</li>
 					</ul>
 				</ng-transclude>
-				<li ng-class="canNext ? '' : 'disabled'" class="next"><a ng-click="navPageRelative(1)"><i ng-class="qbTableSettings.icons.paginationNext"></i></a></li>
+				<li ng-class="canNext ? '' : 'disabled'" class="next"><a ng-click="canNext && navPageRelative(1)"><i ng-class="qbTableSettings.icons.paginationNext"></i></a></li>
 			</ul>
 		</nav>
 	`,
